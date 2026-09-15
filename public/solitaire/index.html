@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Solitaire</title>
+  <meta name="description" content="Classic Klondike solitaire — draw 1 or draw 3, drag and drop, undo, hints and auto-complete.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🂡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/" title="Back to the arcade">⌂ <span>ARCADE</span></a>
+    <div class="stats">
+      <div><span>SCORE</span><b id="score">0</b></div>
+      <div><span>MOVES</span><b id="moves">0</b></div>
+      <div><span>TIME</span><b id="time">0:00</b></div>
+    </div>
+    <div class="actions">
+      <select id="draw-mode" title="Draw mode">
+        <option value="1">Draw 1</option>
+        <option value="3">Draw 3</option>
+      </select>
+      <button id="hint-btn" title="Hint (H)">💡<span> Hint</span></button>
+      <button id="undo-btn" title="Undo (Ctrl+Z)">↶<span> Undo</span></button>
+      <button id="new-btn" class="primary" title="New game (N)">＋<span> New</span></button>
+    </div>
+  </header>
+
+  <main id="board" aria-label="Solitaire table"></main>
+
+  <button id="auto-btn" class="auto" hidden>⚡ Auto-complete</button>
+
+  <canvas id="celebrate" hidden></canvas>
+  <div class="win" id="win" hidden>
+    <div class="win-panel">
+      <h2>You win!</h2>
+      <div class="win-stats">
+        <div><span>Score</span><b id="win-score">0</b></div>
+        <div><span>Time</span><b id="win-time">0:00</b></div>
+        <div><span>Moves</span><b id="win-moves">0</b></div>
+      </div>
+      <p id="win-record"></p>
+      <button class="primary big" id="win-new">Deal again</button>
+      <a class="big ghost" href="/pacman/">Play Infinite Pac-Man →</a>
+    </div>
+  </div>
+
+  <script src="solitaire.js"></script>
+</body>
+</html>

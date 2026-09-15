@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Pac-Man</title>
+  <meta name="description" content="Pac-Man in an endless, procedurally generated maze that stretches forever in every direction.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 50 L95 25 A50 50 0 1 0 95 75 Z' fill='%23ffe600'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; color: #fff; font-family: "Press Start 2P", ui-monospace, monospace; touch-action: none; user-select: none; -webkit-user-select: none; }
+    canvas { display: block; }
+    a { color: inherit; }
+
+    .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 16px; pointer-events: none; background: linear-gradient(#000d 0%, #0000 100%); font-size: 12px; }
+    .hud .col { display: flex; flex-direction: column; gap: 6px; }
+    .hud .label { color: #8a8aff; font-size: 9px; }
+    .hud .right { text-align: right; align-items: flex-end; }
+    #lives { color: #ffe600; letter-spacing: 3px; }
+    #suits { display: flex; gap: 4px; }
+    .suit { display: inline-grid; place-items: center; width: 20px; height: 26px; border-radius: 3px; background: #1a1a3a; color: #444; font-family: serif; font-size: 16px; }
+    .suit.got { background: #fbfbff; color: #111; box-shadow: 0 0 8px #fff8; }
+    .suit.got.red { color: #e0153a; }
+    #dist { color: #666; font-size: 8px; }
+    .hud-buttons { position: fixed; bottom: 12px; right: 12px; display: flex; gap: 8px; }
+    .icon-btn { pointer-events: auto; font: inherit; font-size: 16px; background: #111a; color: #fff; border: 1px solid #333; border-radius: 8px; padding: 8px 10px; cursor: pointer; text-decoration: none; }
+    .icon-btn:hover { border-color: #3b4bff; }
+
+    .overlay { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at center, #000a 0%, #000e 70%); z-index: 10; padding: 20px; }
+    .panel { text-align: center; max-width: 560px; }
+    .panel h1 { margin: 0 0 8px; font-size: clamp(22px, 6vw, 44px); color: #ffe600; text-shadow: 0 0 18px #ffe60088, 4px 4px 0 #b37400; line-height: 1.25; }
+    .panel h1 small { display: block; font-size: 0.42em; color: #00e5ff; text-shadow: 0 0 12px #00e5ff88; margin-bottom: 10px; letter-spacing: 4px; }
+    .panel p { font-size: 10px; line-height: 2; color: #bbb; margin: 18px 0; }
+    .panel .keys { color: #fff; }
+    .btn { font: inherit; font-size: 14px; background: #ffe600; color: #000; border: 0; border-radius: 6px; padding: 16px 26px; cursor: pointer; box-shadow: 0 6px 0 #b37400; margin: 8px; text-decoration: none; display: inline-block; }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b37400; }
+    .btn.alt { background: #1b1b3a; color: #fff; box-shadow: 0 6px 0 #0b0b20; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 22px 0; }
+    .stats div { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px 6px; font-size: 16px; }
+    .stats span { display: block; font-size: 8px; color: #8a8aff; margin-bottom: 8px; }
+    .legend { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; font-size: 9px; color: #aaa; }
+    .legend b { font-family: serif; font-size: 16px; color: #fff; font-weight: normal; }
+
+    #toast { position: fixed; left: 50%; top: 70px; transform: translate(-50%, -10px); background: #000c; border: 2px solid #ffe600; color: #ffe600; font-size: 11px; padding: 10px 14px; border-radius: 6px; opacity: 0; pointer-events: none; white-space: nowrap; transition: opacity .25s, transform .25s; z-index: 5; }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .dpad { position: fixed; left: 14px; bottom: 14px; display: none; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 4px; opacity: .55; }
+    .dpad button { font-size: 20px; background: #1b1b3a; color: #fff; border: 1px solid #3b4bff; border-radius: 10px; touch-action: none; }
+    @media (pointer: coarse) { .dpad { display: grid; } .hud { font-size: 10px; } }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col" style="align-items:center">
+      <span class="label">LEVEL <span id="level" style="color:#fff">1</span></span>
+      <div id="suits"></div>
+      <span id="dist"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="dpad" aria-hidden="true">
+    <span></span><button data-dir="3">▲</button><span></span>
+    <button data-dir="2">◀</button><span></span><button data-dir="0">▶</button>
+    <span></span><button data-dir="1">▼</button><span></span>
+  </div>
+
+  <div id="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small>INFINITE</small>PAC-MAN</h1>
+      <p>The maze never ends. Every direction is a brand-new,<br>randomly generated labyrinth — go as far as you dare.</p>
+      <div class="legend">
+        <span>● dot 10</span><span>⬤ power 50</span><span><b>♠♥♦♣</b> card 500</span>
+      </div>
+      <p>Collect all four card suits for an <span class="keys">extra life</span>.<br>
+        <span class="keys">ARROWS / WASD</span> to move · <span class="keys">P</span> pause · <span class="keys">M</span> mute<br>
+        Swipe on touch screens.</p>
+      <button class="btn" id="play-btn">PLAY</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="final-score">0</b></div>
+        <div><span>FARTHEST</span><b id="final-dist">0</b></div>
+        <div><span>LEVEL</span><b id="final-level">1</b></div>
+      </div>
+      <p>A new maze is generated every game.</p>
+      <button class="btn" id="again-btn">PLAY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
