@@ -214,7 +214,12 @@
         const d = DIRS[e.dir];
         if (isWall(e.x + d.x, e.y + d.y)) { e.dir = -1; return; }
       }
-      if (e.dir < 0) return;
+      if (e.dir < 0) {
+        // stopped off-grid: snap to the nearest tile centre and try again next frame
+        e.x = Math.round(e.x);
+        e.y = Math.round(e.y);
+        return;
+      }
       const d = DIRS[e.dir];
       let tx = e.x, ty = e.y;
       if (d.x) tx = d.x > 0 ? Math.floor(e.x) + 1 : Math.ceil(e.x) - 1;
@@ -375,7 +380,11 @@
         } else {
           frightT = 0;
           for (const g of ghosts) respawnGhost(g);
+          // Death can happen between tiles; snap back onto the grid so steering works again
+          pac.x = Math.round(pac.x);
+          pac.y = Math.round(pac.y);
           pac.dir = -1;
+          pac.next = pac.face;
           setState('ready');
         }
       }
