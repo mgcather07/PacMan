@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Frogger</title>
+  <meta name="description" content="Hop forever across endless roads, rivers and railways. How far can your frog get?">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/frogger/">
+  <meta property="og:title" content="Infinite Frogger">
+  <meta property="og:description" content="Hop forever across endless roads, rivers and railways. How far can your frog get?">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #7dff6a; --accent-dark: #2e7d32; --bg: #0b1f0b; }
+    .hud { background: linear-gradient(#000c, #0000); text-shadow: 2px 2px 0 #000; }
+    #suits { display: flex; gap: 4px; }
+    .suit { display: inline-grid; place-items: center; width: 20px; height: 26px; border-radius: 3px; background: #0006; color: #555; font-family: serif; font-size: 16px; text-shadow: none; }
+    .suit.got { background: #fbfbff; color: #111; box-shadow: 0 0 8px #fff8; }
+    .suit.got.red { color: #e0153a; }
+    .legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 9px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col center">
+      <span class="label">ROW</span>
+      <span id="rows">0</span>
+      <div id="suits"></div>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small>INFINITE</small>FROGGER</h1>
+      <p>The road never ends. Hop across traffic, ride logs and turtles<br>over rivers, and dodge trains — forever.</p>
+      <div class="legend"><span>🪙 coin +50</span><span>♠♥♦♣ card +250</span><span>🐸 extra life every 100 rows</span></div>
+      <p>Don’t dawdle: the screen keeps moving, and the eagle<br>grabs frogs that fall behind. Turtles sometimes dive!<br>
+        <span class="k">ARROWS / WASD</span> to hop · <span class="k">P</span> pause<br>Tap to hop forward · swipe to hop any direction</p>
+      <button class="btn" id="play-btn">PLAY</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>ROWS</span><b id="o-rows">0</b></div>
+        <div><span>COINS</span><b id="o-coins">0</b></div>
+      </div>
+      <p>Every run is a brand-new road.</p>
+      <button class="btn" id="again-btn">PLAY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/arcade.js"></script>
+  <script src="frogger.js"></script>
+</body>
+</html>

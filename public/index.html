@@ -90,6 +90,8 @@
     .modes b { font-family: "Press Start 2P", monospace; font-size: 10px; color: #7ee2a8; font-weight: normal; }
     .modes span { font-size: 12px; color: #a9a9c2; }
     .sol .preview { text-decoration: none; }
+    .game.frg:hover { border-color: #7dff6a; box-shadow: 0 20px 60px #7dff6a44; }
+    .frg h2, .frg .cta { color: #7dff6a; }
   </style>
 </head>
 <body>
@@ -97,7 +99,7 @@
   <main>
     <header>
       <h1>INFINITE <span>ARCADE</span></h1>
-      <p>Six games. Three of them never end.</p>
+      <p>Seven games. Four of them never end.</p>
     </header>
 
     <section class="grid">
@@ -130,6 +132,16 @@
           <div class="cta">DIG ▶</div>
         </div>
       </a>
+      <a class="game frg" href="/frogger/">
+        <div class="preview"><canvas id="frog-preview"></canvas></div>
+        <div class="body">
+          <h2>Infinite Frogger</h2>
+          <p>Hop forever across endless roads, rivers and railways. Ride logs and diving turtles, dodge trains, and keep ahead of the eagle.</p>
+          <div class="tags"><span>Endless</span><span>Tap + swipe</span><span>Card suits</span></div>
+          <div class="cta">HOP ▶</div>
+        </div>
+      </a>
+
       <div class="game sol">
         <a class="preview" href="/solitaire/" aria-label="Play Klondike">
           <div class="fan">
@@ -249,6 +261,44 @@
         const [hx, hy] = pts[0];
         c.fillStyle = '#fff'; c.beginPath(); c.arc(hx + 2, hy - 4, 3.2, 0, 7); c.arc(hx + 2, hy + 4, 3.2, 0, 7); c.fill();
         c.fillStyle = '#111'; c.beginPath(); c.arc(hx + 3, hy - 4, 1.6, 0, 7); c.arc(hx + 3, hy + 4, 1.6, 0, 7); c.fill();
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+    // Frogger preview
+    (() => {
+      const cv = document.getElementById('frog-preview');
+      const c = cv.getContext('2d');
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      let w, h;
+      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
+      addEventListener('resize', size);
+      size();
+      const L = 7, lanes = ['grass', 'road', 'road', 'grass', 'river', 'river', 'grass'];
+      const speeds = [0, 70, -110, 0, 45, -60, 0];
+      const colors = ['#ff4d6d', '#ffd23f', '#3fa7ff', '#b37bff'];
+      function frame(ms) {
+        const t = ms / 1000, lh = h / L;
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        lanes.forEach((type, i) => {
+          const y = h - (i + 1) * lh;
+          c.fillStyle = type === 'grass' ? (i % 2 ? '#5fbf3f' : '#56b33a') : type === 'road' ? '#3b3b4a' : '#2f7fd8';
+          c.fillRect(0, y, w, lh);
+          if (type === 'grass') return;
+          const gap = type === 'road' ? 150 : 170;
+          for (let k = -1; k < w / gap + 1; k++) {
+            const x = ((k * gap + t * speeds[i]) % (w + gap) + w + gap) % (w + gap) - gap;
+            if (type === 'road') { c.fillStyle = colors[(i + k + 8) % 4]; c.beginPath(); c.roundRect(x, y + lh * 0.18, lh * 1.3, lh * 0.64, 7); c.fill(); c.fillStyle = '#bfe6ff'; c.fillRect(x + lh * (speeds[i] > 0 ? 0.8 : 0.2), y + lh * 0.28, lh * 0.3, lh * 0.44); }
+            else { c.fillStyle = '#8b5a2b'; c.beginPath(); c.roundRect(x, y + lh * 0.18, lh * 3, lh * 0.64, lh * 0.3); c.fill(); }
+          }
+        });
+        const cycle = 3.2, p = (t % cycle) / cycle, row = Math.min(6, Math.floor(p * 8));
+        const hop = (p * 8) % 1;
+        const fy = h - (row + 0.5 + (row < 6 ? Math.min(1, hop * 4) * 0 : 0)) * lh;
+        const fx = w / 2, lift = Math.sin(Math.min(1, hop * 4) * Math.PI) * 6;
+        c.fillStyle = '#4caf50'; c.beginPath(); c.ellipse(fx, fy - lift, lh * 0.28, lh * 0.34, 0, 0, 7); c.fill();
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(fx - lh * 0.13, fy - lift - lh * 0.22, lh * 0.09, 0, 7); c.arc(fx + lh * 0.13, fy - lift - lh * 0.22, lh * 0.09, 0, 7); c.fill();
+        c.fillStyle = '#111'; c.beginPath(); c.arc(fx - lh * 0.13, fy - lift - lh * 0.25, lh * 0.045, 0, 7); c.arc(fx + lh * 0.13, fy - lift - lh * 0.25, lh * 0.045, 0, 7); c.fill();
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
