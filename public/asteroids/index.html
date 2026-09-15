@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Asteroids</title>
+  <meta name="description" content="Fly forever through an endless asteroid field. Blast rocks, dodge saucers and see how far from home you get.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/asteroids/">
+  <meta property="og:title" content="Infinite Asteroids">
+  <meta property="og:description" content="Fly forever through an endless asteroid field. Blast rocks, dodge saucers and see how far from home you get.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #ffe600; --accent-dark: #8a6d00; --bg: #02020a; }
+    #suits { display: flex; gap: 4px; }
+    .suit { display: inline-grid; place-items: center; width: 18px; height: 24px; border-radius: 3px; background: #1a1a3a; color: #444; font-family: serif; font-size: 14px; }
+    .suit.got { background: #fbfbff; color: #111; }
+    .suit.got.red { color: #e0153a; }
+    #lives { color: #ffe600; letter-spacing: 4px; }
+    #powers { font-size: 9px; min-height: 9px; }
+    .touch { position: fixed; bottom: 14px; left: 14px; right: 14px; justify-content: space-between; align-items: flex-end; z-index: 5; pointer-events: none; }
+    .touch .group { display: flex; gap: 10px; pointer-events: auto; }
+    .touch .pad-btn { width: 70px; height: 70px; }
+    .touch .pad-btn.small { width: 54px; height: 54px; font-size: 10px; }
+    @media (pointer: coarse) { .hud-buttons { bottom: auto; top: 70px; } }
+  </style>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col center">
+      <div id="suits"></div>
+      <span id="powers"></span>
+      <span class="dim" id="dist"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch" aria-hidden="true">
+    <div class="group">
+      <button class="pad-btn" data-key="left">⟲</button>
+      <button class="pad-btn" data-key="right">⟳</button>
+    </div>
+    <div class="group">
+      <button class="pad-btn small" data-key="hyper">HYP</button>
+      <button class="pad-btn" data-key="thrust">▲</button>
+      <button class="pad-btn" data-key="fire">●</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small>INFINITE</small>ASTEROIDS</h1>
+      <p>Space goes on forever — and so do the rocks. Blast them apart,<br>dodge flying saucers, and see how far from home you can fly.</p>
+      <p>Hexagon pickups: <span style="color:#3fd8ff">S</span> shield · <span style="color:#ffd23f">3</span> triple shot · <span style="color:#ff4d6d">R</span> rapid fire · <span class="k">♠♥♦♣</span> card suits</p>
+      <p><span class="k">← →</span> rotate · <span class="k">↑</span> thrust · <span class="k">SPACE</span> fire · <span class="k">SHIFT / ↓</span> hyperspace · <span class="k">P</span> pause<br>
+        On-screen buttons on touch screens</p>
+      <button class="btn" id="play-btn">LAUNCH</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>KILLS</span><b id="o-kills">0</b></div>
+        <div><span>FARTHEST (LY)</span><b id="o-dist">0</b></div>
+      </div>
+      <p>The asteroid field is different every flight.</p>
+      <button class="btn" id="again-btn">FLY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/arcade.js"></script>
+  <script src="asteroids.js"></script>
+</body>
+</html>

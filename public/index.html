@@ -94,6 +94,8 @@
     .frg h2, .frg .cta { color: #7dff6a; }
     .game.brk:hover { border-color: #3fd8ff; box-shadow: 0 20px 60px #3fd8ff44; }
     .brk h2, .brk .cta { color: #3fd8ff; }
+    .game.ast:hover { border-color: #ffe600; box-shadow: 0 20px 60px #ffe60033; }
+    .ast h2, .ast .cta { color: #ffe600; }
   </style>
 </head>
 <body>
@@ -101,7 +103,7 @@
   <main>
     <header>
       <h1>INFINITE <span>ARCADE</span></h1>
-      <p>Eight games. Five of them never end.</p>
+      <p>Nine games. Six of them never end.</p>
     </header>
 
     <section class="grid">
@@ -151,6 +153,16 @@
           <p>The wall never ends: it keeps sliding down, tougher and faster. Grab multiball, lasers and fireballs and smash it before it reaches your paddle.</p>
           <div class="tags"><span>Endless</span><span>Power-ups</span><span>Mouse + touch</span></div>
           <div class="cta">SMASH ▶</div>
+        </div>
+      </a>
+
+      <a class="game ast" href="/asteroids/">
+        <div class="preview"><canvas id="asteroids-preview"></canvas></div>
+        <div class="body">
+          <h2>Infinite Asteroids</h2>
+          <p>Fly forever through an endless asteroid field. Blast rocks apart, outgun flying saucers, grab shields and triple shot, and see how far from home you get.</p>
+          <div class="tags"><span>Endless space</span><span>Saucers</span><span>Radar</span></div>
+          <div class="cta">LAUNCH ▶</div>
         </div>
       </a>
 
@@ -349,6 +361,40 @@
         c.beginPath(); c.roundRect(px - 36, h - 20, 72, 9, 5); c.fill();
         c.fillStyle = '#fff'; c.beginPath(); c.arc(bx, by, 6, 0, 7); c.fill();
         c.shadowBlur = 0;
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+    // Asteroids preview
+    (() => {
+      const cv = document.getElementById('asteroids-preview');
+      const c = cv.getContext('2d');
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      let w, h;
+      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
+      addEventListener('resize', size);
+      size();
+      const rocks = Array.from({ length: 9 }, (_, i) => ({ x: Math.random() * 600, y: Math.random() * 220, r: 12 + Math.random() * 26, a: Math.random() * 6, s: (Math.random() - 0.5), v: Array.from({ length: 10 }, () => 0.75 + Math.random() * 0.3) }));
+      const stars = Array.from({ length: 70 }, () => [Math.random(), Math.random(), Math.random()]);
+      function frame(ms) {
+        const t = ms / 1000;
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.fillStyle = '#02020a'; c.fillRect(0, 0, w, h);
+        for (const [x, y, z] of stars) { c.fillStyle = `rgba(210,220,255,${0.3 + z * 0.6})`; c.fillRect(((x * w - t * 20 * z) % w + w) % w, y * h, 1 + z, 1 + z); }
+        c.strokeStyle = '#c9d3ff'; c.lineWidth = 1.6;
+        for (const r of rocks) {
+          const x = ((r.x - t * 30) % (w + 80) + w + 80) % (w + 80) - 40, y = r.y + Math.sin(t * 0.5 + r.a) * 10;
+          c.beginPath();
+          r.v.forEach((k, i) => { const a = r.a + t * r.s + (i / 10) * 6.283; const px = x + Math.cos(a) * r.r * k, py = y + Math.sin(a) * r.r * k; i ? c.lineTo(px, py) : c.moveTo(px, py); });
+          c.closePath(); c.stroke();
+        }
+        const sx = w * 0.45, sy = h * 0.55, a = -0.3 + Math.sin(t) * 0.6;
+        c.save(); c.translate(sx, sy); c.rotate(a);
+        c.strokeStyle = '#ffe600'; c.shadowColor = '#ffe600'; c.shadowBlur = 12; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -9); c.lineTo(-6, 0); c.lineTo(-10, 9); c.closePath(); c.stroke();
+        c.restore(); c.shadowBlur = 0;
+        c.fillStyle = '#fffbe0';
+        for (let k = 0; k < 4; k++) { const d = ((t * 260 + k * 60) % 240) + 20; c.fillRect(sx + Math.cos(a) * d - 1.5, sy + Math.sin(a) * d - 1.5, 3, 3); }
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);

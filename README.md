@@ -7,6 +7,7 @@ A static site of arcade and card games:
 - **Infinite Minesweeper** (`/minesweeper/`): an endless minefield with three lives. Mines get denser the farther you go, and the field is saved in the browser.
 - **Infinite Frogger** (`/frogger/`): endless procedurally generated roads, rivers (logs and diving turtles) and railways, with a creeping camera so you can't stand still.
 - **Infinite Breakout** (`/breakout/`): an endless brick wall that slides down and gets tougher; multiball, wide paddle, lasers, slow ball, fireball and card-suit capsules.
+- **Infinite Asteroids** (`/asteroids/`): open space with a following camera, parallax stars, splitting rocks, flying saucers, radar, pickups (shield, triple shot, rapid fire, card suits) and hyperspace.
 - **Klondike Solitaire** (`/solitaire/`): draw 1/3, drag and drop, tap to auto-move, undo, hints and auto-complete.
 - **Spider Solitaire** (`/spider/`): 1, 2 or 4 suits; completed King-to-Ace runs clear automatically.
 - **FreeCell** (`/freecell/`): the original Microsoft numbered deals (`/freecell/?game=617`), supermoves and automatic safe moves to the foundations.
