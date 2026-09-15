@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Minesweeper</title>
+  <meta name="description" content="A minefield that goes on forever. Clear as far as you can with three lives.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/minesweeper/">
+  <meta property="og:title" content="Infinite Minesweeper">
+  <meta property="og:description" content="A minefield that goes on forever. Clear as far as you can with three lives.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Infinite Minesweeper">
+  <meta name="twitter:description" content="A minefield that goes on forever. Clear as far as you can with three lives.">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2b12; color: #fff; font-family: Inter, system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+    canvas { display: block; touch-action: none; cursor: pointer; }
+    canvas.panning { cursor: grabbing; }
+
+    .bar { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: #4a752ce6; backdrop-filter: blur(6px); box-shadow: 0 2px 10px #0004; z-index: 5; }
+    .brand { font-family: "Press Start 2P", monospace; font-size: 11px; color: #fff; text-decoration: none; white-space: nowrap; }
+    .stats { display: flex; gap: clamp(10px, 3vw, 28px); align-items: center; }
+    .stats div { display: flex; flex-direction: column; align-items: center; }
+    .stats span { font-size: 10px; letter-spacing: .1em; color: #d7f0b8; }
+    .stats b { font-size: 17px; font-variant-numeric: tabular-nums; }
+    #lives { font-size: 14px; letter-spacing: 1px; }
+    .actions { display: flex; gap: 6px; }
+    button { font: 600 14px Inter, system-ui, sans-serif; color: #fff; background: #ffffff22; border: 1px solid #ffffff40; border-radius: 10px; padding: 8px 11px; cursor: pointer; }
+    button:hover { background: #ffffff35; }
+    #mode-btn.flag { background: #f23607; border-color: #f23607; }
+    @media (max-width: 720px) {
+      .brand span, .hide-sm { display: none !important; }
+      .stats b { font-size: 14px; }
+    }
+
+    .zoom { position: fixed; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+    .zoom button { width: 44px; height: 44px; font-size: 20px; background: #000a; }
+
+    #hint { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #000c; padding: 12px 18px; border-radius: 12px; font-size: 14px; text-align: center; line-height: 1.5; z-index: 5; transition: opacity .4s; pointer-events: none; max-width: calc(100% - 100px); }
+    #hint.gone { opacity: 0; }
+    #toast { position: fixed; left: 50%; top: 74px; transform: translateX(-50%); background: #000d; color: #ffb4a8; padding: 10px 16px; border-radius: 10px; font-weight: 800; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 6; }
+    #toast.show { opacity: 1; }
+
+    .overlay { position: fixed; inset: 0; display: grid; place-items: center; background: #000a; z-index: 10; padding: 20px; }
+    .panel { background: #2e4a1c; border: 1px solid #ffffff30; border-radius: 18px; padding: 28px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 20px 60px #000a; }
+    .panel h2 { margin: 0 0 18px; font-family: "Press Start 2P", monospace; color: #ffe600; font-size: 20px; line-height: 1.4; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+    .grid3 div { background: #ffffff12; border-radius: 10px; padding: 10px 4px; }
+    .grid3 span { display: block; font-size: 11px; color: #d7f0b8; }
+    .grid3 b { font-size: 20px; }
+    .big { display: block; width: 100%; padding: 14px; font-size: 16px; margin-top: 8px; text-decoration: none; color: #fff; border-radius: 10px; }
+    .primary { background: #ffe600; color: #1b1400; border-color: #ffe600; }
+    .primary:hover { background: #fff04d; }
+    a.big { border: 1px solid #ffffff40; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <header class="bar">
+    <a class="brand" href="/" title="Back to the arcade">⌂ <span>ARCADE</span></a>
+    <div class="stats">
+      <div><span>CLEARED</span><b id="score">0</b></div>
+      <div class="hide-sm"><span>BEST</span><b id="best">0</b></div>
+      <div><span>LIVES</span><b id="lives"></b></div>
+      <div class="hide-sm"><span>FLAGS</span><b id="flags">0</b></div>
+      <div><span>REACH</span><b id="dist">0</b></div>
+    </div>
+    <div class="actions">
+      <button id="mode-btn" title="Toggle dig / flag (F)">⛏️ Dig</button>
+      <button id="home-btn" title="Back to start (H)">🎯<span class="hide-sm"> Start</span></button>
+      <button id="new-btn" title="New minefield">＋<span class="hide-sm"> New</span></button>
+    </div>
+  </header>
+
+  <div class="zoom">
+    <button id="zin" title="Zoom in (+)">＋</button>
+    <button id="zout" title="Zoom out (−)">－</button>
+  </div>
+
+  <div id="hint">
+    <b>Infinite Minesweeper</b> · tap any tile to begin (the first tap is always safe)<br>
+    Drag to explore · right-click or long-press to flag · 3 lives · mines get denser the farther you go
+  </div>
+  <div id="toast"></div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h2>FIELD LOST</h2>
+      <div class="grid3">
+        <div><span>Cleared</span><b id="o-score">0</b></div>
+        <div><span>Reach</span><b id="o-dist">0</b></div>
+        <div><span>Flags</span><b id="o-flags">0</b></div>
+      </div>
+      <button class="big primary" id="again-btn">New minefield</button>
+      <a class="big" href="/">Back to the arcade</a>
+    </div>
+  </div>
+
+  <script src="mines.js"></script>
+</body>
+</html>

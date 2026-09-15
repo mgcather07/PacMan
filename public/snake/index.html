@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Snake</title>
+  <meta name="description" content="Snake in a world that never ends. Eat, grow, outsmart rival snakes, and see how far you can go.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/snake/">
+  <meta property="og:title" content="Infinite Snake">
+  <meta property="og:description" content="Snake in a world that never ends. Eat, grow, outsmart rival snakes, and see how far you can go.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Infinite Snake">
+  <meta name="twitter:description" content="Snake in a world that never ends. Eat, grow, outsmart rival snakes, and see how far you can go.">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; height: 100%; background: #07071a; overflow: hidden; color: #fff; font-family: "Press Start 2P", ui-monospace, monospace; touch-action: none; user-select: none; -webkit-user-select: none; }
+    canvas { display: block; }
+    .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 16px; pointer-events: none; background: linear-gradient(#07071add, #07071a00); font-size: 12px; }
+    .hud .col { display: flex; flex-direction: column; gap: 6px; }
+    .hud .label { color: #3cff8a; font-size: 9px; }
+    .hud .right { align-items: flex-end; text-align: right; }
+    #suits { display: flex; gap: 4px; align-items: center; }
+    .suit { display: inline-grid; place-items: center; width: 20px; height: 26px; border-radius: 3px; background: #1a1a3a; color: #444; font-family: serif; font-size: 16px; }
+    .suit.got { background: #fbfbff; color: #111; box-shadow: 0 0 8px #fff8; }
+    .suit.got.red { color: #e0153a; }
+    .shield { font-size: 18px; margin-left: 4px; }
+    .hud-buttons { position: fixed; bottom: 12px; right: 12px; display: flex; gap: 8px; }
+    .icon-btn { pointer-events: auto; font: inherit; font-size: 16px; background: #111a; color: #fff; border: 1px solid #333; border-radius: 8px; padding: 8px 10px; cursor: pointer; text-decoration: none; }
+    .icon-btn:hover { border-color: #3cff8a; }
+
+    .overlay { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at center, #07071a99 0%, #07071aee 70%); z-index: 10; padding: 20px; }
+    .panel { text-align: center; max-width: 580px; }
+    .panel h1 { margin: 0 0 8px; font-size: clamp(24px, 7vw, 50px); color: #3cff8a; text-shadow: 0 0 20px #3cff8a88, 4px 4px 0 #0a6b35; line-height: 1.25; }
+    .panel h1 small { display: block; font-size: 0.38em; color: #ff5ea8; text-shadow: 0 0 12px #ff5ea888; margin-bottom: 10px; letter-spacing: 4px; }
+    .panel p { font-size: 10px; line-height: 2; color: #bbb; margin: 18px 0; }
+    .panel .k { color: #fff; }
+    .btn { font: inherit; font-size: 14px; background: #3cff8a; color: #03210f; border: 0; border-radius: 6px; padding: 16px 26px; cursor: pointer; box-shadow: 0 6px 0 #0a6b35; margin: 8px; text-decoration: none; display: inline-block; }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #0a6b35; }
+    .btn.alt { background: #1b1b3a; color: #fff; box-shadow: 0 6px 0 #0b0b20; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 22px 0 10px; }
+    .stats div { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px 4px; font-size: 14px; }
+    .stats span { display: block; font-size: 7px; color: #3cff8a; margin-bottom: 8px; }
+    .legend { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; font-size: 9px; color: #aaa; }
+    .legend b { color: #ff5ea8; }
+    #o-reason { color: #ff8a8a; }
+
+    #toast { position: fixed; left: 50%; top: 70px; transform: translate(-50%, -10px); background: #000c; border: 2px solid #3cff8a; color: #3cff8a; font-size: 11px; padding: 10px 14px; border-radius: 6px; opacity: 0; pointer-events: none; white-space: nowrap; transition: opacity .25s, transform .25s; z-index: 5; }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .dpad { position: fixed; left: 14px; bottom: 14px; display: none; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 4px; opacity: .55; }
+    .dpad button { font-size: 20px; background: #1b1b3a; color: #fff; border: 1px solid #3cff8a; border-radius: 10px; touch-action: none; }
+    @media (pointer: coarse) { .dpad { display: grid; } .hud { font-size: 10px; } }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span class="label">LENGTH <span id="length" style="color:#fff">5</span> · KILLS <span id="kills" style="color:#fff">0</span></span>
+    </div>
+    <div class="col" style="align-items:center"><div id="suits"></div></div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="dpad" aria-hidden="true">
+    <span></span><button data-dir="3">▲</button><span></span>
+    <button data-dir="2">◀</button><span></span><button data-dir="0">▶</button>
+    <span></span><button data-dir="1">▼</button><span></span>
+  </div>
+
+  <div id="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small>INFINITE</small>SNAKE</h1>
+      <p>No walls at the edge of the world — just rocks, food,<br>and rival snakes, forever in every direction.</p>
+      <div class="legend">
+        <span><b>●</b> food +1</span><span style="color:#ffe600">★ gold +5</span><span>♠♥♦♣ card</span>
+      </div>
+      <p>Rivals that crash into your body drop food.<br>
+        Collect all four card suits for a <span class="k">shield</span>.<br>
+        <span class="k">ARROWS / WASD</span> to steer · <span class="k">P</span> pause · swipe on touch</p>
+      <button class="btn" id="play-btn">PLAY</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <p id="o-reason"></p>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>LENGTH</span><b id="o-length">0</b></div>
+        <div><span>FARTHEST</span><b id="o-dist">0</b></div>
+        <div><span>KILLS</span><b id="o-kills">0</b></div>
+      </div>
+      <p>Every game is a brand-new world.</p>
+      <button class="btn" id="again-btn">PLAY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="snake.js"></script>
+</body>
+</html>

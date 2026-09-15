@@ -3,25 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Infinite Arcade — Pac-Man & Solitaire</title>
-  <meta name="description" content="Play Infinite Pac-Man in an endless procedurally generated maze, or relax with classic Klondike Solitaire.">
+  <title>Infinite Arcade — Pac-Man, Snake, Minesweeper & Solitaire</title>
+  <meta name="description" content="Endless Pac-Man, Snake and Minesweeper in worlds that never end, plus classic Klondike Solitaire.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#05050f">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Infinite Arcade">
   <meta property="og:url" content="https://pacman-d28dc.web.app/">
-  <meta property="og:title" content="Infinite Arcade — Pac-Man & Solitaire">
-  <meta property="og:description" content="Play Infinite Pac-Man in an endless, randomly generated maze, or relax with classic Klondike Solitaire.">
-  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card.jpg">
+  <meta property="og:title" content="Infinite Arcade — Pac-Man, Snake, Minesweeper & Solitaire">
+  <meta property="og:description" content="Endless Pac-Man, Snake and Minesweeper in worlds that never end, plus classic Klondike Solitaire.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Infinite Arcade — Pac-Man & Solitaire">
-  <meta name="twitter:description" content="Play Infinite Pac-Man in an endless, randomly generated maze, or relax with classic Klondike Solitaire.">
-  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card.jpg">
+  <meta name="twitter:title" content="Infinite Arcade — Pac-Man, Snake, Minesweeper & Solitaire">
+  <meta name="twitter:description" content="Endless Pac-Man, Snake and Minesweeper in worlds that never end, plus classic Klondike Solitaire.">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -35,7 +35,8 @@
     h1 { font-family: "Press Start 2P", monospace; font-size: clamp(24px, 6vw, 54px); margin: 0; color: #ffe600; text-shadow: 0 0 24px #ffe60066, 5px 5px 0 #b37400; line-height: 1.3; }
     h1 span { color: #00e5ff; text-shadow: 0 0 24px #00e5ff66, 5px 5px 0 #005f6b; }
     header p { color: #9a9ab8; font-size: 17px; margin: 18px 0 0; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
     .game { position: relative; display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; text-decoration: none; color: inherit; border: 1px solid #ffffff1a; background: #0b0b1d; transition: transform .2s, box-shadow .2s, border-color .2s; }
     .game:hover, .game:focus-visible { transform: translateY(-6px); box-shadow: 0 20px 50px #0009; outline: none; }
     .game.pac:hover { border-color: #3b4bff; box-shadow: 0 20px 60px #3b4bff44; }
@@ -70,6 +71,19 @@
     .combo .suits { font-family: Georgia, serif; font-size: 28px; white-space: nowrap; }
     .combo .suits .r { color: #ff4d6d; }
     footer { text-align: center; color: #55557a; font-size: 13px; margin-top: 40px; }
+    .game.snk:hover { border-color: #3cff8a; box-shadow: 0 20px 60px #3cff8a44; }
+    .game.mns:hover { border-color: #aad751; box-shadow: 0 20px 60px #aad75144; }
+    .snk h2 { color: #3cff8a; } .snk .cta { color: #3cff8a; }
+    .mns h2 { color: #c5ec7a; } .mns .cta { color: #c5ec7a; }
+    .mns .preview { background: #1c2b12; display: grid; place-items: center; }
+    .field { display: grid; grid-template-columns: repeat(12, 26px); grid-auto-rows: 26px; transform: rotate(-8deg) scale(1.15); box-shadow: 0 10px 30px #0008; }
+    .field i { display: grid; place-items: center; font: 800 15px Inter, system-ui, sans-serif; font-style: normal; background: #aad751; }
+    .field i.o { background: #a2d149; }
+    .field i.r { background: #e5c29f; } .field i.r.o { background: #d7b899; }
+    .field i.n1 { color: #1976d2; } .field i.n2 { color: #388e3c; } .field i.n3 { color: #d32f2f; } .field i.n4 { color: #7b1fa2; }
+    .field i.f::after { content: "🚩"; font-size: 14px; }
+    .game.mns:hover .field i.pulse { animation: dig .6s ease; }
+    @keyframes dig { 50% { transform: scale(.7); } }
   </style>
 </head>
 <body>
@@ -77,7 +91,7 @@
   <main>
     <header>
       <h1>INFINITE <span>ARCADE</span></h1>
-      <p>Two games. One of them never ends.</p>
+      <p>Four games. Three of them never end.</p>
     </header>
 
     <section class="grid">
@@ -91,6 +105,25 @@
         </div>
       </a>
 
+      <a class="game snk" href="/snake/">
+        <div class="preview"><canvas id="snake-preview"></canvas></div>
+        <div class="body">
+          <h2>Infinite Snake</h2>
+          <p>Slither through a world with no edges. Eat, grow, dodge rocks, and trick rival snakes into crashing into you so they burst into food.</p>
+          <div class="tags"><span>Endless</span><span>Rival snakes</span><span>Shields</span></div>
+          <div class="cta">SLITHER ▶</div>
+        </div>
+      </a>
+
+      <a class="game mns" href="/minesweeper/">
+        <div class="preview"><div class="field"><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="o"></i><i></i><i class="o"></i><i class="r n1">1</i><i class="r o"></i><i class="r n1">1</i><i class="o"></i><i></i><i class="f o"></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i class="r n1">1</i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r n1">1</i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="o"></i><i class="f"></i><i class="r n2 o">2</i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r n2">2</i><i class="r n1 o">1</i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i><i class="r n2 o">2</i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r n1 o">1</i><i></i><i class="o"></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="r n3">3</i><i class="r n1 o">1</i><i class="r"></i><i class="r n2 o">2</i><i></i><i class="o"></i><i></i></div></div>
+        <div class="body">
+          <h2>Infinite Minesweeper</h2>
+          <p>A minefield that never ends. Three lives, mines that get denser the farther you roam, and your field is saved so you can keep exploring later.</p>
+          <div class="tags"><span>Endless</span><span>Saves progress</span><span>Touch friendly</span></div>
+          <div class="cta">DIG ▶</div>
+        </div>
+      </a>
       <a class="game sol" href="/solitaire/">
         <div class="preview">
           <div class="fan">
@@ -111,10 +144,10 @@
 
     <div class="combo">
       <div class="suits">♠<span class="r">♥♦</span>♣</div>
-      <div><strong style="color:#fff">Where the two meet:</strong> playing cards are hidden throughout the infinite Pac-Man maze. Collect all four suits to earn an extra life.</div>
+      <div><strong style="color:#fff">Where the two meet:</strong> playing cards are hidden in Infinite Pac-Man and Infinite Snake. Collect all four suits to earn an extra life in Pac-Man or a shield in Snake.</div>
     </div>
 
-    <footer>Arrow keys or WASD for Pac-Man · Ctrl+Z to undo in Solitaire</footer>
+    <footer>Arrow keys or WASD for Pac-Man &amp; Snake · right-click or long-press to flag in Minesweeper · Ctrl+Z to undo in Solitaire</footer>
   </main>
 
   <script>
@@ -173,6 +206,40 @@
           b.beginPath(); b.arc(x + off, y + off, 2, 0, 7); b.fill();
         }
         b.globalAlpha = 1;
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+    // Snake preview
+    (() => {
+      const cv = document.getElementById('snake-preview');
+      const c = cv.getContext('2d');
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      let w, h;
+      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
+      addEventListener('resize', size);
+      size();
+      const G = 22;
+      function frame(ms) {
+        const t = ms / 1000;
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.fillStyle = '#07071a'; c.fillRect(0, 0, w, h);
+        c.fillStyle = '#1b1b44';
+        for (let y = G / 2; y < h; y += G) for (let x = G / 2; x < w; x += G) { c.beginPath(); c.arc(x, y, 1.5, 0, 7); c.fill(); }
+        c.fillStyle = '#26114a'; c.strokeStyle = '#8b5cff'; c.lineWidth = 2;
+        [[3, 2], [3, 3], [4, 2], [13, 7], [14, 7], [15, 7]].forEach(([x, y]) => { c.fillRect(x * G + 1, y * G + 1, G - 2, G - 2); c.strokeRect(x * G + 1, y * G + 1, G - 2, G - 2); });
+        const cycle = w + 400;
+        const head = ((t * 90) % cycle) - 40;
+        const pts = [];
+        for (let i = 0; i < 26; i++) { const x = head - i * 12; pts.push([x, h / 2 + Math.sin((x) * 0.025) * 38]); }
+        c.shadowColor = '#ff5ea8'; c.shadowBlur = 10; c.fillStyle = '#ff5ea8';
+        for (let x = 30; x < w; x += 70) if (x > head) { c.beginPath(); c.arc(x, h / 2 + Math.sin(x * 0.025) * 38, 5, 0, 7); c.fill(); }
+        c.shadowColor = '#3cff8a'; c.shadowBlur = 16; c.strokeStyle = '#3cff8a'; c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = 16;
+        c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+        c.shadowBlur = 0; c.strokeStyle = '#ffffff40'; c.lineWidth = 5; c.stroke();
+        const [hx, hy] = pts[0];
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(hx + 2, hy - 4, 3.2, 0, 7); c.arc(hx + 2, hy + 4, 3.2, 0, 7); c.fill();
+        c.fillStyle = '#111'; c.beginPath(); c.arc(hx + 3, hy - 4, 1.6, 0, 7); c.arc(hx + 3, hy + 4, 1.6, 0, 7); c.fill();
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
