@@ -96,6 +96,8 @@
     .brk h2, .brk .cta { color: #3fd8ff; }
     .game.ast:hover { border-color: #ffe600; box-shadow: 0 20px 60px #ffe60033; }
     .ast h2, .ast .cta { color: #ffe600; }
+    .game.tet:hover { border-color: #c77dff; box-shadow: 0 20px 60px #c77dff44; }
+    .tet h2, .tet .cta { color: #c77dff; }
   </style>
 </head>
 <body>
@@ -103,7 +105,7 @@
   <main>
     <header>
       <h1>INFINITE <span>ARCADE</span></h1>
-      <p>Nine games. Six of them never end.</p>
+      <p>Ten games. Seven of them never end.</p>
     </header>
 
     <section class="grid">
@@ -163,6 +165,16 @@
           <p>Fly forever through an endless asteroid field. Blast rocks apart, outgun flying saucers, grab shields and triple shot, and see how far from home you get.</p>
           <div class="tags"><span>Endless space</span><span>Saucers</span><span>Radar</span></div>
           <div class="cta">LAUNCH ▶</div>
+        </div>
+      </a>
+
+      <a class="game tet" href="/tetris/">
+        <div class="preview"><canvas id="tetris-preview"></canvas></div>
+        <div class="body">
+          <h2>Infinite Tetris</h2>
+          <p>Tower mode has no ceiling: climb forever while a tide rises beneath you, sealing rows before they leak. Or play Marathon, the classic that never ends.</p>
+          <div class="tags"><span>Tower + Marathon</span><span>Hold &amp; ghost</span><span>SRS rotation</span></div>
+          <div class="cta">STACK ▶</div>
         </div>
       </a>
 
@@ -395,6 +407,39 @@
         c.restore(); c.shadowBlur = 0;
         c.fillStyle = '#fffbe0';
         for (let k = 0; k < 4; k++) { const d = ((t * 260 + k * 60) % 240) + 20; c.fillRect(sx + Math.cos(a) * d - 1.5, sy + Math.sin(a) * d - 1.5, 3, 3); }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+    // Tetris preview
+    (() => {
+      const cv = document.getElementById('tetris-preview');
+      const c = cv.getContext('2d');
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      let w, h;
+      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
+      addEventListener('resize', size);
+      size();
+      const colors = ['#3fd8ff', '#ffd23f', '#c77dff', '#7dff6a', '#ff4d6d', '#4d7dff', '#ff9f3d'];
+      const pieces = [[[0,0],[1,0],[2,0],[3,0]], [[0,0],[1,0],[0,1],[1,1]], [[0,0],[1,0],[2,0],[1,1]], [[0,0],[1,0],[1,1],[2,1]], [[1,0],[2,0],[0,1],[1,1]], [[0,0],[0,1],[1,0],[2,0]], [[0,0],[1,0],[2,0],[2,1]]];
+      const stack = [];
+      let cur = null;
+      function frame(ms) {
+        const t = ms / 1000, s = 16, cols = 10, bx = w / 2 - (cols * s) / 2;
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.fillStyle = '#07061a'; c.fillRect(0, 0, w, h);
+        c.fillStyle = '#0e0c2a'; c.fillRect(bx, 0, cols * s, h);
+        const cam = Math.max(0, stack.length ? Math.max(...stack.map(b => b[1])) - 8 : 0);
+        if (!cur) { const k = Math.floor(Math.random() * 7); cur = { k, x: Math.floor(Math.random() * 7), y: cam + 16, t: 0 }; }
+        cur.t += 1 / 60; if (cur.t > 0.06) { cur.t = 0; const blocked = pieces[cur.k].some(([dx, dy]) => cur.y + dy - 1 < 0 || stack.some(b => b[0] === cur.x + dx && b[1] === cur.y + dy - 1)); if (blocked) { pieces[cur.k].forEach(([dx, dy]) => stack.push([cur.x + dx, cur.y + dy, cur.k])); cur = null; if (stack.length > 300) stack.length = 0; } else cur.y--; }
+        const draw = (x, y, k) => { const py = h - (y - cam + 1) * s; c.fillStyle = colors[k]; c.fillRect(bx + x * s + 1, py + 1, s - 2, s - 2); c.fillStyle = '#ffffff44'; c.fillRect(bx + x * s + 1, py + 1, s - 2, 3); };
+        stack.forEach(([x, y, k]) => draw(x, y, k));
+        if (cur) pieces[cur.k].forEach(([dx, dy]) => draw(cur.x + dx, cur.y + dy, cur.k));
+        const tideY = h - 18 + Math.sin(t) * 4;
+        c.fillStyle = 'rgba(40,140,255,0.5)'; c.beginPath(); c.moveTo(bx, h);
+        for (let x = 0; x <= cols * s; x += 6) c.lineTo(bx + x, tideY + Math.sin(t * 3 + x * 0.08) * 3);
+        c.lineTo(bx + cols * s, h); c.closePath(); c.fill();
+        c.strokeStyle = '#c77dff88'; c.strokeRect(bx - 1, -1, cols * s + 2, h + 2);
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);

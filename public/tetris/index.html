@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Tetris</title>
+  <meta name="description" content="Build an endless tower while the tide rises beneath you, or play classic marathon falling blocks that never end.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/tetris/">
+  <meta property="og:title" content="Infinite Tetris">
+  <meta property="og:description" content="Build an endless tower while the tide rises beneath you, or play classic marathon falling blocks that never end.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #c77dff; --accent-dark: #6a2c9e; --bg: #07061a; }
+    #clear { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.8); color: #fff; font-size: clamp(14px, 3.5vw, 24px); text-shadow: 0 0 18px #c77dff, 3px 3px 0 #6a2c9e; opacity: 0; pointer-events: none; z-index: 7; white-space: nowrap; transition: opacity .2s, transform .2s; }
+    #clear.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    #mode-label { color: #fff; }
+    .touch { position: fixed; left: 0; right: 0; bottom: 12px; flex-direction: column; align-items: center; gap: 8px; z-index: 5; }
+    .touch .row { display: flex; gap: 8px; }
+    .touch .pad-btn { width: 60px; height: 60px; font-size: 18px; }
+    .touch .pad-btn.wide { width: 90px; font-size: 10px; }
+    .modes { max-width: 520px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+    </div>
+    <div class="col center">
+      <span class="label" id="mode-label">TOWER</span>
+      <span id="level"></span>
+      <span class="dim">GOLD / LINES <span id="lines">0</span></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+  <div id="clear"></div>
+  <div id="toast" class="toast"></div>
+
+  <div class="touch" aria-hidden="true">
+    <div class="row">
+      <button class="pad-btn wide" data-act="hold">HOLD</button>
+      <button class="pad-btn" data-act="ccw">⟲</button>
+      <button class="pad-btn" data-act="cw">⟳</button>
+      <button class="pad-btn wide" data-act="hard">DROP</button>
+    </div>
+    <div class="row">
+      <button class="pad-btn" data-hold="left">◀</button>
+      <button class="pad-btn" data-hold="down">▼</button>
+      <button class="pad-btn" data-hold="right">▶</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small>INFINITE</small>TETRIS</h1>
+      <div class="choice modes">
+        <button data-mode="tower">TOWER<small>endless climb · beat the tide</small></button>
+        <button data-mode="marathon">MARATHON<small>classic · levels never end</small></button>
+      </div>
+      <p><span class="k">Tower:</span> the board has no ceiling — the camera climbs with you<br>while a tide rises from below. Complete rows (they turn gold)<br>before the tide reaches them — every unfinished row it reaches<br>leaks. Five leaks and your tower floods. A Tetris repairs a leak.</p>
+      <p><span class="k">← →</span> move · <span class="k">↓</span> soft drop · <span class="k">SPACE</span> hard drop<br><span class="k">↑ / X</span> rotate · <span class="k">Z</span> rotate back · <span class="k">C / SHIFT</span> hold · <span class="k">P</span> pause</p>
+      <button class="btn" id="play-btn">PLAY</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <p id="o-reason"></p>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>LINES</span><b id="o-lines">0</b></div>
+        <div><span id="o-third-label">HEIGHT</span><b id="o-third">0</b></div>
+      </div>
+      <button class="btn" id="again-btn">PLAY AGAIN</button>
+      <button class="btn alt" id="menu-btn">MODES</button>
+    </div>
+  </div>
+
+  <script src="/shared/arcade.js"></script>
+  <script src="tetris.js"></script>
+</body>
+</html>

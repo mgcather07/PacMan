@@ -8,6 +8,7 @@ A static site of arcade and card games:
 - **Infinite Frogger** (`/frogger/`): endless procedurally generated roads, rivers (logs and diving turtles) and railways, with a creeping camera so you can't stand still.
 - **Infinite Breakout** (`/breakout/`): an endless brick wall that slides down and gets tougher; multiball, wide paddle, lasers, slow ball, fireball and card-suit capsules.
 - **Infinite Asteroids** (`/asteroids/`): open space with a following camera, parallax stars, splitting rocks, flying saucers, radar, pickups (shield, triple shot, rapid fire, card suits) and hyperspace.
+- **Infinite Tetris** (`/tetris/`): Tower mode (no ceiling; a rising tide makes every unfinished row it reaches leak, five leaks ends the run) and classic Marathon. SRS rotation with wall kicks, 7-bag, hold, ghost, T-spins, combos and back-to-back.
 - **Klondike Solitaire** (`/solitaire/`): draw 1/3, drag and drop, tap to auto-move, undo, hints and auto-complete.
 - **Spider Solitaire** (`/spider/`): 1, 2 or 4 suits; completed King-to-Ace runs clear automatically.
 - **FreeCell** (`/freecell/`): the original Microsoft numbered deals (`/freecell/?game=617`), supermoves and automatic safe moves to the foundations.
