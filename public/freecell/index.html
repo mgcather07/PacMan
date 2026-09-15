@@ -3,53 +3,52 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Klondike Solitaire</title>
-  <meta name="description" content="Classic Klondike solitaire — draw 1 or draw 3, drag and drop, undo, hints and auto-complete.">
+  <title>FreeCell</title>
+  <meta name="description" content="Classic FreeCell with the original numbered deals. Nearly every game can be won — can you?">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#05050f">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Infinite Arcade">
-  <meta property="og:url" content="https://pacman-d28dc.web.app/solitaire/">
-  <meta property="og:title" content="Solitaire — Infinite Arcade">
-  <meta property="og:description" content="Classic Klondike Solitaire: draw 1 or 3, drag and drop, undo, hints and auto-complete.">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/freecell/">
+  <meta property="og:title" content="FreeCell">
+  <meta property="og:description" content="Classic FreeCell with the original numbered deals. Nearly every game can be won — can you?">
   <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Solitaire — Infinite Arcade">
-  <meta name="twitter:description" content="Classic Klondike Solitaire: draw 1 or 3, drag and drop, undo, hints and auto-complete.">
+  <meta name="twitter:title" content="FreeCell">
+  <meta name="twitter:description" content="Classic FreeCell with the original numbered deals. Nearly every game can be won — can you?">
   <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v2.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/solitaire/style.css">
 </head>
 <body>
   <header class="bar">
     <a class="brand" href="/" title="Back to the arcade">⌂ <span>ARCADE</span></a>
     <div class="stats">
-      <div><span>SCORE</span><b id="score">0</b></div>
+      <div><span>GAME</span><b id="game-no">#1</b></div>
       <div><span>MOVES</span><b id="moves">0</b></div>
       <div><span>TIME</span><b id="time">0:00</b></div>
+      <div class="hide-sm"><span>SCORE</span><b id="score">0</b></div>
+      <div class="hide-sm"><span>FREE</span><b id="cells-free">4</b></div>
     </div>
     <div class="actions">
-      <select class="switch" title="Switch game" onchange="location.href=this.value"><option value="/solitaire/" selected>Klondike</option><option value="/spider/">Spider</option><option value="/freecell/">FreeCell</option></select>
-      <select id="draw-mode" title="Draw mode">
-        <option value="1">Draw 1</option>
-        <option value="3">Draw 3</option>
-      </select>
+      <select class="switch" title="Switch game" onchange="location.href=this.value"><option value="/solitaire/">Klondike</option><option value="/spider/">Spider</option><option value="/freecell/" selected>FreeCell</option></select>
+      <button id="choose-btn" title="Pick a game number">#<span> Game</span></button>
+      <button id="restart-btn" class="hide-sm" title="Restart this deal">⟲<span> Restart</span></button>
       <button id="hint-btn" title="Hint (H)">💡<span> Hint</span></button>
       <button id="undo-btn" title="Undo (Ctrl+Z)">↶<span> Undo</span></button>
       <button id="new-btn" class="primary" title="New game (N)">＋<span> New</span></button>
     </div>
   </header>
 
-  <main id="board" aria-label="Solitaire table"></main>
-
-  <button id="auto-btn" class="auto" hidden>⚡ Auto-complete</button>
+  <main id="board" aria-label="Card table"></main>
+  <div id="toast" class="sol-toast"></div>
 
   <canvas id="celebrate" hidden></canvas>
   <div class="win" id="win" hidden>
@@ -62,10 +61,11 @@
       </div>
       <p id="win-record"></p>
       <button class="primary big" id="win-new">Deal again</button>
-      <a class="big ghost" href="/pacman/">Play Infinite Pac-Man →</a>
+      <a class="big ghost" href="/">Back to the arcade</a>
     </div>
   </div>
 
-  <script src="solitaire.js"></script>
+  <script src="/solitaire/engine.js"></script>
+  <script src="/solitaire/freecell.js"></script>
 </body>
 </html>

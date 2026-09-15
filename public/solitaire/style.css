@@ -121,3 +121,25 @@ button:disabled { opacity: .4; cursor: default; }
 #win-record { color: #ffe600; min-height: 1em; }
 .big { display: block; width: 100%; margin-top: 10px; padding: 14px; font-size: 16px; text-decoration: none; }
 .big.ghost { background: transparent; }
+
+.switch { background: #ffe60022 !important; border-color: #ffe60066 !important; font-weight: 800 !important; }
+.slot.clickable { cursor: pointer; border-style: solid; }
+.slot.clickable::after { content: "↻"; font-family: Inter, sans-serif; }
+.slot.cell { border-style: solid; background: #00000030; }
+.slot.found { font-size: calc(var(--cw) * 0.45); }
+.sol-toast {
+  position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 10px); z-index: 2200;
+  background: #000d; color: #fff; padding: 12px 18px; border-radius: 12px; font-weight: 600;
+  opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; text-align: center; max-width: calc(100% - 32px);
+}
+.sol-toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 720px) { .hide-sm { display: none !important; } }
+@media (max-width: 560px) {
+  .bar { flex-wrap: wrap; row-gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+  .brand { order: 0; }
+  .stats { order: 1; gap: 14px; }
+  .actions { order: 2; width: 100%; gap: 5px; }
+  .actions > * { flex: 1 1 auto; }
+  .actions button, .actions select { padding: 8px 6px; font-size: 13px; text-align: center; }
+  .brand span { display: inline !important; }
+}
