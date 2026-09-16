@@ -65,7 +65,7 @@ Daily games use the Infinite rules and post to `boards/daily-<game>-<YYYYMMDD>`.
 
 ## Menu music
 
-The home page, `/daily/` and `/leaderboards/` play an original chiptune loop (`public/shared/music.js`): 16 bars at 124 BPM with a square-wave lead, triangle bass, arpeggios and synthesized drums, all generated live with Web Audio (no audio files). Browsers block sound until a user gesture, so it starts on the first click, tap or key press; the ♫ button in the bottom-left turns it off and the choice is remembered (`localStorage['arcade.music']`). It pauses while the tab is hidden. The games keep their own sound effects.
+The home page, `/daily/`, `/leaderboards/` and the arcade games' title screens play an original chiptune loop (`public/shared/music.js`): 16 bars at 124 BPM with a square-wave lead, triangle bass, arpeggios and synthesized drums, all generated live with Web Audio (no audio files). Browsers block sound until a user gesture, so it starts on the first click, tap or key press; the ♫ button in the bottom-left turns it off and the choice is remembered (`localStorage['arcade.music']`). It pauses while the tab is hidden. On a game page it only plays while the title screen is showing (`ArcadeMusic.mount({ screen: 'title' })`) and fades out when a round starts; if the first click is PLAY, it stays quiet. The games keep their own sound effects.
 
 No build step. Everything lives in `public/`.
 

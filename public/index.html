@@ -404,13 +404,27 @@
             else { c.fillStyle = '#8b5a2b'; c.beginPath(); c.roundRect(x, y + lh * 0.18, lh * 3, lh * 0.64, lh * 0.3); c.fill(); }
           }
         });
-        const cycle = 3.2, p = (t % cycle) / cycle, row = Math.min(6, Math.floor(p * 8));
-        const hop = (p * 8) % 1;
-        const fy = h - (row + 0.5 + (row < 6 ? Math.min(1, hop * 4) * 0 : 0)) * lh;
-        const fx = w / 2, lift = Math.sin(Math.min(1, hop * 4) * Math.PI) * 6;
-        c.fillStyle = '#4caf50'; c.beginPath(); c.ellipse(fx, fy - lift, lh * 0.28, lh * 0.34, 0, 0, 7); c.fill();
-        c.fillStyle = '#fff'; c.beginPath(); c.arc(fx - lh * 0.13, fy - lift - lh * 0.22, lh * 0.09, 0, 7); c.arc(fx + lh * 0.13, fy - lift - lh * 0.22, lh * 0.09, 0, 7); c.fill();
-        c.fillStyle = '#111'; c.beginPath(); c.arc(fx - lh * 0.13, fy - lift - lh * 0.25, lh * 0.045, 0, 7); c.arc(fx + lh * 0.13, fy - lift - lh * 0.25, lh * 0.045, 0, 7); c.fill();
+        // frog hops up one lane per beat, drawn exactly like the in-game frog
+        const cycle = 3.2, p = (t % cycle) / cycle, n = Math.floor(p * 8), k = Math.min(1, ((p * 8) % 1) * 4);
+        const row = n >= 6 ? 6 : n + k, lift = n >= 6 ? 0 : Math.sin(k * Math.PI);
+        const T = lh, cx = w / 2, cy = h - (row + 0.5) * lh, s = 1 + lift * 0.25;
+        c.fillStyle = '#0004';
+        c.beginPath(); c.ellipse(cx, cy + T * 0.18, T * 0.28, T * 0.12, 0, 0, 7); c.fill();
+        c.save();
+        c.translate(cx, cy - lift * T * 0.18);
+        c.scale(s, s);
+        c.fillStyle = '#2e7d32';
+        for (const sx of [-1, 1]) {
+          c.beginPath(); c.ellipse(sx * T * 0.26, T * 0.2, T * 0.1, T * 0.18, sx * 0.5, 0, 7); c.fill();
+          c.beginPath(); c.ellipse(sx * T * 0.24, -T * 0.12, T * 0.07, T * 0.12, -sx * 0.4, 0, 7); c.fill();
+        }
+        c.fillStyle = '#4caf50'; c.beginPath(); c.ellipse(0, 0, T * 0.24, T * 0.3, 0, 0, 7); c.fill();
+        c.fillStyle = '#81c784'; c.beginPath(); c.ellipse(0, T * 0.05, T * 0.12, T * 0.16, 0, 0, 7); c.fill();
+        for (const sx of [-1, 1]) {
+          c.fillStyle = '#fff'; c.beginPath(); c.arc(sx * T * 0.12, -T * 0.22, T * 0.08, 0, 7); c.fill();
+          c.fillStyle = '#111'; c.beginPath(); c.arc(sx * T * 0.12, -T * 0.25, T * 0.04, 0, 7); c.fill();
+        }
+        c.restore();
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);

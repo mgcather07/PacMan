@@ -3,7 +3,8 @@
  * Browsers only allow audio after a user gesture, so it starts on the first click / tap / key press
  * (unless the visitor turned it off; that choice is remembered).
  *
- *   ArcadeMusic.mount()   → adds the ♫ toggle button and arms autoplay-on-first-interaction
+ *   ArcadeMusic.mount()                   → adds the ♫ toggle button and arms autoplay-on-first-interaction
+ *   ArcadeMusic.mount({ screen: 'title' }) → same, but only plays (and shows the button) while #title is visible
  */
 (function () {
   'use strict';
@@ -181,10 +182,12 @@
   // --- UI ---------------------------------------------------------------------
   const pref = () => { try { return localStorage.getItem(PREF_KEY) !== 'off'; } catch (e) { return true; } };
   const setPref = (on) => { try { localStorage.setItem(PREF_KEY, on ? 'on' : 'off'); } catch (e) { /* ignore */ } };
-  let button = null;
+  let button = null, screen = null, unlocked = false;
+  const allowed = () => !screen || !screen.hidden;
 
   function render() {
     if (!button) return;
+    button.hidden = !allowed();
     const on = pref();
     button.setAttribute('aria-pressed', String(playing));
     button.classList.toggle('on', playing);
@@ -194,10 +197,12 @@
     button.title = playing ? 'Turn music off' : 'Turn music on';
   }
 
-  function mount() {
+  function mount(opts = {}) {
     if (button || !('AudioContext' in window || 'webkitAudioContext' in window)) return;
+    screen = opts.screen ? document.getElementById(opts.screen) : null;
     const st = document.createElement('style');
     st.textContent = `
+      .music-toggle[hidden] { display: none !important; }
       .music-toggle { position: fixed; left: 14px; bottom: 14px; z-index: 50; display: inline-flex; align-items: center; gap: 8px;
         font: 600 13px Inter, system-ui, -apple-system, sans-serif; color: #cfcfe6; background: #0b0b1dcc; backdrop-filter: blur(6px);
         border: 1px solid #ffffff26; border-radius: 999px; padding: 9px 14px; cursor: pointer; }
@@ -215,20 +220,35 @@
     button.className = 'music-toggle';
     button.addEventListener('click', (e) => {
       e.stopPropagation();
+      unlocked = true;
       if (playing) { stop(); setPref(false); } else { setPref(true); start(); }
       render();
+      button.blur();
     });
     document.body.appendChild(button);
     render();
 
-    // start on the first interaction if the visitor hasn't turned music off
+    // start on the first interaction if the visitor hasn't turned music off. The audio context is unlocked
+    // inside the gesture, but playback waits a moment: if that click / key press started a game, stay quiet.
     const kick = (e) => {
       if (e.target && e.target.closest && e.target.closest('.music-toggle')) return;
       remove();
-      if (pref()) start();
+      unlocked = true;
+      if (!pref() || !ensureContext()) return;
+      if (ac.state === 'suspended') ac.resume();
+      setTimeout(() => { if (pref() && allowed()) start(); }, 250);
     };
     const remove = () => ['pointerdown', 'keydown', 'touchstart'].forEach((t) => window.removeEventListener(t, kick, true));
     ['pointerdown', 'keydown', 'touchstart'].forEach((t) => window.addEventListener(t, kick, true));
+
+    // follow the title screen: play while it's showing, fade out when a game starts
+    if (screen) {
+      new MutationObserver(() => {
+        if (!allowed()) stop();
+        else if (unlocked && pref()) start();
+        render();
+      }).observe(screen, { attributes: true, attributeFilter: ['hidden'] });
+    }
 
     // pause while the tab is hidden
     document.addEventListener('visibilitychange', () => {
