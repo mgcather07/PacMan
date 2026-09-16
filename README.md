@@ -63,6 +63,10 @@ Deploy rules with `firebase deploy --only firestore:rules`. To remove an entry, 
 
 Daily games use the Infinite rules and post to `boards/daily-<game>-<YYYYMMDD>`. The rules only accept new results on yesterday's, today's or tomorrow's board (UTC) so every time zone can play its own date, and older boards stay readable.
 
+## Menu music
+
+The home page, `/daily/` and `/leaderboards/` play an original chiptune loop (`public/shared/music.js`): 16 bars at 124 BPM with a square-wave lead, triangle bass, arpeggios and synthesized drums, all generated live with Web Audio (no audio files). Browsers block sound until a user gesture, so it starts on the first click, tap or key press; the ♫ button in the bottom-left turns it off and the choice is remembered (`localStorage['arcade.music']`). It pauses while the tab is hidden. The games keep their own sound effects.
+
 No build step. Everything lives in `public/`.
 
 ## Run locally
