@@ -48,6 +48,9 @@
     .board li .sc { font-variant-numeric: tabular-nums; font-weight: 700; }
     .board li.empty { display: block; color: #777; text-align: center; padding: 14px 0; }
     .board .play { margin-top: auto; align-self: flex-start; font: 10px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding-top: 6px; }
+    .namebar { max-width: 460px; margin: -8px auto 18px; }
+    .board li.me { background: #ffe60022; border-radius: 6px; }
+    .board li.me .nm::after { content: ' (you)'; color: #ffe600; font-size: 12px; }
     .note { text-align: center; color: #666; font-size: 13px; margin-top: 28px; }
   </style>
 </head>
@@ -55,20 +58,25 @@
   <main>
     <div class="top"><a class="back" href="/">⌂ ARCADE</a></div>
     <h1>🏆 LEADERBOARDS</h1>
-    <p class="sub">Top 10 on every board. Finish a game to post your score.</p>
+    <p class="sub">Top 10 on every board. Finish a game to post your score — your best result on each board is kept.</p>
+    <div id="namebar" class="namebar"></div>
     <nav class="tabs" role="tablist">
       <button role="tab" data-group="Infinite">∞ Infinite</button>
       <button role="tab" data-group="Classic">🏆 Classic</button>
       <button role="tab" data-group="Solitaire">🃏 Solitaire</button>
     </nav>
     <section class="grid" id="grid"></section>
-    <p class="note">Scores are public. Names are limited to letters, numbers and simple punctuation.</p>
+    <p class="note">Scores are public. Each device plays under one anonymous player ID; names are limited to letters, numbers and simple punctuation.</p>
   </main>
 
   <script src="/shared/leaderboard.js"></script>
   <script>
     (() => {
-      const { BOARDS, top, fmtTime } = window.Leaderboard;
+      const { BOARDS, top, fmtTime, nameBar, user, onName } = window.Leaderboard;
+      nameBar(document.getElementById('namebar'));
+      let myId = null;
+      user().then((u) => { myId = u.uid; if (current) show(current); return Leaderboard.getName(); }).catch(() => {});
+      onName(() => { if (current) show(current); });
       const grid = document.getElementById('grid');
       const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       let current = null;
@@ -91,7 +99,7 @@
             const entries = await top(id, 10);
             if (current !== group) return;
             list.innerHTML = entries.length
-              ? entries.map((e, i) => `<li><span class="rk">#${i + 1}</span><span class="nm">${esc(e.name)}</span><span class="sc">${BOARDS[id].type === 'time' ? fmtTime(e.time) : e.score.toLocaleString()}</span></li>`).join('')
+              ? entries.map((e, i) => `<li class="${e.id === myId ? 'me' : ''}"><span class="rk">#${i + 1}</span><span class="nm">${esc(e.name)}</span><span class="sc">${BOARDS[id].type === 'time' ? fmtTime(e.time) : e.score.toLocaleString()}</span></li>`).join('')
               : '<li class="empty">No scores yet — be the first!</li>';
           } catch (e) {
             list.innerHTML = '<li class="empty">Unavailable right now</li>';

@@ -37,14 +37,17 @@ Mode detection and the shared win screen live in `public/shared/arcade.js` (`Arc
 
 ## Leaderboards
 
-Online top-10 boards for every game live in Cloud Firestore (`boards/{board}/scores/{entry}`), with a page at `/leaderboards/`.
+Online top-10 boards for every game live in Cloud Firestore, with a page at `/leaderboards/`.
 
-- `public/shared/leaderboard.js` loads the Firebase JS SDK (Firestore Lite) from gstatic only when a board is opened or a score is posted. It adds the submit form to game-over / win screens (`Leaderboard.offer`) and the 🏆 buttons (`Leaderboard.button` / `Leaderboard.open`).
-- Score boards rank highest score first; time boards (Tetris Sprint, classic Minesweeper, solitaire) rank fastest win first and only accept wins.
-- `firestore.rules` allows anyone to read known boards and to **create** entries that pass validation (known board id, 1–16 character name from a safe character set, integer score ≤ 100,000,000, time ≤ 24h, server timestamp, no extra fields). Updates and deletes are denied, as is everything outside `boards/`.
-- The Firebase web config in `leaderboard.js` is public by design; access is controlled by the rules.
+- **Players:** every visitor who uses a leaderboard signs in with Firebase **Anonymous Auth** (one hidden ID per browser). Their display name is stored in `players/{uid}` and can be changed any time from the home page, the Leaderboards page, the 🏆 pop-up or a game-over screen; renaming updates all of their entries.
+- **Scores:** one entry per player per board at `boards/{board}/scores/{uid}`, kept at their best. Score boards rank highest first; time boards (Tetris Sprint, classic Minesweeper, solitaire) rank the fastest win first.
+- **App Check** (reCAPTCHA Enterprise key `6LcCJb8t…`) is **enforced** on Firestore and Authentication, so requests must come from the real site.
+- **`firestore.rules`:** reads of known boards are public. Writes require sign-in, must target your own uid, pass validation (1–16 safe characters, integer score, time ≤ 24h, time boards must be wins, server timestamp, no extra fields) and may only improve your best or change just the name. Nothing can be deleted by clients; `players` profiles are private to their owner.
+- `public/shared/leaderboard.js` loads Firebase (App, App Check, Auth, Firestore Lite) from gstatic only when a leaderboard is used.
 
-Deploy rules with `firebase deploy --only firestore:rules`. To remove an entry, use the Firebase console or `firebase firestore:delete boards/<board>/scores/<id>`.
+**Local testing:** App Check blocks localhost unless you register a debug token (Firebase console → App Check → Apps → Manage debug tokens) and run `localStorage.setItem('appcheck.debug', '<token>')` in the browser on `http://localhost:5173`. Delete the token when you're done.
+
+Deploy rules with `firebase deploy --only firestore:rules`. To remove an entry, use the Firebase console or `firebase firestore:delete boards/<board>/scores/<uid>`.
 
 No build step. Everything lives in `public/`.
 

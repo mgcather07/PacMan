@@ -111,6 +111,7 @@
     body[data-tab="classic"] h1 span { color: #7dff6a; text-shadow: 0 0 24px #7dff6a66, 5px 5px 0 #2e7d32; }
     .lb-link { display: inline-block; margin-top: 16px; font: 11px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding: 10px 14px; border-radius: 10px; border: 1px solid #ffe60055; }
     .lb-link:hover { background: #ffe60018; }
+    .home-namebar { max-width: 460px; margin: 10px auto 0; }
   </style>
 </head>
 <body>
@@ -125,6 +126,7 @@
         <button role="tab" data-tab="classic">🏆 Classic</button>
       </nav>
       <div><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a></div>
+      <div id="namebar" class="home-namebar"></div>
     </header>
 
     <section class="grid">
@@ -252,6 +254,10 @@
     <footer>Arrow keys or WASD for Pac-Man &amp; Snake · right-click or long-press to flag in Minesweeper · Ctrl+Z to undo in Klondike, Spider &amp; FreeCell</footer>
   </main>
 
+  <script src="/shared/leaderboard.js"></script>
+  <script>
+    if (window.Leaderboard) Leaderboard.nameBar(document.getElementById('namebar'));
+  </script>
   <script>
     // Infinite / Classic tabs
     (() => {

@@ -1,15 +1,22 @@
 /*
- * Online leaderboards backed by Cloud Firestore (boards/{board}/scores/{entry}).
- * Firebase is only downloaded the first time a leaderboard is opened or a score is submitted.
+ * Online leaderboards backed by Cloud Firestore.
  *
- *   Leaderboard.offer(boardId, { score, time, won }, containerEl)  → submit form + top 10 inside a game-over panel
+ * Players sign in anonymously (one hidden ID per device) and own one entry per board at
+ * boards/{board}/scores/{uid}; it only changes when they beat their own best. Their display name
+ * lives in players/{uid} and can be changed at any time, which renames all of their entries.
+ * App Check (reCAPTCHA Enterprise) proves requests come from this site.
+ * Firebase is only downloaded the first time a leaderboard is used.
+ *
+ *   Leaderboard.offer(boardId, { score, time, won }, containerEl)  → posts the result and shows the top 10
  *   Leaderboard.open(boardId)                                      → modal with the top 10
- *   Leaderboard.button(boardIdOrFn, parentEl)                      → "🏆 Leaderboard" button that opens the modal
+ *   Leaderboard.button(boardIdOrFn, parentEl)                      → "🏆 Leaderboard" button
+ *   Leaderboard.nameBar(parentEl)                                  → "Playing as …" control to set/change your name
  */
 (function () {
   'use strict';
 
   const FIREBASE_VERSION = '10.12.2';
+  const RECAPTCHA_SITE_KEY = '6LcCJb8tAAAAAPHRbjst_r22hHsVpodTajC2y-ae';
   const CONFIG = {
     apiKey: 'AIzaSyAXwWoC_s2DCQ9TuUmOLM6PFx-zCHcSSaY',
     authDomain: 'pacman-d28dc.firebaseapp.com',
@@ -52,43 +59,65 @@
   };
 
   // ---------------------------------------------------------------------------
-  // Firebase (lazy)
+  // Firebase (lazy): App Check + anonymous Auth + Firestore Lite
   // ---------------------------------------------------------------------------
   let fbPromise = null;
   function firebase() {
     if (!fbPromise) {
-      const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
-      fbPromise = Promise.all([import(`${base}/firebase-app.js`), import(`${base}/firebase-firestore-lite.js`)])
-        .then(([app, fs]) => ({ fs, db: fs.getFirestore(app.initializeApp(CONFIG, 'arcade-leaderboards')) }))
-        .catch((e) => { fbPromise = null; throw e; });
+      fbPromise = (async () => {
+        const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+        if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+          // local development: use a registered App Check debug token (or print a new one to the console)
+          let token = null;
+          try { token = localStorage.getItem('appcheck.debug'); } catch (e) { /* ignore */ }
+          self.FIREBASE_APPCHECK_DEBUG_TOKEN = token || true;
+        }
+        const [appMod, checkMod, authMod, fs] = await Promise.all([
+          import(`${base}/firebase-app.js`),
+          import(`${base}/firebase-app-check.js`),
+          import(`${base}/firebase-auth.js`),
+          import(`${base}/firebase-firestore-lite.js`),
+        ]);
+        const app = appMod.initializeApp(CONFIG, 'arcade-leaderboards');
+        checkMod.initializeAppCheck(app, { provider: new checkMod.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
+        const auth = authMod.getAuth(app);
+        return { fs, db: fs.getFirestore(app), auth, authMod };
+      })().catch((e) => { fbPromise = null; throw e; });
     }
     return fbPromise;
   }
 
+  let userPromise = null;
+  function user() {
+    if (!userPromise) {
+      userPromise = (async () => {
+        const { auth, authMod } = await firebase();
+        await auth.authStateReady();
+        return auth.currentUser || (await authMod.signInAnonymously(auth)).user;
+      })().catch((e) => { userPromise = null; throw e; });
+    }
+    return userPromise;
+  }
+
+  const isTime = (board) => BOARDS[board].type === 'time';
+
   async function top(board, n = 10) {
     const { fs, db } = await firebase();
     const col = fs.collection(db, 'boards', board, 'scores');
-    const order = BOARDS[board].type === 'time' ? fs.orderBy('time', 'asc') : fs.orderBy('score', 'desc');
+    const order = isTime(board) ? fs.orderBy('time', 'asc') : fs.orderBy('score', 'desc');
     const snap = await fs.getDocs(fs.query(col, order, fs.limit(n)));
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
 
-  async function submit(board, entry) {
+  async function rankOf(board, entry) {
     const { fs, db } = await firebase();
     const col = fs.collection(db, 'boards', board, 'scores');
-    // rank with exactly the values that are stored, so rounding can't count our own entry as "ahead"
-    const score = Math.max(0, Math.min(100000000, Math.round(entry.score || 0)));
-    const time = Math.max(0, Math.min(86400, Math.round((entry.time || 0) * 100) / 100));
-    const ref = await fs.addDoc(col, { name: entry.name, score, time, won: !!entry.won, createdAt: fs.serverTimestamp() });
-    const ahead = BOARDS[board].type === 'time'
-      ? fs.query(col, fs.where('time', '<', time))
-      : fs.query(col, fs.where('score', '>', score));
-    const count = await fs.getCount(ahead);
-    return { id: ref.id, rank: count.data().count + 1 };
+    const ahead = isTime(board) ? fs.query(col, fs.where('time', '<', entry.time)) : fs.query(col, fs.where('score', '>', entry.score));
+    return (await fs.getCount(ahead)).data().count + 1;
   }
 
   // ---------------------------------------------------------------------------
-  // Helpers
+  // Names
   // ---------------------------------------------------------------------------
   const BLOCKED = ['fuck', 'shit', 'bitch', 'cunt', 'nigg', 'fag', 'rape', 'nazi', 'whore', 'slut', 'dick', 'cock', 'pussy'];
   function cleanName(raw) {
@@ -97,12 +126,68 @@
     if (!name || BLOCKED.some((w) => flat.includes(w))) return '';
     return name;
   }
-  const savedName = () => { try { return localStorage.getItem('arcade.name') || ''; } catch (e) { return ''; } };
-  const saveName = (n) => { try { localStorage.setItem('arcade.name', n); } catch (e) { /* ignore */ } };
+  const cachedName = () => { try { return localStorage.getItem('arcade.name') || ''; } catch (e) { return ''; } };
+  const cacheName = (n) => { try { localStorage.setItem('arcade.name', n); } catch (e) { /* ignore */ } };
+  const nameListeners = new Set();
+
+  async function getName() {
+    const { fs, db } = await firebase();
+    const u = await user();
+    try {
+      const snap = await fs.getDoc(fs.doc(db, 'players', u.uid));
+      if (snap.exists()) { cacheName(snap.data().name); return snap.data().name; }
+    } catch (e) { /* fall back to the cached name */ }
+    return cachedName();
+  }
+
+  // Saves the name and renames every existing entry this player owns
+  async function setName(raw) {
+    const name = cleanName(raw);
+    if (!name) throw new Error('bad-name');
+    const { fs, db } = await firebase();
+    const u = await user();
+    await fs.setDoc(fs.doc(db, 'players', u.uid), { name, updatedAt: fs.serverTimestamp() });
+    cacheName(name);
+    await Promise.all(Object.keys(BOARDS).map(async (board) => {
+      const ref = fs.doc(db, 'boards', board, 'scores', u.uid);
+      const snap = await fs.getDoc(ref);
+      if (!snap.exists() || snap.data().name === name) return;
+      const d = snap.data();
+      await fs.setDoc(ref, { uid: u.uid, name, score: d.score, time: d.time, won: d.won, updatedAt: fs.serverTimestamp() });
+    }));
+    nameListeners.forEach((fn) => fn(name));
+    return name;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Posting results (one entry per player per board, kept at their best)
+  // ---------------------------------------------------------------------------
+  async function submit(board, result) {
+    const { fs, db } = await firebase();
+    const u = await user();
+    const name = cachedName() || (await getName());
+    if (!name) throw new Error('no-name');
+    const score = Math.max(0, Math.min(100000000, Math.round(result.score || 0)));
+    const time = Math.max(0, Math.min(86400, Math.round((result.time || 0) * 100) / 100));
+    const ref = fs.doc(db, 'boards', board, 'scores', u.uid);
+    const snap = await fs.getDoc(ref);
+    const prev = snap.exists() ? snap.data() : null;
+    const improved = !prev || (isTime(board) ? time < prev.time : score > prev.score);
+    if (improved) await fs.setDoc(ref, { uid: u.uid, name, score, time, won: !!result.won, updatedAt: fs.serverTimestamp() });
+    const best = improved ? { score, time } : prev;
+    return { improved, first: !prev, best, rank: await rankOf(board, best), uid: u.uid, name };
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI helpers
+  // ---------------------------------------------------------------------------
   const fmtTime = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
-  const fmtEntry = (board, e) => (BOARDS[board].type === 'time' ? fmtTime(e.time) : e.score.toLocaleString());
+  const fmtEntry = (board, e) => (isTime(board) ? fmtTime(e.time) : e.score.toLocaleString());
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const qualifies = (board, r) => (BOARDS[board].type === 'time' ? r.won && r.time > 0 : r.score > 0);
+  const qualifies = (board, r) => (isTime(board) ? r.won && r.time > 0 : r.score > 0);
+  const setNote = (el, text, kind = '') => { el.textContent = text; el.className = 'lb-note' + (kind ? ' ' + kind : ''); };
+  // typing a name must not trigger game shortcuts
+  const shieldKeys = (el) => { ['keydown', 'keyup', 'keypress'].forEach((t) => el.addEventListener(t, (e) => e.stopPropagation())); };
 
   function injectCss() {
     if (document.getElementById('lb-css')) return;
@@ -110,12 +195,17 @@
     st.id = 'lb-css';
     st.textContent = `
       .lb { margin: 14px auto 6px; max-width: 420px; text-align: left; font-family: Inter, system-ui, -apple-system, sans-serif; color: #eee; }
-      .lb h3 { margin: 0 0 10px; font: 12px "Press Start 2P", ui-monospace, monospace; color: #ffe600; text-align: center; letter-spacing: 1px; }
-      .lb-form { display: flex; gap: 6px; margin-bottom: 10px; }
+      .lb h3 { margin: 0 0 10px; font: 12px "Press Start 2P", ui-monospace, monospace; color: #ffe600; text-align: center; letter-spacing: 1px; line-height: 1.5; }
+      .lb-form { display: flex; gap: 6px; margin-bottom: 8px; }
       .lb-form input { flex: 1; min-width: 0; font: 600 15px Inter, system-ui, sans-serif; padding: 10px 12px; border-radius: 10px; border: 1px solid #ffffff40; background: #0008; color: #fff; }
       .lb-form input:focus { outline: 2px solid #ffe600; border-color: transparent; }
       .lb-form button, .lb-btn { font: 700 14px Inter, system-ui, sans-serif; padding: 10px 14px; border-radius: 10px; border: 0; background: #ffe600; color: #1b1400; cursor: pointer; white-space: nowrap; }
       .lb-form button:disabled { opacity: .5; cursor: default; }
+      .lb-form .cancel { background: #ffffff18; color: #fff; }
+      .lb-label { font-size: 13px; color: #ccc; text-align: center; margin: 0 0 6px; }
+      .lb-you { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; margin-bottom: 8px; color: #ccc; }
+      .lb-you b { color: #fff; }
+      .lb-link { font: 600 13px Inter, system-ui, sans-serif; color: #ffe600; background: none; border: 0; padding: 2px 4px; cursor: pointer; text-decoration: underline; }
       .lb-note { font-size: 13px; color: #bbb; text-align: center; min-height: 18px; margin: 4px 0 8px; }
       .lb-note.ok { color: #7dff6a; }
       .lb-note.err { color: #ff8a8a; }
@@ -127,6 +217,7 @@
       .lb li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .lb li .sc { font-variant-numeric: tabular-nums; font-weight: 700; }
       .lb li.me { background: #ffe60026; }
+      .lb li.me .nm::after { content: ' (you)'; color: #ffe600; font-size: 12px; }
       .lb li.empty { display: block; text-align: center; color: #999; }
       .lb-btn.ghost { background: #ffffff18; color: #fff; border: 1px solid #ffffff30; }
       .lb-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: #000b; padding: 16px; }
@@ -145,27 +236,88 @@
     document.head.appendChild(st);
   }
 
-  function renderList(listEl, board, entries, highlightId) {
+  function renderList(listEl, board, entries, myId) {
     if (!entries.length) {
-      listEl.innerHTML = `<li class="empty">No scores yet — be the first!</li>`;
+      listEl.innerHTML = '<li class="empty">No scores yet — be the first!</li>';
       return;
     }
     listEl.innerHTML = entries.map((e, i) => `
-      <li class="${e.id === highlightId ? 'me' : ''}">
+      <li class="${e.id === myId ? 'me' : ''}">
         <span class="rk">#${i + 1}</span>
-        <span class="nm">${esc(e.name)}${e.won && BOARDS[board].type === 'score' && BOARDS[board].group === 'Classic' ? ' 🏆' : ''}</span>
+        <span class="nm">${esc(e.name)}${e.won && !isTime(board) && BOARDS[board].group === 'Classic' ? ' 🏆' : ''}</span>
         <span class="sc">${fmtEntry(board, e)}</span>
       </li>`).join('');
   }
 
-  async function loadInto(listEl, noteEl, board, highlightId) {
+  async function loadInto(listEl, noteEl, board) {
     listEl.innerHTML = '<li class="empty">Loading…</li>';
     try {
-      renderList(listEl, board, await top(board, 10), highlightId);
+      const [entries, u] = await Promise.all([top(board, 10), user().catch(() => null)]);
+      renderList(listEl, board, entries, u && u.uid);
     } catch (e) {
       listEl.innerHTML = '<li class="empty">Leaderboard unavailable right now</li>';
-      if (noteEl && !noteEl.textContent) { noteEl.textContent = 'Check your connection and try again.'; noteEl.className = 'lb-note err'; }
+      if (noteEl && !noteEl.textContent) setNote(noteEl, 'Check your connection and try again.', 'err');
     }
+  }
+
+  // A small form for entering or changing the player's name. Resolves when saved (or cancelled).
+  function nameForm(parent, { label, button, cancel } = {}) {
+    injectCss();
+    return new Promise((resolve) => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `${label ? `<p class="lb-label">${esc(label)}</p>` : ''}
+        <form class="lb-form" autocomplete="off">
+          <input name="name" maxlength="16" placeholder="Your name" aria-label="Your name" value="${esc(cachedName())}">
+          <button type="submit">${esc(button || 'Save')}</button>
+          ${cancel ? '<button type="button" class="cancel">Cancel</button>' : ''}
+        </form>
+        <div class="lb-note"></div>`;
+      parent.appendChild(wrap);
+      const form = wrap.querySelector('form');
+      const input = form.elements.name;
+      const note = wrap.querySelector('.lb-note');
+      shieldKeys(wrap);
+      form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === input) { e.preventDefault(); form.requestSubmit(); } });
+      const cancelBtn = form.querySelector('.cancel');
+      if (cancelBtn) cancelBtn.addEventListener('click', () => { wrap.remove(); resolve(null); });
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!cleanName(input.value)) { setNote(note, 'Use 1–16 letters, numbers or spaces (keep it friendly).', 'err'); input.focus(); return; }
+        form.querySelectorAll('input, button').forEach((el) => { el.disabled = true; });
+        setNote(note, 'Saving…');
+        try {
+          const saved = await setName(input.value);
+          wrap.remove();
+          resolve(saved);
+        } catch (err) {
+          setNote(note, 'Could not save your name — try again.', 'err');
+          form.querySelectorAll('input, button').forEach((el) => { el.disabled = false; });
+        }
+      });
+      setTimeout(() => { if (!input.value) input.focus(); }, 50);
+    });
+  }
+
+  // "Playing as NAME · Change name" (or a prompt to set one)
+  function nameBar(parent) {
+    if (!parent) return null;
+    injectCss();
+    const bar = document.createElement('div');
+    bar.className = 'lb-namebar';
+    parent.appendChild(bar);
+    const render = (name) => {
+      bar.innerHTML = name
+        ? `<div class="lb-you">Playing as <b>${esc(name)}</b> <button type="button" class="lb-link">Change name</button></div>`
+        : `<div class="lb-you">No name yet <button type="button" class="lb-link">Add your name</button></div>`;
+      bar.querySelector('.lb-link').addEventListener('click', async () => {
+        bar.innerHTML = '';
+        const saved = await nameForm(bar, { label: 'Your name appears on every leaderboard you’re on.', button: 'Save name', cancel: true });
+        render(saved || cachedName());
+      });
+    };
+    render(cachedName());
+    nameListeners.add(render);
+    return bar;
   }
 
   // ---------------------------------------------------------------------------
@@ -178,53 +330,53 @@
     if (old) old.remove();
     const wrap = document.createElement('div');
     wrap.className = 'lb';
-    const canSubmit = qualifies(board, result);
-    const shown = BOARDS[board].type === 'time' ? fmtTime(result.time || 0) : (result.score || 0).toLocaleString();
-    wrap.innerHTML = `
-      <h3>🏆 ${esc(BOARDS[board].title.toUpperCase())}</h3>
-      ${canSubmit ? `<form class="lb-form" autocomplete="off">
-        <input name="name" maxlength="16" placeholder="Your name" aria-label="Your name" value="${esc(savedName())}">
-        <button type="submit">Submit ${esc(shown)}</button>
-      </form>` : ''}
-      <div class="lb-note">${canSubmit ? '' : BOARDS[board].type === 'time' ? 'Win to post a time.' : ''}</div>
-      <ol></ol>`;
+    wrap.innerHTML = `<h3>🏆 ${esc(BOARDS[board].title.toUpperCase())}</h3><div class="lb-slot"></div><div class="lb-note"></div><ol></ol>`;
     const anchor = container.querySelector('.stats, .win-stats, .grid3');
     if (anchor) anchor.after(wrap); else container.appendChild(wrap);
-    const list = wrap.querySelector('ol');
+    const slot = wrap.querySelector('.lb-slot');
     const note = wrap.querySelector('.lb-note');
-    loadInto(list, note, board);
+    const list = wrap.querySelector('ol');
+    shieldKeys(wrap);
 
-    const form = wrap.querySelector('form');
-    if (!form) return;
-    // keep game keyboard shortcuts from firing while typing a name
-    form.addEventListener('keydown', (e) => {
-      e.stopPropagation();
-      if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); form.requestSubmit(); }
-    });
-    form.addEventListener('keyup', (e) => e.stopPropagation());
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const input = form.elements.name;
-      const btn = form.querySelector('button');
-      const name = cleanName(input.value);
-      if (!name) { note.textContent = 'Pick a name (letters, numbers, spaces).'; note.className = 'lb-note err'; input.focus(); return; }
-      saveName(name);
-      btn.disabled = true;
-      input.disabled = true;
-      note.textContent = 'Submitting…';
-      note.className = 'lb-note';
+    if (!qualifies(board, result)) {
+      if (isTime(board)) setNote(note, 'Win to post a time.');
+      loadInto(list, note, board);
+      return;
+    }
+
+    const shown = isTime(board) ? fmtTime(result.time || 0) : (result.score || 0).toLocaleString();
+    const post = async () => {
+      setNote(note, 'Posting your score…');
       try {
-        const res = await submit(board, { name, score: result.score || 0, time: result.time || 0, won: !!result.won });
-        note.textContent = `Posted! You're #${res.rank.toLocaleString()} on the ${BOARDS[board].title} board.`;
-        note.className = 'lb-note ok';
-        form.remove();
-        loadInto(list, note, board, res.id);
-      } catch (err) {
-        note.textContent = 'Could not post your score — try again.';
-        note.className = 'lb-note err';
-        btn.disabled = false;
-        input.disabled = false;
+        const res = await submit(board, result);
+        if (!wrap.isConnected) return;
+        const change = '<button type="button" class="lb-link">Change name</button>';
+        slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(res.name)}</b> ${change}</div>`;
+        slot.querySelector('.lb-link').addEventListener('click', async () => {
+          slot.innerHTML = '';
+          const saved = await nameForm(slot, { button: 'Save name', cancel: true });
+          slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(saved || cachedName())}</b></div>`;
+          if (saved) { setNote(note, 'Name updated on all your scores.', 'ok'); loadInto(list, note, board); }
+        });
+        if (res.improved) setNote(note, `${res.first ? 'On the board' : 'New personal best'}! You're #${res.rank.toLocaleString()}.`, 'ok');
+        else setNote(note, `Your best is still ${fmtEntry(board, res.best)} (#${res.rank.toLocaleString()}). Beat it to climb!`);
+        loadInto(list, note, board);
+      } catch (e) {
+        setNote(note, 'Could not post your score — check your connection.', 'err');
+        loadInto(list, note, board);
       }
+    };
+
+    loadInto(list, note, board);
+    if (cachedName()) { post(); return; }
+    // no name cached on this device: check the profile, otherwise ask for one
+    setNote(note, '');
+    getName().then((existing) => {
+      if (!wrap.isConnected) return;
+      if (existing) { post(); return; }
+      nameForm(slot, { label: 'Put your name on the leaderboard', button: `Post ${shown}` }).then((saved) => { if (saved) post(); });
+    }).catch(() => {
+      nameForm(slot, { label: 'Put your name on the leaderboard', button: `Post ${shown}` }).then((saved) => { if (saved) post(); });
     });
   }
 
@@ -239,18 +391,20 @@
       modal.className = 'lb-modal';
       modal.innerHTML = `<div class="lb-card" role="dialog" aria-label="Leaderboard">
         <select aria-label="Choose leaderboard"></select>
-        <div class="lb"><div class="lb-note"></div><ol></ol></div>
+        <div class="lb"><div class="lb-names"></div><div class="lb-note"></div><ol></ol></div>
         <button class="lb-btn ghost lb-close" type="button">Close</button>
       </div>`;
       document.body.appendChild(modal);
+      shieldKeys(modal);
       modal.addEventListener('click', (e) => { if (e.target === modal) modal.hidden = true; });
       modal.querySelector('.lb-close').addEventListener('click', () => { modal.hidden = true; });
-      modal.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') modal.hidden = true; });
+      modal.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.hidden = true; });
       const sel = modal.querySelector('select');
       sel.addEventListener('change', () => loadInto(modal.querySelector('ol'), modal.querySelector('.lb-note'), sel.value));
+      nameBar(modal.querySelector('.lb-names'));
+      nameListeners.add(() => { if (!modal.hidden) loadInto(modal.querySelector('ol'), modal.querySelector('.lb-note'), sel.value); });
     }
     const sel = modal.querySelector('select');
-    // offer the other boards from the same game family in the dropdown
     const family = BOARDS[board].href.split('?')[0];
     const ids = Object.keys(BOARDS).filter((id) => BOARDS[id].href.split('?')[0] === family);
     sel.innerHTML = ids.map((id) => `<option value="${id}" ${id === board ? 'selected' : ''}>${esc(BOARDS[id].title)}</option>`).join('');
@@ -258,7 +412,6 @@
     modal.querySelector('.lb-note').textContent = '';
     modal.hidden = false;
     loadInto(modal.querySelector('ol'), modal.querySelector('.lb-note'), board);
-    sel.focus();
   }
 
   function button(boardOrFn, parent, className = 'lb-btn ghost') {
@@ -277,5 +430,5 @@
     return b;
   }
 
-  window.Leaderboard = { BOARDS, top, submit, offer, open, button, fmtTime };
+  window.Leaderboard = { BOARDS, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime, onName: (fn) => nameListeners.add(fn) };
 })();
