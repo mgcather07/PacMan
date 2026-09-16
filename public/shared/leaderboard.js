@@ -236,7 +236,22 @@
       .lb-label { font-size: 13px; color: #ccc; text-align: center; margin: 0 0 6px; }
       .lb-you { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; margin-bottom: 8px; color: #ccc; }
       .lb-you b { color: #fff; }
-      .lb-link { font: 600 13px Inter, system-ui, sans-serif; color: #ffe600; background: none; border: 0; padding: 2px 4px; cursor: pointer; text-decoration: underline; }
+      .lb-textbtn { font: 600 13px Inter, system-ui, sans-serif; color: #ffe600; background: none; border: 0; padding: 2px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+      .lb-namebar { display: flex; justify-content: center; }
+      .lb-namebar .lb-form, .lb-namebar .lb-label, .lb-namebar .lb-note { width: 100%; }
+      .lb-namebar > div:not(.lb-chip) { width: 100%; max-width: 420px; }
+      .lb-chip { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 6px 6px 6px 8px; border-radius: 999px; background: #ffffff0d; border: 1px solid #ffffff1f; font: 14px Inter, system-ui, -apple-system, sans-serif; color: #b8b8d0; line-height: 1; }
+      .lb-avatar { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #ffe600, #ff9f3d); color: #1b1400; font: 800 13px Inter, system-ui, sans-serif; }
+      .lb-chip .lb-who { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+      .lb-chip .lb-who b { color: #fff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .lb-chip .lb-edit { flex: none; font: 600 13px Inter, system-ui, sans-serif; color: #ffe600; background: #ffe60014; border: 1px solid #ffe60040; border-radius: 999px; padding: 7px 12px; cursor: pointer; line-height: 1; }
+      .lb-chip .lb-edit:hover { background: #ffe60026; }
+      .lb-chip.empty { padding-left: 14px; }
+      .lb-chip .lb-pre { white-space: nowrap; }
+      @media (max-width: 480px) {
+        .lb-chip .lb-pre { display: none; }
+        .lb-chip.empty .lb-who { white-space: normal; line-height: 1.3; }
+      }
       .lb-note { font-size: 13px; color: #bbb; text-align: center; min-height: 18px; margin: 4px 0 8px; }
       .lb-note.ok { color: #7dff6a; }
       .lb-note.err { color: #ff8a8a; }
@@ -340,9 +355,9 @@
     parent.appendChild(bar);
     const render = (name) => {
       bar.innerHTML = name
-        ? `<div class="lb-you">Playing as <b>${esc(name)}</b> <button type="button" class="lb-link">Change name</button></div>`
-        : `<div class="lb-you">No name yet <button type="button" class="lb-link">Add your name</button></div>`;
-      bar.querySelector('.lb-link').addEventListener('click', async () => {
+        ? `<div class="lb-chip"><span class="lb-avatar" aria-hidden="true">${esc(name.charAt(0).toUpperCase())}</span><span class="lb-who"><span class="lb-pre">Playing as</span> <b>${esc(name)}</b></span><button type="button" class="lb-edit">Change name</button></div>`
+        : `<div class="lb-chip empty"><span class="lb-who">Want your name on the leaderboards?</span><button type="button" class="lb-edit">Add your name</button></div>`;
+      bar.querySelector('.lb-edit').addEventListener('click', async () => {
         bar.innerHTML = '';
         const saved = await nameForm(bar, { label: 'Your name appears on every leaderboard you’re on.', button: 'Save name', cancel: true });
         render(saved || cachedName());
@@ -383,9 +398,9 @@
       try {
         const res = await submit(board, result);
         if (!wrap.isConnected) return;
-        const change = '<button type="button" class="lb-link">Change name</button>';
+        const change = '<button type="button" class="lb-textbtn">Change name</button>';
         slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(res.name)}</b> ${change}</div>`;
-        slot.querySelector('.lb-link').addEventListener('click', async () => {
+        slot.querySelector('.lb-textbtn').addEventListener('click', async () => {
           slot.innerHTML = '';
           const saved = await nameForm(slot, { button: 'Save name', cancel: true });
           slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(saved || cachedName())}</b></div>`;
