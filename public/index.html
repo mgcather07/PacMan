@@ -67,8 +67,15 @@
     .pac h2 { color: #ffe600; }
     .sol h2 { color: #7ee2a8; }
     .body p { margin: 0; color: #a9a9c2; line-height: 1.55; }
-    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-    .tags span { font-size: 12px; padding: 4px 10px; border-radius: 99px; background: #ffffff10; color: #cfcfe6; }
+    /* feature tags: little pixel-font arcade labels in each game's color */
+    .game { --acc: #ffe600; }
+    .snk { --acc: #3cff8a; } .mns { --acc: #c5ec7a; } .frg { --acc: #7dff6a; } .brk { --acc: #3fd8ff; }
+    .ast { --acc: #ffe600; } .tet { --acc: #c77dff; } .sht { --acc: #ff6b8a; } .sol { --acc: #7ee2a8; }
+    .tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .tags span { font: 9px/1 "Press Start 2P", monospace; text-transform: uppercase; letter-spacing: .5px; padding: 7px 9px 6px; border-radius: 4px;
+      color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent);
+      box-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 22%, #000); }
+    .tags span::before { content: '▸ '; opacity: .6; }
     .cta { margin-top: auto; padding-top: 12px; font-family: "Press Start 2P", monospace; font-size: 12px; }
     .pac .cta { color: #ffe600; }
     .sol .cta { color: #7ee2a8; }
