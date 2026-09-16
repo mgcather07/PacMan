@@ -31,6 +31,21 @@
   let best = 0;
   try { best = +localStorage.getItem('infmines.best') || 0; } catch (e) { /* ignore */ }
 
+  // Classic mode: a finite board with a fixed mine count, one life and a timer
+  const CLASSIC = !!(window.Arcade && Arcade.classic);
+  const DIFFS = {
+    beginner: { w: 9, h: 9, m: 10, name: 'Beginner' },
+    intermediate: { w: 16, h: 16, m: 40, name: 'Intermediate' },
+    expert: { w: 30, h: 16, m: 99, name: 'Expert' },
+  };
+  let diff = 'beginner';
+  try { diff = localStorage.getItem('mines.classic.diff') || 'beginner'; } catch (e) { /* ignore */ }
+  if (!DIFFS[diff]) diff = 'beginner';
+  const inBoard = (x, y) => !CLASSIC || (x >= 0 && y >= 0 && x < G.w && y < G.h);
+  const elapsed = () => (G.startT ? ((G.endT || performance.now()) - G.startT) / 1000 : 0);
+  const fmtTime = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+  const bestTimeKey = () => `mines.classic.best.${diff}`;
+
   function freshGame() {
     return {
       seed: (Math.random() * 2 ** 31) | 0,
@@ -42,7 +57,16 @@
       score: 0,
       farthest: 0,
       over: false,
+      ...(CLASSIC ? { w: DIFFS[diff].w, h: DIFFS[diff].h, m: DIFFS[diff].m, mines: null, lives: 1, startT: 0, endT: 0 } : {}),
     };
+  }
+
+  function placeMines(sx, sy) {
+    const cells = [];
+    for (let y = 0; y < G.h; y++) for (let x = 0; x < G.w; x++) if (Math.abs(x - sx) > 1 || Math.abs(y - sy) > 1) cells.push(key(x, y));
+    for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
+    G.mines = new Set(cells.slice(0, G.m));
+    G.startT = performance.now();
   }
 
   // Mines get denser the farther you travel from where you started
@@ -51,6 +75,7 @@
     return 0.15 + Math.min(0.08, r / 1500);
   }
   function isMine(x, y) {
+    if (CLASSIC) return !!G.mines && G.mines.has(key(x, y));
     if (!G.safe) return false;
     if (Math.abs(x - G.safe.x) <= 1 && Math.abs(y - G.safe.y) <= 1) return false;
     return hash(x, y, 5, G.seed) < density(x, y);
@@ -65,11 +90,12 @@
   // Actions
   // ---------------------------------------------------------------------------
   function reveal(x, y) {
-    if (G.over) return;
+    if (G.over || !inBoard(x, y)) return;
     const k = key(x, y);
     if (G.flags.has(k) || G.revealed.has(k) || G.exploded.has(k)) return;
     if (!G.safe) {
       G.safe = { x, y };
+      if (CLASSIC) placeMines(x, y);
       $('hint').classList.add('gone');
     }
     if (isMine(x, y)) return explode(x, y);
@@ -87,18 +113,32 @@
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           if (dx || dy) {
             const nk = key(cx + dx, cy + dy);
-            if (!G.revealed.has(nk) && !G.flags.has(nk)) queue.push([cx + dx, cy + dy]);
+            if (!G.revealed.has(nk) && !G.flags.has(nk) && inBoard(cx + dx, cy + dy)) queue.push([cx + dx, cy + dy]);
           }
         }
       }
     }
     G.score += n;
     if (n > 40) burst(x, y, '#ffe600', Math.min(40, n / 4));
+    if (CLASSIC) {
+      if (G.revealed.size === G.w * G.h - G.m) winBoard();
+      changed();
+      return;
+    }
     if (G.score > best) {
       best = G.score;
       try { localStorage.setItem('infmines.best', String(best)); } catch (e) { /* ignore */ }
     }
     changed();
+  }
+
+  function winBoard() {
+    G.over = true;
+    G.won = true;
+    G.endT = performance.now();
+    for (const k of G.mines) G.flags.add(k);
+    burst(G.w / 2, G.h / 2, '#ffe600', 60);
+    setTimeout(() => showOver(true), 600);
   }
 
   function explode(x, y) {
@@ -108,7 +148,8 @@
     burst(x, y, '#ff3b30', 30);
     if (G.lives <= 0) {
       G.over = true;
-      setTimeout(showOver, 900);
+      G.endT = performance.now();
+      setTimeout(() => showOver(false), 900);
     } else {
       toast(`💥 BOOM! ${G.lives} ${G.lives === 1 ? 'life' : 'lives'} left`);
     }
@@ -116,7 +157,7 @@
   }
 
   function toggleFlag(x, y) {
-    if (G.over || !G.safe) return;
+    if (G.over || !G.safe || !inBoard(x, y)) return;
     const k = key(x, y);
     if (G.revealed.has(k) || G.exploded.has(k)) return;
     if (G.flags.has(k)) G.flags.delete(k); else G.flags.add(k);
@@ -155,6 +196,7 @@
   let saveTimer = null;
   function changed() {
     dirty = true;
+    if (CLASSIC) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(save, 800);
   }
@@ -171,6 +213,7 @@
     } catch (e) { /* ignore */ }
   }
   function load() {
+    if (CLASSIC) return false;
     try {
       const raw = JSON.parse(localStorage.getItem('infmines.game') || 'null');
       if (!raw || raw.over) return false;
@@ -186,6 +229,10 @@
   function newField() {
     G = freshGame();
     cam = { x: 0, y: 0, z: cam.z };
+    if (CLASSIC) {
+      cam = { x: G.w / 2, y: G.h / 2 - 20 / Math.max(1, cam.z), z: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.floor(Math.min((W - 30) / G.w, (H - 150) / G.h)))) };
+      cam.y = G.h / 2 - 25 / cam.z;
+    }
     particles = [];
     $('over').hidden = true;
     $('hint').classList.remove('gone');
@@ -231,6 +278,7 @@
     const mines = [];
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
+        if (!inBoard(x, y)) continue;
         const k = key(x, y);
         const L = px(x), T = py(y), R = px(x + 1), B = py(y + 1);
         const odd = (x + y) & 1;
@@ -258,6 +306,11 @@
     }
     ctx.fillStyle = '#87af3a';
     ctx.fill(edges);
+    if (CLASSIC) {
+      ctx.strokeStyle = '#4a752c';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(px(0) - 2, py(0) - 2, px(G.w) - px(0) + 4, py(G.h) - py(0) + 4);
+    }
 
     if (z >= 16) {
       ctx.font = `800 ${Math.round(z * 0.62)}px Inter, system-ui, sans-serif`;
@@ -342,6 +395,15 @@
   const last = {};
   function hudSet(id, v) { if (last[id] !== v) { last[id] = v; $(id).textContent = v; } }
   function updateHud() {
+    if (CLASSIC) {
+      hudSet('score', String(G.m - G.flags.size));
+      const bt = +(localStorage.getItem(bestTimeKey()) || 0);
+      hudSet('best', bt ? fmtTime(bt) : '—');
+      hudSet('lives', G.over ? (G.won ? '🏆' : '💥') : '❤️');
+      hudSet('flags', `${G.revealed.size}/${G.w * G.h - G.m}`);
+      hudSet('dist', fmtTime(elapsed()));
+      return;
+    }
     hudSet('score', G.score.toLocaleString());
     hudSet('best', best.toLocaleString());
     hudSet('lives', '❤️'.repeat(Math.max(0, G.lives)) + '🖤'.repeat(Math.max(0, 3 - G.lives)));
@@ -358,12 +420,21 @@
     toastT = setTimeout(() => el.classList.remove('show'), 1800);
   }
 
-  function showOver() {
+  function showOver(won) {
     $('o-score').textContent = G.score.toLocaleString();
-    $('o-dist').textContent = G.farthest;
+    $('o-dist').textContent = CLASSIC ? fmtTime(elapsed()) : G.farthest;
     $('o-flags').textContent = G.flags.size;
+    let msg = '';
+    if (CLASSIC && won) {
+      const t = elapsed();
+      let prev = 0;
+      try { prev = +(localStorage.getItem(bestTimeKey()) || 0); } catch (e) { /* ignore */ }
+      if (!prev || t < prev) { try { localStorage.setItem(bestTimeKey(), String(t)); } catch (e) { /* ignore */ } msg = `${DIFFS[diff].name} cleared in ${fmtTime(t)} — new best!`; }
+      else msg = `${DIFFS[diff].name} cleared in ${fmtTime(t)} (best ${fmtTime(prev)})`;
+    }
+    if (window.Arcade) Arcade.endScreen(!!won, msg);
     $('over').hidden = false;
-    try { localStorage.removeItem('infmines.game'); } catch (e) { /* ignore */ }
+    if (!CLASSIC) { try { localStorage.removeItem('infmines.game'); } catch (e) { /* ignore */ } }
   }
 
   function setFlagMode(on) {
@@ -470,6 +541,7 @@
   window.addEventListener('keyup', (e) => held.delete(e.key.toLowerCase()));
 
   function goHome() {
+    if (CLASSIC) { homeAnim = { x: G.w / 2, y: G.h / 2 - 25 / cam.z }; return; }
     const c = G.safe || { x: 0, y: 0 };
     homeAnim = { x: c.x + 0.5, y: c.y + 0.5 };
   }
@@ -478,7 +550,7 @@
   $('mode-btn').addEventListener('click', (e) => { setFlagMode(!flagMode); e.currentTarget.blur(); });
   $('home-btn').addEventListener('click', goHome);
   $('new-btn').addEventListener('click', () => {
-    if (G.safe && !G.over && !confirm('Start a brand-new minefield? Your current field will be lost.')) return;
+    if (!CLASSIC && G.safe && !G.over && !confirm('Start a brand-new minefield? Your current field will be lost.')) return;
     newField();
   });
   $('again-btn').addEventListener('click', newField);
@@ -508,6 +580,7 @@
       dirty = true;
     }
     if (shakeT > 0) { shakeT -= dt; dirty = true; }
+    if (CLASSIC && G.startT && !G.over && Math.floor(now / 250) !== Math.floor((now - dt * 1000) / 250)) dirty = true;
     if (particles.length) {
       for (const p of particles) { p.t += dt; p.vy += 14 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
       particles = particles.filter((p) => p.t < p.life);
@@ -522,9 +595,21 @@
   }
 
   resize();
-  if (!load()) newField();
-  cam.z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, cam.z || Math.round(Math.min(W, H) / 18)));
-  if (!G.safe) cam.z = Math.max(24, Math.min(40, Math.round(Math.min(W, H) / 18)));
+  if (CLASSIC) {
+    const sel = $('diff');
+    sel.value = diff;
+    sel.addEventListener('change', () => {
+      diff = sel.value;
+      try { localStorage.setItem('mines.classic.diff', diff); } catch (e) { /* ignore */ }
+      sel.blur();
+      newField();
+    });
+    newField();
+  } else {
+    if (!load()) newField();
+    cam.z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, cam.z || Math.round(Math.min(W, H) / 18)));
+    if (!G.safe) cam.z = Math.max(24, Math.min(40, Math.round(Math.min(W, H) / 18)));
+  }
   setFlagMode(false);
   requestAnimationFrame(frame);
 })();

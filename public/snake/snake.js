@@ -21,7 +21,14 @@
 
   const BLOCK = 10;
   const SPAWN_CLEAR = 7;
+  // Classic mode: walled arena of cells |x| <= AX, |y| <= AY and three stages to clear
+  const CLASSIC = !!(window.Arcade && Arcade.classic);
+  const AX = 17, AY = 12;
+  const STAGES = [{ goal: 12, ais: 1 }, { goal: 16, ais: 2 }, { goal: 20, ais: 3 }];
+  const outside = (x, y) => CLASSIC && (Math.abs(x) > AX || Math.abs(y) > AY);
+  let stage = 0, stageFood = 0, stageT = 0;
   function isRock(x, y) {
+    if (outside(x, y)) return true;
     if (Math.abs(x) < SPAWN_CLEAR && Math.abs(y) < SPAWN_CLEAR) return false;
     const bx = Math.floor(x / BLOCK), by = Math.floor(y / BLOCK);
     if (hash(bx, by, 3) > 0.5) return false;
@@ -46,6 +53,7 @@
     const k = key(x, y);
     if (dropped.has(k)) return dropped.get(k);
     if (eaten.has(k) || isRock(x, y)) return 0;
+    if (CLASSIC) return hash(x, y, 13) < 0.004 ? CARD : 0;
     if (hash(x, y, 13) < 0.0016) return CARD;
     const h = hash(x, y, 9);
     if (h < 0.0022) return GOLD;
@@ -98,14 +106,17 @@
   let score, farthest, kills, suits, shield, invuln, deadT, time = 0;
   let camX = 0, camY = 0;
   let high = 0;
-  try { high = +localStorage.getItem('infsnake.high') || 0; } catch (e) { /* ignore */ }
+  const HIGH_KEY = CLASSIC ? 'infsnake.high.classic' : 'infsnake.high';
+  try { high = +localStorage.getItem(HIGH_KEY) || 0; } catch (e) { /* ignore */ }
 
   function resize() {
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W * DPR; canvas.height = H * DPR;
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    T = Math.max(16, Math.min(30, Math.round(Math.min(W, H) / 26)));
+    T = CLASSIC
+      ? Math.max(12, Math.min(30, Math.floor(Math.min(W / (AX * 2 + 3), (H - 80) / (AY * 2 + 3)))))
+      : Math.max(16, Math.min(30, Math.round(Math.min(W, H) / 26)));
   }
   window.addEventListener('resize', resize);
   resize();
@@ -127,10 +138,50 @@
     popups = [];
     score = 0; farthest = 0; kills = 0; suits = [false, false, false, false]; shield = false; invuln = 0; deadT = 0;
     camX = 0.5; camY = 0.5;
+    stage = 0; stageFood = 0; stageT = 0;
+  }
+
+  // Classic: keep a few pieces of food on the board at all times
+  function maintainFood() {
+    let food = 0;
+    for (const v of dropped.values()) if (v === FOOD || v === GOLD) food++;
+    for (let tries = 0; food < 3 && tries < 200; tries++) {
+      const x = Math.floor(Math.random() * (AX * 2 + 1)) - AX, y = Math.floor(Math.random() * (AY * 2 + 1)) - AY;
+      const k = key(x, y);
+      const h = player.body[0];
+      if (isRock(x, y) || occ.has(k) || dropped.has(k) || Math.abs(x - h.x) + Math.abs(y - h.y) < 3) continue;
+      dropped.set(k, Math.random() < 0.12 ? GOLD : FOOD);
+      food++;
+    }
+  }
+
+  function clearStage() {
+    addScore(500 * (stage + 1));
+    Sound.gold();
+    if (stage === STAGES.length - 1) {
+      state = 'over';
+      showOver(true);
+      return;
+    }
+    toast(`STAGE ${stage + 1} CLEAR! Next arena has more rivals`);
+    state = 'stageclear';
+    stageT = 0;
+  }
+
+  function nextStage() {
+    stage++;
+    SEED = (Math.random() * 2 ** 31) | 0;
+    eaten.clear();
+    dropped.clear();
+    player = makeSnake(0, 0, 0, 5, '#3cff8a');
+    ais = [];
+    stageFood = 0;
+    invuln = 1.5;
+    state = 'play';
   }
 
   const playerSpeed = () => Math.min(15, 8 + (player.body.length - 5) * 0.06);
-  const aiTarget = () => Math.min(10, 4 + Math.floor(score / 400));
+  const aiTarget = () => (CLASSIC ? STAGES[stage].ais : Math.min(10, 4 + Math.floor(score / 400)));
 
   // ---------------------------------------------------------------------------
   // Occupancy
@@ -182,6 +233,10 @@
     farthest = Math.max(farthest, Math.round(Math.hypot(nx, ny)));
 
     const f = consume(nx, ny);
+    if (CLASSIC && (f === FOOD || f === GOLD || f === 'bits') && ++stageFood >= STAGES[stage].goal) {
+      player.grow += 1;
+      return clearStage();
+    }
     if (f === FOOD) { player.grow += 1; addScore(10); Sound.eat(); spark(nx, ny, '#ff5ea8', 6); }
     else if (f === GOLD) { player.grow += 5; addScore(100, nx, ny); Sound.gold(); spark(nx, ny, '#ffe600', 18); }
     else if (f === 'bits') { player.grow += 1; addScore(15); Sound.eat(); spark(nx, ny, '#9cf', 5); }
@@ -266,7 +321,12 @@
     for (let tries = 0; tries < 30; tries++) {
       const ang = Math.random() * Math.PI * 2;
       const r = 16 + Math.random() * 14;
-      const x = Math.round(h.x + Math.cos(ang) * r), y = Math.round(h.y + Math.sin(ang) * r);
+      let x = Math.round(h.x + Math.cos(ang) * r), y = Math.round(h.y + Math.sin(ang) * r);
+      if (CLASSIC) {
+        x = Math.floor(Math.random() * (AX * 2 - 5)) - AX + 3;
+        y = Math.floor(Math.random() * (AY * 2 - 5)) - AY + 3;
+        if (Math.abs(x - h.x) + Math.abs(y - h.y) < 12) continue;
+      }
       const dir = (Math.random() * 4) | 0;
       const len = 5 + ((Math.random() * 10) | 0);
       const back = DIRS[(dir + 2) % 4];
@@ -289,7 +349,7 @@
     if (x !== undefined) popups.push({ x, y, text: '+' + n, t: 0 });
     if (score > high) {
       high = score;
-      try { localStorage.setItem('infsnake.high', String(high)); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(HIGH_KEY, String(high)); } catch (e) { /* ignore */ }
     }
   }
 
@@ -318,7 +378,12 @@
 
     if (state === 'dead') {
       deadT += dt;
-      if (deadT > 1.2) { state = 'over'; showOver(); }
+      if (deadT > 1.2) { state = 'over'; showOver(false); }
+    }
+    if (state === 'stageclear') {
+      stageT += dt;
+      if (stageT > 2) nextStage();
+      return;
     }
     if (state !== 'play') {
       if (state === 'title') { // attract mode: AIs roam behind the menu
@@ -331,6 +396,7 @@
     }
 
     if (invuln > 0) invuln -= dt;
+    if (CLASSIC) { rebuildOcc(); maintainFood(); }
 
     player.acc += dt * playerSpeed();
     while (player.acc >= 1 && state === 'play') { player.acc -= 1; stepPlayer(); }
@@ -415,7 +481,11 @@
 
     const alpha = state === 'play' ? Math.min(1, player.acc) : 1;
     const ppts = interp(player, alpha);
-    if (player.alive) {
+    const arenaFits = CLASSIC && (AX * 2 + 1) * T <= W && (AY * 2 + 1) * T <= H - 70;
+    if (arenaFits) {
+      camX = 0.5;
+      camY = 0.5 - 30 / T;
+    } else if (player.alive) {
       camX += (ppts[0].x - camX) * 0.18;
       camY += (ppts[0].y - camY) * 0.18;
     }
@@ -430,6 +500,10 @@
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         const cx = sx(x + 0.5), cy = sy(y + 0.5);
+        if (outside(x, y)) {
+          if (Math.abs(x) <= AX + 1 && Math.abs(y) <= AY + 1) rocks.rect(sx(x) + 1, sy(y) + 1, T - 2, T - 2);
+          continue;
+        }
         if (isRock(x, y)) {
           rocks.rect(sx(x) + 1, sy(y) + 1, T - 2, T - 2);
           continue;
@@ -539,6 +613,7 @@
     hudSet('high', high.toLocaleString());
     hudSet('length', String(player.body.length + player.grow));
     hudSet('kills', String(kills));
+    if (CLASSIC) hudSet('goal', `STAGE ${stage + 1}/${STAGES.length} · FOOD ${Math.min(stageFood, STAGES[stage].goal)}/${STAGES[stage].goal}`);
     hudSet('suits', SUITS.map((s, i) => `<span class="suit ${suits[i] ? 'got' : ''} ${i === 1 || i === 2 ? 'red' : ''}">${s}</span>`).join('') + (shield ? '<span class="shield">🛡️</span>' : ''), true);
   }
 
@@ -551,11 +626,12 @@
     toastT = setTimeout(() => el.classList.remove('show'), 2000);
   }
 
-  function showOver() {
+  function showOver(won) {
     $('o-score').textContent = score.toLocaleString();
     $('o-length').textContent = player.body.length;
-    $('o-dist').textContent = farthest;
+    $('o-dist').textContent = CLASSIC ? `${stage + 1}/${STAGES.length}` : farthest;
     $('o-kills').textContent = kills;
+    if (window.Arcade) Arcade.endScreen(!!won, won ? `All ${STAGES.length} arenas conquered!` : '');
     $('over').hidden = false;
   }
 
@@ -623,7 +699,7 @@
   function frame(now) {
     const dt = Math.min(0.05, (now - lastT) / 1000);
     lastT = now;
-    if (state === 'title') { camX += dt * 1.5; camY += dt * 0.6; player.body[0].x = Math.round(camX); player.body[0].y = Math.round(camY); }
+    if (state === 'title' && !CLASSIC) { camX += dt * 1.5; camY += dt * 0.6; player.body[0].x = Math.round(camX); player.body[0].y = Math.round(camY); }
     if (!paused) update(dt);
     render();
     updateHud();

@@ -8,6 +8,9 @@
   const ctx = view.ctx;
 
   const TAU = Math.PI * 2;
+  const CLASSIC = Arcade.classic;
+  const WAVES = 8; // classic mode: clear this many waves to win
+  const mod = (a, n) => ((a % n) + n) % n;
   const SIZES = { 3: { r: 54, score: 20 }, 2: { r: 30, score: 50 }, 1: { r: 16, score: 100 } };
   const SUITS = ['♠', '♥', '♦', '♣'];
   const PICKUPS = {
@@ -21,7 +24,8 @@
   let paused = false;
   let ship, rocks, bullets, ufos, ufoShots, pickups, particles, popups;
   let score, lives, time, farthest, suits, powers, nextLifeAt, ufoTimer, kills, fireCd, thrustSnd, shake;
-  let high = store.get('asteroids.high', 0);
+  let high = store.get(Arcade.modeKey('asteroids.high'), 0);
+  let wave = 0, waveDelay = 0;
 
   function hash(x, y, s) {
     let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(s | 0, 1103515245);
@@ -52,10 +56,43 @@
     rocks.push(makeRock(x, y, size, Math.cos(toShip) * sp + ship.vx * 0.3, Math.sin(toShip) * sp + ship.vy * 0.3));
   }
 
+  // Classic mode: a fixed number of big rocks enters from the screen edges
+  function spawnWave() {
+    wave++;
+    const n = 3 + wave;
+    for (let i = 0; i < n; i++) {
+      let x, y, tries = 0;
+      do {
+        const edge = Math.floor(rand(0, 4));
+        x = edge < 2 ? rand(0, view.W) : edge === 2 ? 0 : view.W;
+        y = edge < 2 ? (edge === 0 ? 0 : view.H) : rand(0, view.H);
+      } while (Math.hypot(x - ship.x, y - ship.y) < 260 && tries++ < 20);
+      const a = rand(0, TAU), sp = rand(40, 90) * (1 + wave * 0.1);
+      rocks.push(makeRock(x, y, 3, Math.cos(a) * sp, Math.sin(a) * sp));
+    }
+    toast(`WAVE ${wave} OF ${WAVES}`);
+    Sound.arp([392, 523, 659], 0.09, 'square', 0.04);
+  }
+
+  function wrapAll() {
+    const W = view.W, H = view.H;
+    for (const o of [ship, ...rocks, ...bullets, ...ufos, ...ufoShots, ...pickups]) { o.x = mod(o.x, W); o.y = mod(o.y, H); }
+  }
+
+  function endGame(won) {
+    state = 'over';
+    $('o-score').textContent = score.toLocaleString();
+    $('o-kills').textContent = kills;
+    $('o-dist').textContent = CLASSIC ? `${wave}/${WAVES}` : Math.round(farthest / 100);
+    Arcade.endScreen(won, won ? `All ${WAVES} waves cleared!` : '');
+    $('over').hidden = false;
+  }
+
   function spawnUfo() {
     const small = time > 90 && Math.random() < Math.min(0.6, time / 400);
     const ang = rand(0, TAU), R = spawnRadius();
-    ufos.push({ x: ship.x + Math.cos(ang) * R, y: ship.y + Math.sin(ang) * R, vx: 0, vy: 0, r: small ? 14 : 24, small, t: 0, shot: 1.2, turn: 0 });
+    const pos = CLASSIC ? { x: Math.random() < 0.5 ? 0 : view.W, y: rand(0, view.H) } : { x: ship.x + Math.cos(ang) * R, y: ship.y + Math.sin(ang) * R };
+    ufos.push({ x: pos.x, y: pos.y, vx: 0, vy: 0, r: small ? 14 : 24, small, t: 0, shot: 1.2, turn: 0 });
     toast(small ? '⚠ SMALL SAUCER — it aims!' : '⚠ SAUCER INBOUND');
   }
 
@@ -65,7 +102,9 @@
     score = 0; lives = 3; time = 0; farthest = 0; suits = [false, false, false, false];
     powers = { triple: 0, rapid: 0 };
     nextLifeAt = 10000; ufoTimer = rand(25, 35); kills = 0; fireCd = 0; thrustSnd = 0; shake = 0;
-    for (let i = 0; i < 8; i++) spawnRock(Math.random() < 0.7 ? 3 : 2);
+    wave = 0; waveDelay = 0;
+    if (CLASSIC) { ship.x = view.W / 2; ship.y = view.H / 2; spawnWave(); }
+    else for (let i = 0; i < 8; i++) spawnRock(Math.random() < 0.7 ? 3 : 2);
   }
 
   function start() {
@@ -81,7 +120,7 @@
     score += n;
     if (x !== undefined) popups.push({ x, y, text: String(n), t: 0 });
     if (score >= nextLifeAt) { nextLifeAt += 10000; lives++; toast('EXTRA SHIP!'); Sound.arp([523, 659, 784, 1046], 0.07); }
-    if (score > high) { high = score; store.set('asteroids.high', high); }
+    if (score > high) { high = score; store.set(Arcade.modeKey('asteroids.high'), high); }
   }
 
   function explode(x, y, n, color, speed = 160) {
@@ -126,13 +165,7 @@
     lives--;
     powers = { triple: 0, rapid: 0 };
     if (lives <= 0) {
-      setTimeout(() => {
-        state = 'over';
-        $('o-score').textContent = score.toLocaleString();
-        $('o-kills').textContent = kills;
-        $('o-dist').textContent = Math.round(farthest / 100);
-        $('over').hidden = false;
-      }, 1400);
+      setTimeout(() => endGame(false), 1400);
     }
   }
 
@@ -157,7 +190,7 @@
     for (const p of popups) p.t += dt;
     popups = popups.filter((p) => p.t < 0.9);
     if (shake > 0) shake -= dt;
-    if (state === 'title') { time += dt; moveWorld(dt); ship.x += 60 * dt; ship.y += 25 * dt; maintainRocks(); return; }
+    if (state === 'title') { time += dt; moveWorld(dt); ship.x += 60 * dt; ship.y += 25 * dt; maintainRocks(); if (CLASSIC) wrapAll(); return; }
     if (state !== 'play') return;
     time += dt;
 
@@ -191,7 +224,8 @@
       if (ship.respawn <= 0) {
         // respawn somewhere clear
         let tries = 0;
-        while (tries++ < 20 && rocks.some((r) => Math.hypot(r.x - ship.x, r.y - ship.y) < r.r + 120)) { ship.x += rand(-200, 200); ship.y += rand(-200, 200); }
+        if (CLASSIC) { ship.x = view.W / 2; ship.y = view.H / 2; }
+        while (tries++ < 20 && rocks.some((r) => Math.hypot(r.x - ship.x, r.y - ship.y) < r.r + 120)) { ship.x += rand(-200, 200); ship.y += rand(-200, 200); if (CLASSIC) { ship.x = mod(ship.x, view.W); ship.y = mod(ship.y, view.H); } }
         Object.assign(ship, { vx: 0, vy: 0, a: -Math.PI / 2, alive: true, invuln: 3 });
       }
     }
@@ -264,9 +298,21 @@
       }
       if (Math.floor(u.t * 6) !== Math.floor((u.t - dt) * 6)) Sound.tone(u.small ? 1100 : 700, u.small ? 900 : 560, 0.08, 'sine', 0.012);
     }
-    ufos = ufos.filter((u) => Math.hypot(u.x - ship.x, u.y - ship.y) < spawnRadius() * 3);
+    ufos = ufos.filter((u) => (CLASSIC ? u.t < 22 : Math.hypot(u.x - ship.x, u.y - ship.y) < spawnRadius() * 3));
 
     maintainRocks();
+    if (CLASSIC) {
+      wrapAll();
+      if (!rocks.length && state === 'play') {
+        waveDelay += dt;
+        if (waveDelay > 2) {
+          waveDelay = 0;
+          addScore(1000 * wave);
+          if (wave >= WAVES) return endGame(true);
+          spawnWave();
+        }
+      }
+    }
   }
 
   function moveWorld(dt) {
@@ -275,6 +321,7 @@
   }
 
   function maintainRocks() {
+    if (CLASSIC) return;
     const R = spawnRadius();
     rocks = rocks.filter((r) => Math.hypot(r.x - ship.x, r.y - ship.y) < R * 2.4);
     const mass = rocks.reduce((m, r) => m + r.size, 0);
@@ -286,7 +333,7 @@
     if (!ship.alive) return;
     explode(ship.x, ship.y, 16, '#9ffcff');
     const a = rand(0, TAU), d = rand(250, 500);
-    ship.x += Math.cos(a) * d; ship.y += Math.sin(a) * d;
+    if (CLASSIC) { ship.x = rand(40, view.W - 40); ship.y = rand(40, view.H - 40); } else { ship.x += Math.cos(a) * d; ship.y += Math.sin(a) * d; }
     ship.vx *= 0.2; ship.vy *= 0.2;
     ship.invuln = Math.max(ship.invuln, 0.6);
     explode(ship.x, ship.y, 16, '#9ffcff');
@@ -319,8 +366,8 @@
     ctx.fillStyle = '#02020a';
     ctx.fillRect(0, 0, W, H);
     if (!ship) return;
-    const camX = ship.x - W / 2 + (shake > 0 ? rand(-8, 8) * shake : 0);
-    const camY = ship.y - H / 2 + (shake > 0 ? rand(-8, 8) * shake : 0);
+    const camX = (CLASSIC ? 0 : ship.x - W / 2) + (shake > 0 ? rand(-8, 8) * shake : 0);
+    const camY = (CLASSIC ? 0 : ship.y - H / 2) + (shake > 0 ? rand(-8, 8) * shake : 0);
 
     // parallax stars
     for (const [layer, par, cell, size, alpha] of [[1, 0.15, 140, 1, 0.45], [2, 0.4, 180, 1.5, 0.7], [3, 0.8, 260, 2, 0.95]]) {
@@ -442,7 +489,7 @@
     ctx.globalAlpha = 1;
     ctx.restore();
 
-    if (state !== 'title') drawRadar();
+    if (state !== 'title' && !CLASSIC) drawRadar();
 
     if (paused && state === 'play') {
       ctx.fillStyle = '#0009'; ctx.fillRect(0, 0, W, H);
@@ -481,7 +528,7 @@
     set('score', score.toLocaleString());
     set('high', high.toLocaleString());
     set('lives', '▲'.repeat(Math.max(0, Math.min(lives, 8))));
-    set('dist', `${Math.round(Math.hypot(ship.x, ship.y) / 100)} ly from home`);
+    set('dist', CLASSIC ? `WAVE ${wave}/${WAVES} · ${rocks.length} ROCKS` : `${Math.round(Math.hypot(ship.x, ship.y) / 100)} ly from home`);
     const act = [];
     if (ship.shield > 0) act.push(`<span style="color:#3fd8ff">S${Math.ceil(ship.shield)}</span>`);
     if (powers.triple > 0) act.push(`<span style="color:#ffd23f">3${Math.ceil(powers.triple)}</span>`);

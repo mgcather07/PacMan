@@ -100,92 +100,122 @@
     .tet h2, .tet .cta { color: #c77dff; }
     .game.sht:hover { border-color: #ff4d6d; box-shadow: 0 20px 60px #ff4d6d44; }
     .sht h2, .sht .cta { color: #ff6b8a; }
+    .only-classic { display: none !important; }
+    body[data-tab="classic"] .only-classic { display: revert !important; }
+    body[data-tab="classic"] .only-infinite { display: none !important; }
+    .tabs { display: inline-flex; gap: 6px; margin-top: 26px; padding: 6px; border-radius: 16px; background: #ffffff0d; border: 1px solid #ffffff1a; }
+    .tabs button { font: 12px "Press Start 2P", monospace; color: #9a9ab8; background: transparent; border: 0; border-radius: 11px; padding: 14px 20px; cursor: pointer; transition: background .15s, color .15s; }
+    .tabs button:hover { color: #fff; }
+    .tabs button[aria-selected="true"] { background: #ffe600; color: #1b1400; box-shadow: 0 4px 18px #ffe60044; }
+    body[data-tab="classic"] .tabs button[aria-selected="true"] { background: #7dff6a; box-shadow: 0 4px 18px #7dff6a44; }
+    body[data-tab="classic"] h1 span { color: #7dff6a; text-shadow: 0 0 24px #7dff6a66, 5px 5px 0 #2e7d32; }
   </style>
 </head>
 <body>
   <canvas id="bg"></canvas>
   <main>
     <header>
-      <h1>INFINITE <span>ARCADE</span></h1>
-      <p>Eleven games. Eight of them never end.</p>
+      <h1><span class="only-infinite" style="color:inherit;text-shadow:inherit">INFINITE</span><span class="only-classic" style="color:inherit;text-shadow:inherit">CLASSIC</span> <span>ARCADE</span></h1>
+      <p class="only-infinite">Eight arcade games that never end — plus solitaire.</p>
+      <p class="only-classic">Eight arcade games you can actually beat — plus solitaire.</p>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="infinite">∞ Infinite</button>
+        <button role="tab" data-tab="classic">🏆 Classic</button>
+      </nav>
     </header>
 
     <section class="grid">
-      <a class="game pac" href="/pacman/">
+      <a class="game pac" data-base="/pacman/" href="/pacman/">
         <div class="preview"><canvas id="pac-preview"></canvas></div>
         <div class="body">
-          <h2>Infinite Pac-Man</h2>
-          <p>A maze that generates forever in every direction. No walls at the edge of the world — just more dots, more ghosts, and more speed the farther you go.</p>
-          <div class="tags"><span>Endless</span><span>Procedural</span><span>Keyboard + swipe</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Pac-Man</h2>
+          <p class="only-infinite">A maze that generates forever in every direction. No walls at the edge of the world — just more dots, more ghosts, and more speed the farther you go.</p>
+          <p class="only-classic">Four randomly built mazes with walls all around. Clear every dot to advance, and beat level four to win.</p>
+          <div class="tags only-infinite"><span>Endless</span><span>Procedural</span><span>Keyboard + swipe</span></div>
+          <div class="tags only-classic"><span>4 levels</span><span>Clear the maze</span><span>Card suits</span></div>
           <div class="cta">PLAY ▶</div>
         </div>
       </a>
 
-      <a class="game snk" href="/snake/">
+      <a class="game snk" data-base="/snake/" href="/snake/">
         <div class="preview"><canvas id="snake-preview"></canvas></div>
         <div class="body">
-          <h2>Infinite Snake</h2>
-          <p>Slither through a world with no edges. Eat, grow, dodge rocks, and trick rival snakes into crashing into you so they burst into food.</p>
-          <div class="tags"><span>Endless</span><span>Rival snakes</span><span>Shields</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Snake</h2>
+          <p class="only-infinite">Slither through a world with no edges. Eat, grow, dodge rocks, and trick rival snakes into crashing into you so they burst into food.</p>
+          <p class="only-classic">Three walled arenas with rival snakes. Eat enough food to clear each stage, then conquer the final arena to win.</p>
+          <div class="tags only-infinite"><span>Endless</span><span>Rival snakes</span><span>Shields</span></div>
+          <div class="tags only-classic"><span>3 stages</span><span>Rival snakes</span><span>Shields</span></div>
           <div class="cta">SLITHER ▶</div>
         </div>
       </a>
 
-      <a class="game mns" href="/minesweeper/">
+      <a class="game mns" data-base="/minesweeper/" href="/minesweeper/">
         <div class="preview"><div class="field"><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="o"></i><i></i><i class="o"></i><i class="r n1">1</i><i class="r o"></i><i class="r n1">1</i><i class="o"></i><i></i><i class="f o"></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i class="r n1">1</i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r n1">1</i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="o"></i><i class="f"></i><i class="r n2 o">2</i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r n2">2</i><i class="r n1 o">1</i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i><i class="r n2 o">2</i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r n1 o">1</i><i></i><i class="o"></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="r n3">3</i><i class="r n1 o">1</i><i class="r"></i><i class="r n2 o">2</i><i></i><i class="o"></i><i></i></div></div>
         <div class="body">
-          <h2>Infinite Minesweeper</h2>
-          <p>A minefield that never ends. Three lives, mines that get denser the farther you roam, and your field is saved so you can keep exploring later.</p>
-          <div class="tags"><span>Endless</span><span>Saves progress</span><span>Touch friendly</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Minesweeper</h2>
+          <p class="only-infinite">A minefield that never ends. Three lives, mines that get denser the farther you roam, and your field is saved so you can keep exploring later.</p>
+          <p class="only-classic">The classic boards: Beginner, Intermediate and Expert. One life, a timer, and your best times are saved.</p>
+          <div class="tags only-infinite"><span>Endless</span><span>Saves progress</span><span>Touch friendly</span></div>
+          <div class="tags only-classic"><span>3 difficulties</span><span>Best times</span><span>Touch friendly</span></div>
           <div class="cta">DIG ▶</div>
         </div>
       </a>
-      <a class="game frg" href="/frogger/">
+      <a class="game frg" data-base="/frogger/" href="/frogger/">
         <div class="preview"><canvas id="frog-preview"></canvas></div>
         <div class="body">
-          <h2>Infinite Frogger</h2>
-          <p>Hop forever across endless roads, rivers and railways. Ride logs and diving turtles, dodge trains, and keep ahead of the eagle.</p>
-          <div class="tags"><span>Endless</span><span>Tap + swipe</span><span>Card suits</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Frogger</h2>
+          <p class="only-infinite">Hop forever across endless roads, rivers and railways. Ride logs and diving turtles, dodge trains, and keep ahead of the eagle.</p>
+          <p class="only-classic">Three courses with a finish line at the end of each. Cross roads, rivers and railways and reach the final finish to win.</p>
+          <div class="tags only-infinite"><span>Endless</span><span>Tap + swipe</span><span>Card suits</span></div>
+          <div class="tags only-classic"><span>3 courses</span><span>Finish lines</span><span>Card suits</span></div>
           <div class="cta">HOP ▶</div>
         </div>
       </a>
 
-      <a class="game brk" href="/breakout/">
+      <a class="game brk" data-base="/breakout/" href="/breakout/">
         <div class="preview"><canvas id="breakout-preview"></canvas></div>
         <div class="body">
-          <h2>Infinite Breakout</h2>
-          <p>The wall never ends: it keeps sliding down, tougher and faster. Grab multiball, lasers and fireballs and smash it before it reaches your paddle.</p>
-          <div class="tags"><span>Endless</span><span>Power-ups</span><span>Mouse + touch</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Breakout</h2>
+          <p class="only-infinite">The wall never ends: it keeps sliding down, tougher and faster. Grab multiball, lasers and fireballs and smash it before it reaches your paddle.</p>
+          <p class="only-classic">Five hand-built levels that stay put. Clear every breakable brick to advance, and finish level five to win.</p>
+          <div class="tags only-infinite"><span>Endless</span><span>Power-ups</span><span>Mouse + touch</span></div>
+          <div class="tags only-classic"><span>5 levels</span><span>Power-ups</span><span>Mouse + touch</span></div>
           <div class="cta">SMASH ▶</div>
         </div>
       </a>
 
-      <a class="game ast" href="/asteroids/">
+      <a class="game ast" data-base="/asteroids/" href="/asteroids/">
         <div class="preview"><canvas id="asteroids-preview"></canvas></div>
         <div class="body">
-          <h2>Infinite Asteroids</h2>
-          <p>Fly forever through an endless asteroid field. Blast rocks apart, outgun flying saucers, grab shields and triple shot, and see how far from home you get.</p>
-          <div class="tags"><span>Endless space</span><span>Saucers</span><span>Radar</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Asteroids</h2>
+          <p class="only-infinite">Fly forever through an endless asteroid field. Blast rocks apart, outgun flying saucers, grab shields and triple shot, and see how far from home you get.</p>
+          <p class="only-classic">The classic wrap-around screen. Clear eight waves of rocks and saucers to win.</p>
+          <div class="tags only-infinite"><span>Endless space</span><span>Saucers</span><span>Radar</span></div>
+          <div class="tags only-classic"><span>8 waves</span><span>Wrap-around</span><span>Saucers</span></div>
           <div class="cta">LAUNCH ▶</div>
         </div>
       </a>
 
-      <a class="game tet" href="/tetris/">
+      <a class="game tet" data-base="/tetris/" href="/tetris/">
         <div class="preview"><canvas id="tetris-preview"></canvas></div>
         <div class="body">
-          <h2>Infinite Tetris</h2>
-          <p>Tower mode has no ceiling: climb forever while a tide rises beneath you, sealing rows before they leak. Or play Marathon, the classic that never ends.</p>
-          <div class="tags"><span>Tower + Marathon</span><span>Hold &amp; ghost</span><span>SRS rotation</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Tetris</h2>
+          <p class="only-infinite">Tower mode has no ceiling: climb forever while a tide rises beneath you, sealing rows before they leak. Or play Marathon, the classic that never ends.</p>
+          <p class="only-classic">Sprint: clear 40 lines as fast as you can. Marathon: survive to 150 lines. Hit the goal and you win.</p>
+          <div class="tags only-infinite"><span>Tower + Marathon</span><span>Hold &amp; ghost</span><span>SRS rotation</span></div>
+          <div class="tags only-classic"><span>Sprint 40</span><span>Marathon 150</span><span>Best times</span></div>
           <div class="cta">STACK ▶</div>
         </div>
       </a>
 
-      <a class="game sht" href="/shooter/">
+      <a class="game sht" data-base="/shooter/" href="/shooter/">
         <div class="preview"><canvas id="shooter-preview"></canvas></div>
         <div class="body">
-          <h2>Infinite Space Shooter</h2>
-          <p>Wave after wave forever, with a boss every fifth wave. Power your guns up to a five-way spread with homing missiles, and save bombs for the bullet storms.</p>
-          <div class="tags"><span>Endless waves</span><span>Bosses</span><span>Auto-fire</span></div>
+          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Space Shooter</h2>
+          <p class="only-infinite">Wave after wave forever, with a boss every fifth wave. Power your guns up to a five-way spread with homing missiles, and save bombs for the bullet storms.</p>
+          <p class="only-classic">Fifteen waves and three bosses. Destroy the final boss on wave fifteen to win.</p>
+          <div class="tags only-infinite"><span>Endless waves</span><span>Bosses</span><span>Auto-fire</span></div>
+          <div class="tags only-classic"><span>15 waves</span><span>3 bosses</span><span>Auto-fire</span></div>
           <div class="cta">LAUNCH ▶</div>
         </div>
       </a>
@@ -219,6 +249,24 @@
     <footer>Arrow keys or WASD for Pac-Man &amp; Snake · right-click or long-press to flag in Minesweeper · Ctrl+Z to undo in Klondike, Spider &amp; FreeCell</footer>
   </main>
 
+  <script>
+    // Infinite / Classic tabs
+    (() => {
+      const buttons = document.querySelectorAll('.tabs button');
+      function setTab(tab, push) {
+        document.body.dataset.tab = tab;
+        buttons.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+        document.querySelectorAll('a.game[data-base]').forEach((a) => { a.href = a.dataset.base + (tab === 'classic' ? '?mode=classic' : ''); });
+        try { localStorage.setItem('arcade.tab', tab); } catch (e) { /* ignore */ }
+        if (push) history.replaceState(null, '', tab === 'classic' ? '#classic' : location.pathname);
+      }
+      buttons.forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab, true)));
+      let initial = location.hash === '#classic' ? 'classic' : location.hash === '#infinite' ? 'infinite' : null;
+      if (!initial) { try { initial = localStorage.getItem('arcade.tab'); } catch (e) { /* ignore */ } }
+      setTab(initial === 'classic' ? 'classic' : 'infinite', false);
+      addEventListener('hashchange', () => setTab(location.hash === '#classic' ? 'classic' : 'infinite', false));
+    })();
+  </script>
   <script>
     // Animated Pac-Man preview + drifting dot background
     (() => {

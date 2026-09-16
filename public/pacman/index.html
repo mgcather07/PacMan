@@ -28,6 +28,10 @@
   <style>
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
+    .only-classic { display: none !important; }
+    [data-mode="classic"] .only-classic { display: revert !important; }
+    [data-mode="classic"] .only-infinite { display: none !important; }
+    #over.won h1 { color: #7dff6a; text-shadow: 0 0 18px #7dff6a88, 4px 4px 0 #2e7d32; }
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; color: #fff; font-family: "Press Start 2P", ui-monospace, monospace; touch-action: none; user-select: none; -webkit-user-select: none; }
     canvas { display: block; }
     a { color: inherit; }
@@ -58,6 +62,7 @@
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 22px 0; }
     .stats div { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px 6px; font-size: 16px; }
     .stats span { display: block; font-size: 8px; color: #8a8aff; margin-bottom: 8px; }
+    .stats span span { margin: 0; }
     .legend { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; font-size: 9px; color: #aaa; }
     .legend b { font-family: serif; font-size: 16px; color: #fff; font-weight: normal; }
 
@@ -104,8 +109,9 @@
 
   <div class="overlay" id="title">
     <div class="panel">
-      <h1><small>INFINITE</small>PAC-MAN</h1>
-      <p>The maze never ends. Every direction is a brand-new,<br>randomly generated labyrinth — go as far as you dare.</p>
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>PAC-MAN</h1>
+      <p class="only-infinite">The maze never ends. Every direction is a brand-new,<br>randomly generated labyrinth — go as far as you dare.</p>
+      <p class="only-classic">Four walled mazes, each randomly built. Eat every dot<br>to clear a maze — clear all four to win.</p>
       <div class="legend">
         <span>● dot 10</span><span>⬤ power 50</span><span><b>♠♥♦♣</b> card 500</span>
       </div>
@@ -122,15 +128,16 @@
       <h1>GAME OVER</h1>
       <div class="stats">
         <div><span>SCORE</span><b id="final-score">0</b></div>
-        <div><span>FARTHEST</span><b id="final-dist">0</b></div>
+        <div><span><span class="only-infinite">FARTHEST</span><span class="only-classic">DOTS LEFT</span></span><b id="final-dist">0</b></div>
         <div><span>LEVEL</span><b id="final-level">1</b></div>
       </div>
-      <p>A new maze is generated every game.</p>
+      <p class="only-infinite">A new maze is generated every game.</p>
       <button class="btn" id="again-btn">PLAY AGAIN</button>
       <a class="btn alt" href="/">ARCADE</a>
     </div>
   </div>
 
+  <script src="/shared/arcade.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

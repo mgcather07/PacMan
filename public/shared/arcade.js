@@ -136,8 +136,35 @@
     });
   }
 
+
+  // Infinite vs Classic (beatable) mode, chosen by ?mode=classic
+  const mode = new URLSearchParams(location.search).get('mode') === 'classic' ? 'classic' : 'infinite';
+  const classic = mode === 'classic';
+  function applyMode() {
+    document.documentElement.dataset.mode = mode;
+    if (!classic) return;
+    document.title = document.title.replace(/^Infinite /, 'Classic ');
+    document.querySelectorAll('a[href="/"]').forEach((a) => { a.href = '/#classic'; });
+  }
+  applyMode();
+  const modeKey = (k) => (classic ? k + '.classic' : k);
+  // Reuse the game-over overlay for wins: sets its heading and optional message
+  function endScreen(won, message) {
+    const over = document.getElementById('over');
+    if (!over) return;
+    const h = over.querySelector('h1, h2');
+    if (!h.dataset.lose) h.dataset.lose = h.textContent;
+    h.textContent = won ? 'YOU WIN!' : h.dataset.lose;
+    let p = over.querySelector('.end-message');
+    if (!p) { p = document.createElement('p'); p.className = 'end-message'; h.after(p); }
+    p.textContent = message || '';
+    p.hidden = !message;
+    over.classList.toggle('won', !!won);
+    if (won) { Sound.init(); Sound.arp([523, 659, 784, 1046, 784, 1046, 1318], 0.11, 'square', 0.05); }
+  }
+
   const rand = (a, b) => a + Math.random() * (b - a);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  window.Arcade = { Sound, setupCanvas, toast, store, swipe, bindPadButtons, soundButton, rand, clamp };
+  window.Arcade = { Sound, setupCanvas, toast, store, swipe, bindPadButtons, soundButton, rand, clamp, mode, classic, modeKey, endScreen };
 })();

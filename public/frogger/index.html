@@ -61,8 +61,9 @@
 
   <div class="overlay" id="title">
     <div class="panel">
-      <h1><small>INFINITE</small>FROGGER</h1>
-      <p>The road never ends. Hop across traffic, ride logs and turtles<br>over rivers, and dodge trains — forever.</p>
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>FROGGER</h1>
+      <p class="only-infinite">The road never ends. Hop across traffic, ride logs and turtles<br>over rivers, and dodge trains — forever.</p>
+      <p class="only-classic">Three courses, each longer and faster than the last.<br>Cross the checkered finish line on all three to win.</p>
       <div class="legend"><span>🪙 coin +50</span><span>♠♥♦♣ card +250</span><span>🐸 extra life every 100 rows</span></div>
       <p>Don’t dawdle: the screen keeps moving, and the eagle<br>grabs frogs that fall behind. Turtles sometimes dive!<br>
         <span class="k">ARROWS / WASD</span> to hop · <span class="k">P</span> pause<br>Tap to hop forward · swipe to hop any direction</p>
@@ -76,10 +77,10 @@
       <h1>GAME OVER</h1>
       <div class="stats">
         <div><span>SCORE</span><b id="o-score">0</b></div>
-        <div><span>ROWS</span><b id="o-rows">0</b></div>
+        <div><span><span class="only-infinite">ROWS</span><span class="only-classic">COURSE</span></span><b id="o-rows">0</b></div>
         <div><span>COINS</span><b id="o-coins">0</b></div>
       </div>
-      <p>Every run is a brand-new road.</p>
+      <p class="only-infinite">Every run is a brand-new road.</p>
       <button class="btn" id="again-btn">PLAY AGAIN</button>
       <a class="btn alt" href="/">ARCADE</a>
     </div>

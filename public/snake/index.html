@@ -28,6 +28,12 @@
   <style>
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
+    .only-classic { display: none !important; }
+    [data-mode="classic"] .only-classic { display: revert !important; }
+    [data-mode="classic"] .only-infinite { display: none !important; }
+    #over.won h1 { color: #fff; text-shadow: 0 0 20px #3cff8a, 4px 4px 0 #0a6b35; }
+    .end-message { color: #fff !important; }
+    .stats span span { margin: 0; }
     html, body { margin: 0; height: 100%; background: #07071a; overflow: hidden; color: #fff; font-family: "Press Start 2P", ui-monospace, monospace; touch-action: none; user-select: none; -webkit-user-select: none; }
     canvas { display: block; }
     .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 16px; pointer-events: none; background: linear-gradient(#07071add, #07071a00); font-size: 12px; }
@@ -76,7 +82,7 @@
       <span id="score">0</span>
       <span class="label">LENGTH <span id="length" style="color:#fff">5</span> · KILLS <span id="kills" style="color:#fff">0</span></span>
     </div>
-    <div class="col" style="align-items:center"><div id="suits"></div></div>
+    <div class="col" style="align-items:center"><div id="suits"></div><span id="goal" class="label only-classic" style="color:#fff"></span></div>
     <div class="col right">
       <span class="label">HIGH SCORE</span>
       <span id="high">0</span>
@@ -98,8 +104,9 @@
 
   <div class="overlay" id="title">
     <div class="panel">
-      <h1><small>INFINITE</small>SNAKE</h1>
-      <p>No walls at the edge of the world — just rocks, food,<br>and rival snakes, forever in every direction.</p>
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>SNAKE</h1>
+      <p class="only-infinite">No walls at the edge of the world — just rocks, food,<br>and rival snakes, forever in every direction.</p>
+      <p class="only-classic">Three walled arenas, each with more rival snakes.<br>Eat enough food to clear each stage — clear all three to win.</p>
       <div class="legend">
         <span><b>●</b> food +1</span><span style="color:#ffe600">★ gold +5</span><span>♠♥♦♣ card</span>
       </div>
@@ -118,15 +125,16 @@
       <div class="stats">
         <div><span>SCORE</span><b id="o-score">0</b></div>
         <div><span>LENGTH</span><b id="o-length">0</b></div>
-        <div><span>FARTHEST</span><b id="o-dist">0</b></div>
+        <div><span><span class="only-infinite">FARTHEST</span><span class="only-classic">STAGE</span></span><b id="o-dist">0</b></div>
         <div><span>KILLS</span><b id="o-kills">0</b></div>
       </div>
-      <p>Every game is a brand-new world.</p>
+      <p class="only-infinite">Every game is a brand-new world.</p>
       <button class="btn" id="again-btn">PLAY AGAIN</button>
       <a class="btn alt" href="/">ARCADE</a>
     </div>
   </div>
 
+  <script src="/shared/arcade.js"></script>
   <script src="snake.js"></script>
 </body>
 </html>

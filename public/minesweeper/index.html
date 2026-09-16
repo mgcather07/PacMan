@@ -28,6 +28,13 @@
   <style>
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
+    .only-classic { display: none !important; }
+    [data-mode="classic"] .only-classic { display: revert !important; }
+    [data-mode="classic"] .only-infinite { display: none !important; }
+    #over.won h2 { color: #7dff6a; }
+    .end-message { color: #fff; margin: -6px 0 16px; }
+    select#diff { font: 600 14px Inter, system-ui, sans-serif; color: #fff; background: #ffffff22; border: 1px solid #ffffff40; border-radius: 10px; padding: 8px 10px; }
+    select#diff option { color: #000; }
     html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2b12; color: #fff; font-family: Inter, system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
     canvas { display: block; touch-action: none; cursor: pointer; }
     canvas.panning { cursor: grabbing; }
@@ -75,13 +82,18 @@
   <header class="bar">
     <a class="brand" href="/" title="Back to the arcade">⌂ <span>ARCADE</span></a>
     <div class="stats">
-      <div><span>CLEARED</span><b id="score">0</b></div>
-      <div class="hide-sm"><span>BEST</span><b id="best">0</b></div>
+      <div><span><span class="only-infinite">CLEARED</span><span class="only-classic">MINES</span></span><b id="score">0</b></div>
+      <div class="hide-sm"><span><span class="only-infinite">BEST</span><span class="only-classic">BEST TIME</span></span><b id="best">0</b></div>
       <div><span>LIVES</span><b id="lives"></b></div>
-      <div class="hide-sm"><span>FLAGS</span><b id="flags">0</b></div>
-      <div><span>REACH</span><b id="dist">0</b></div>
+      <div class="hide-sm"><span><span class="only-infinite">FLAGS</span><span class="only-classic">OPENED</span></span><b id="flags">0</b></div>
+      <div><span><span class="only-infinite">REACH</span><span class="only-classic">TIME</span></span><b id="dist">0</b></div>
     </div>
     <div class="actions">
+      <select id="diff" class="only-classic" title="Difficulty">
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="expert">Expert</option>
+      </select>
       <button id="mode-btn" title="Toggle dig / flag (F)">⛏️ Dig</button>
       <button id="home-btn" title="Back to start (H)">🎯<span class="hide-sm"> Start</span></button>
       <button id="new-btn" title="New minefield">＋<span class="hide-sm"> New</span></button>
@@ -94,8 +106,10 @@
   </div>
 
   <div id="hint">
-    <b>Infinite Minesweeper</b> · tap any tile to begin (the first tap is always safe)<br>
-    Drag to explore · right-click or long-press to flag · 3 lives · mines get denser the farther you go
+    <span class="only-infinite"><b>Infinite Minesweeper</b> · tap any tile to begin (the first tap is always safe)<br>
+    Drag to explore · right-click or long-press to flag · 3 lives · mines get denser the farther you go</span>
+    <span class="only-classic"><b>Classic Minesweeper</b> · open every safe tile to win (the first tap is always safe)<br>
+    Right-click or long-press to flag · click a number to open around it · one life</span>
   </div>
   <div id="toast"></div>
 
@@ -104,14 +118,15 @@
       <h2>FIELD LOST</h2>
       <div class="grid3">
         <div><span>Cleared</span><b id="o-score">0</b></div>
-        <div><span>Reach</span><b id="o-dist">0</b></div>
+        <div><span><span class="only-infinite">Reach</span><span class="only-classic">Time</span></span><b id="o-dist">0</b></div>
         <div><span>Flags</span><b id="o-flags">0</b></div>
       </div>
-      <button class="big primary" id="again-btn">New minefield</button>
+      <button class="big primary" id="again-btn"><span class="only-infinite">New minefield</span><span class="only-classic">Play again</span></button>
       <a class="big" href="/">Back to the arcade</a>
     </div>
   </div>
 
+  <script src="/shared/arcade.js"></script>
   <script src="mines.js"></script>
 </body>
 </html>

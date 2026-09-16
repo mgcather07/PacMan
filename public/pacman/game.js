@@ -29,8 +29,13 @@
   const S = 3;
   const P_OPEN = 0.55;
   const DIRS = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 }]; // R D L U
-  const baseH = (i, j) => hash(i, j, 11) < P_OPEN; // node(i,j) <-> node(i+1,j)
-  const baseV = (i, j) => hash(i, j, 23) < P_OPEN; // node(i,j) <-> node(i,j+1)
+  // Classic mode: a bounded maze of nodes -NX..NX × -NY..NY, cleared level by level
+  const CLASSIC = !!(window.Arcade && Arcade.classic);
+  const LEVELS = 4, NX = 4, NY = 3;
+  const inNodes = (i, j) => !CLASSIC || (Math.abs(i) <= NX && Math.abs(j) <= NY);
+  const NEIGHBOR = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  const baseH = (i, j) => inNodes(i, j) && inNodes(i + 1, j) && hash(i, j, 11) < P_OPEN; // node(i,j) <-> node(i+1,j)
+  const baseV = (i, j) => inNodes(i, j) && inNodes(i, j + 1) && hash(i, j, 23) < P_OPEN; // node(i,j) <-> node(i,j+1)
 
   const forcedCache = new Map();
   function forcedEdges(i, j) {
@@ -40,9 +45,9 @@
     const open = [baseH(i, j), baseV(i, j), baseH(i - 1, j), baseV(i, j - 1)];
     const deg = open.filter(Boolean).length;
     m = 0;
-    if (deg < 2) {
-      const closed = [0, 1, 2, 3].filter((d) => !open[d]).sort((a, b) => hash(i, j, 31 + a) - hash(i, j, 31 + b));
-      for (let k = 0; k < 2 - deg; k++) m |= 1 << closed[k];
+    if (deg < 2 && inNodes(i, j)) {
+      const closed = [0, 1, 2, 3].filter((d) => !open[d] && inNodes(i + NEIGHBOR[d][0], j + NEIGHBOR[d][1])).sort((a, b) => hash(i, j, 31 + a) - hash(i, j, 31 + b));
+      for (let k = 0; k < 2 - deg && k < closed.length; k++) m |= 1 << closed[k];
     }
     if (forcedCache.size > 300000) forcedCache.clear();
     forcedCache.set(key, m);
@@ -52,6 +57,7 @@
   const openV = (i, j) => baseV(i, j) || (forcedEdges(i, j) & 2) !== 0 || (forcedEdges(i, j + 1) & 8) !== 0;
 
   function isWall(x, y) {
+    if (CLASSIC && (Math.abs(x) > NX * S || Math.abs(y) > NY * S)) return true;
     const mx = mod(x, S), my = mod(y, S);
     if (mx === 0 && my === 0) return false;
     if (mx !== 0 && my !== 0) return true;
@@ -134,7 +140,9 @@
   let pac, ghosts, fruit, popups;
   let score, lives, dotsEaten, level, frightT, combo, suits, nextLifeAt, farthest, modeT, scatter, freezeT;
   let highScore = 0;
-  try { highScore = +localStorage.getItem('infpac.high') || 0; } catch (e) { /* ignore */ }
+  const HIGH_KEY = CLASSIC ? 'infpac.high.classic' : 'infpac.high';
+  let dotsLeft = 0;
+  try { highScore = +localStorage.getItem(HIGH_KEY) || 0; } catch (e) { /* ignore */ }
 
   function resize() {
     DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -144,14 +152,50 @@
     canvas.height = H * DPR;
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
-    T = Math.max(18, Math.min(34, Math.round(Math.min(W, H) / 21)));
+    T = CLASSIC
+      ? Math.max(14, Math.min(34, Math.floor(Math.min(W / (NX * 2 * S + 2), (H - 80) / (NY * 2 * S + 2)))))
+      : Math.max(18, Math.min(34, Math.round(Math.min(W, H) / 21)));
   }
   window.addEventListener('resize', resize);
   resize();
 
+  // Classic: pick a seed whose bounded maze is fully connected so every dot is reachable
+  function pickSeed() {
+    for (let tries = 0; tries < 200; tries++) {
+      SEED = (Math.random() * 2 ** 31) | 0;
+      forcedCache.clear();
+      if (!CLASSIC) return;
+      const seen = new Set(['0,0']);
+      const stack = [[0, 0]];
+      while (stack.length) {
+        const [i, j] = stack.pop();
+        const links = [[openH(i, j), i + 1, j], [openV(i, j), i, j + 1], [openH(i - 1, j), i - 1, j], [openV(i, j - 1), i, j - 1]];
+        for (const [ok, a, b] of links) if (ok && inNodes(a, b) && !seen.has(a + ',' + b)) { seen.add(a + ',' + b); stack.push([a, b]); }
+      }
+      if (seen.size === (NX * 2 + 1) * (NY * 2 + 1)) return;
+    }
+  }
+
+  function countDots() {
+    let n = 0;
+    for (let y = -NY * S; y <= NY * S; y++) for (let x = -NX * S; x <= NX * S; x++) if (!isWall(x, y) && itemAt(x, y)) n++;
+    return n;
+  }
+
+  function startLevel() {
+    pickSeed();
+    eaten.clear();
+    pac = { x: 0, y: 0, dir: -1, next: 2, face: 2, speed: 7.2, chew: 0 };
+    fruit = null;
+    frightT = 0;
+    eaten.add(tkey(0, 0));
+    dotsLeft = CLASSIC ? countDots() : 0;
+    spawnGhosts();
+    setState('ready');
+  }
+
   function newGame() {
-    SEED = (Math.random() * 2 ** 31) | 0;
-    forcedCache.clear();
+    pickSeed();
     eaten.clear();
     pac = { x: 0, y: 0, dir: -1, next: 2, face: 2, speed: 7.2, chew: 0 };
     ghosts = [];
@@ -161,6 +205,7 @@
     suits = [false, false, false, false];
     nextLifeAt = 10000; farthest = 0; modeT = 0; scatter = false; freezeT = 0;
     eaten.add(tkey(0, 0));
+    dotsLeft = CLASSIC ? countDots() : 0;
     spawnGhosts();
     setState('ready');
     Sound.start();
@@ -174,6 +219,16 @@
   const frightDuration = () => Math.max(2.5, 8 - (level - 1) * 0.45);
 
   function spawnPoint() {
+    if (CLASSIC) {
+      let best = { x: NX * S, y: NY * S }, bestD = 0;
+      for (let tries = 0; tries < 60; tries++) {
+        const x = Math.round((Math.random() * 2 - 1) * NX) * S, y = Math.round((Math.random() * 2 - 1) * NY) * S;
+        const d = Math.hypot(x - pac.x, y - pac.y);
+        if (d >= 10) return { x, y };
+        if (d > bestD) { bestD = d; best = { x, y }; }
+      }
+      return best;
+    }
     const minR = 11, maxR = Math.max(14, Math.min(22, Math.hypot(W, H) / T / 2 + 2));
     for (let tries = 0; tries < 40; tries++) {
       const a = Math.random() * Math.PI * 2;
@@ -295,7 +350,7 @@
     }
     if (score > highScore) {
       highScore = score;
-      try { localStorage.setItem('infpac.high', String(highScore)); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(HIGH_KEY, String(highScore)); } catch (e) { /* ignore */ }
     }
   }
 
@@ -303,11 +358,16 @@
     const it = itemAt(x, y);
     if (!it) return;
     eaten.add(tkey(x, y));
+    if (CLASSIC && --dotsLeft <= 0) {
+      addScore(it === DOT ? 10 : 50);
+      clearLevel();
+      return;
+    }
     if (it === DOT) {
       addScore(10);
       dotsEaten++;
       Sound.waka();
-      const newLevel = 1 + Math.floor(dotsEaten / 250);
+      const newLevel = CLASSIC ? level : 1 + Math.floor(dotsEaten / 250);
       if (newLevel > level) {
         level = newLevel;
         toast('LEVEL ' + level + ' — THE GHOSTS GROW BOLDER');
@@ -346,13 +406,25 @@
     }
   }
 
+  function clearLevel() {
+    addScore(1000 * level);
+    Sound.life();
+    if (level >= LEVELS) {
+      setState('over');
+      showOver(true);
+      return;
+    }
+    toast(`MAZE ${level} CLEARED! +${1000 * level}`);
+    setState('clear');
+  }
+
   function spawnFruit() {
     for (let tries = 0; tries < 30; tries++) {
       const a = Math.random() * Math.PI * 2;
       const r = 5 + Math.random() * 6;
       const x = Math.round((pac.x + Math.cos(a) * r) / S) * S;
       const y = Math.round((pac.y + Math.sin(a) * r) / S) * S;
-      if (Math.hypot(x - pac.x, y - pac.y) > 3) {
+      if (Math.hypot(x - pac.x, y - pac.y) > 3 && !isWall(x, y)) {
         const f = FRUITS[Math.min(FRUITS.length - 1, level - 1)];
         fruit = { x, y, e: f.e, v: f.v, t: 12 };
         return;
@@ -369,6 +441,14 @@
 
     if (state === 'ready') {
       if (stateT > 1.8) setState('play');
+      return;
+    }
+    if (state === 'clear') {
+      if (stateT > 2.2) {
+        level++;
+        startLevel();
+        toast(`MAZE ${level} OF ${LEVELS} — faster ghosts`);
+      }
       return;
     }
     if (state === 'dying') {
@@ -471,7 +551,7 @@
     }
 
     // Keep memory bounded: forget eaten dots far behind (they quietly regrow)
-    if (eaten.size > 6000 && Math.random() < dt) {
+    if (!CLASSIC && eaten.size > 6000 && Math.random() < dt) {
       for (const k of eaten) {
         const [x, y] = k.split(',').map(Number);
         if (Math.abs(x - pac.x) + Math.abs(y - pac.y) > 160) eaten.delete(k);
@@ -487,8 +567,10 @@
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
 
-    const ox = W / 2 - pac.x * T;
-    const oy = H / 2 - pac.y * T;
+    // classic mazes are centred on screen when they fit; otherwise the camera follows Pac-Man
+    const fitsX = CLASSIC && (NX * 2 * S + 1) * T <= W, fitsY = CLASSIC && (NY * 2 * S + 1) * T <= H - 70;
+    const ox = W / 2 - (fitsX ? 0 : pac.x) * T;
+    const oy = (fitsY ? (H + 50) / 2 : H / 2) - (fitsY ? 0 : pac.y) * T;
     const x0 = Math.floor(-ox / T) - 1, x1 = Math.ceil((W - ox) / T) + 1;
     const y0 = Math.floor(-oy / T) - 1, y1 = Math.ceil((H - oy) / T) + 1;
 
@@ -729,7 +811,7 @@
     setText(hud.score, 'score', score.toLocaleString());
     setText(hud.high, 'high', highScore.toLocaleString());
     setText(hud.level, 'level', String(level));
-    setText(hud.dist, 'dist', `${Math.round(pac.x / S)}, ${-Math.round(pac.y / S)}  ·  farthest ${Math.round(farthest / S)}`);
+    setText(hud.dist, 'dist', CLASSIC ? `MAZE ${level}/${LEVELS}  ·  ${dotsLeft} DOTS LEFT` : `${Math.round(pac.x / S)}, ${-Math.round(pac.y / S)}  ·  farthest ${Math.round(farthest / S)}`);
     const lv = '●'.repeat(Math.max(0, Math.min(lives, 8)));
     setText(hud.lives, 'lives', lv);
     const sv = suits.map((s) => (s ? '1' : '0')).join('');
@@ -750,10 +832,11 @@
     toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
   }
 
-  function showOver() {
+  function showOver(won) {
     $('final-score').textContent = score.toLocaleString();
-    $('final-dist').textContent = Math.round(farthest / S);
-    $('final-level').textContent = level;
+    $('final-dist').textContent = CLASSIC ? dotsLeft : Math.round(farthest / S);
+    $('final-level').textContent = CLASSIC ? `${level}/${LEVELS}` : level;
+    if (window.Arcade) Arcade.endScreen(!!won, won ? `All ${LEVELS} mazes cleared!` : '');
     $('over').hidden = false;
   }
 

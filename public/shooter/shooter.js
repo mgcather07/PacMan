@@ -7,6 +7,8 @@
 
   const FW = 540, FH = 900;
   const TAU = Math.PI * 2;
+  const CLASSIC = Arcade.classic;
+  const FINAL_WAVE = 15; // classic mode: beat the wave-15 boss to win
   const SUITS = ['♠', '♥', '♦', '♣'];
   const NEBULAS = [['#1a0b3a', '#050314'], ['#0b2a3a', '#03060f'], ['#3a0b24', '#0f0308'], ['#0b3a1e', '#030f07'], ['#3a2a0b', '#0f0a03']];
 
@@ -22,7 +24,7 @@
   let paused = false;
   let player, enemies, shots, eshots, drops, particles, popups, stars;
   let score, lives, bombs, wave, waveT, schedule, banner, suits, chain, chainT, time, bossActive, flash, nextLifeAt, kills;
-  let high = store.get('shooter.high', 0);
+  let high = store.get(Arcade.modeKey('shooter.high'), 0);
 
   // ---------------------------------------------------------------------------
   // Setup
@@ -53,14 +55,24 @@
   // ---------------------------------------------------------------------------
   // Waves
   // ---------------------------------------------------------------------------
+  function endGame(won) {
+    state = 'over';
+    $('o-score').textContent = score.toLocaleString();
+    $('o-wave').textContent = CLASSIC ? `${Math.min(wave, FINAL_WAVE)}/${FINAL_WAVE}` : wave;
+    $('o-kills').textContent = kills;
+    Arcade.endScreen(won, won ? `All ${FINAL_WAVE} waves and 3 bosses defeated!` : '');
+    $('over').hidden = false;
+  }
+
   function startWave() {
+    if (CLASSIC && wave >= FINAL_WAVE) { addScore(lives * 5000 + bombs * 1000); return endGame(true); }
     wave++;
     waveT = 0;
     schedule = [];
     const d = wave;
     if (wave % 5 === 0) {
       schedule.push({ t: 1.5, fn: () => spawnBoss() });
-      banner = { text: `WAVE ${wave} — BOSS`, t: 0 };
+      banner = { text: CLASSIC && wave === FINAL_WAVE ? 'FINAL BOSS' : `WAVE ${wave} — BOSS`, t: 0 };
       Sound.arp([220, 196, 175, 147], 0.18, 'sawtooth', 0.04);
     } else {
       banner = { text: `WAVE ${wave}`, t: 0 };
@@ -116,7 +128,8 @@
   function spawnBoss() {
     const k = difficulty();
     const tier = wave / 5;
-    enemies.push({ type: 'boss', x: FW / 2, y: -120, t: 0, hp: Math.round(160 * k + tier * 60), maxHp: Math.round(160 * k + tier * 60), r: 64, score: 5000 * tier, color: NEBULAS[(tier - 1) % NEBULAS.length][0], hit: 0, phase: 0, phaseT: 0, fireT: 0, spin: 0 });
+    const hp = Math.round((160 * k + tier * 60) * (CLASSIC && wave === FINAL_WAVE ? 1.5 : 1));
+    enemies.push({ type: 'boss', x: FW / 2, y: -120, t: 0, hp, maxHp: hp, r: 64, score: 5000 * tier, color: NEBULAS[(tier - 1) % NEBULAS.length][0], hit: 0, phase: 0, phaseT: 0, fireT: 0, spin: 0 });
     bossActive = true;
     toast('⚠ WARNING: BOSS APPROACHING');
   }
@@ -144,7 +157,7 @@
     score += pts;
     if (x !== undefined) popups.push({ x, y, text: String(pts), t: 0 });
     if (score >= nextLifeAt) { nextLifeAt += 50000; lives++; toast('EXTRA LIFE!'); Sound.arp([523, 659, 784, 1046], 0.07); }
-    if (score > high) { high = score; store.set('shooter.high', high); }
+    if (score > high) { high = score; store.set(Arcade.modeKey('shooter.high'), high); }
   }
 
   function explode(x, y, color, n, speed = 240) {
@@ -197,13 +210,7 @@
     explode(player.x, player.y, '#3fd8ff', 60, 360);
     Sound.noise(1, 0.22, 0, 900);
     eshots = eshots.filter((s) => Math.hypot(s.x - player.x, s.y - player.y) > 220);
-    if (lives <= 0) setTimeout(() => {
-      state = 'over';
-      $('o-score').textContent = score.toLocaleString();
-      $('o-wave').textContent = wave;
-      $('o-kills').textContent = kills;
-      $('over').hidden = false;
-    }, 1300);
+    if (lives <= 0) setTimeout(() => endGame(false), 1300);
   }
 
   function useBomb() {
@@ -575,7 +582,7 @@
     set('high', high.toLocaleString());
     set('lives', '▲'.repeat(Math.max(0, Math.min(lives, 8))));
     set('bombs', '●'.repeat(Math.max(0, Math.min(bombs, 9))));
-    set('wave', `WAVE ${wave} · PWR ${player.level}`);
+    set('wave', `WAVE ${wave}${CLASSIC ? '/' + FINAL_WAVE : ''} · PWR ${player.level}`);
     set('chain', chain >= 10 ? `CHAIN ${chain} · x${1 + Math.min(9, Math.floor(chain / 10))}` : '');
     set('suits', SUITS.map((s, i) => `<span class="suit ${suits[i] ? 'got' : ''} ${i === 1 || i === 2 ? 'red' : ''}">${s}</span>`).join(''), true);
   }

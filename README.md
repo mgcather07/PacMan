@@ -18,6 +18,23 @@ Spider and FreeCell share `public/solitaire/engine.js`, which handles cards, dra
 
 The newer canvas games share `public/shared/arcade.css` and `public/shared/arcade.js` (HUD/overlay styles, sound synth, canvas sizing, swipe input, high scores).
 
+## Two versions: Infinite and Classic
+
+The home page has two tabs. **Infinite** runs every arcade game endlessly. **Classic** links to the same games with `?mode=classic`, where each one has an ending you can beat:
+
+| Game | Classic goal |
+|------|--------------|
+| Pac-Man | Clear every dot in 4 walled mazes (each maze is checked to be fully connected) |
+| Snake | Eat enough food to clear 3 walled arenas with more rival snakes each stage |
+| Minesweeper | Beginner 9×9/10, Intermediate 16×16/40, Expert 30×16/99, one life, best times saved |
+| Frogger | Cross the finish line on 3 courses (45, 65 and 90 rows) |
+| Breakout | Clear 5 hand-built levels (armored bricks optional) |
+| Asteroids | Clear 8 waves on a wrap-around screen |
+| Tetris | Sprint 40 lines (timed) or Marathon to 150 lines |
+| Space Shooter | Survive 15 waves and beat the final boss |
+
+Mode detection and the shared win screen live in `public/shared/arcade.js` (`Arcade.classic`, `Arcade.endScreen`); elements with `only-classic` / `only-infinite` classes switch automatically. Classic high scores are stored separately from infinite ones.
+
 No build step. Everything lives in `public/`.
 
 ## Run locally

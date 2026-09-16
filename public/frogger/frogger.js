@@ -6,6 +6,8 @@
   const $ = (id) => document.getElementById(id);
 
   const COLS = 13;
+  const CLASSIC = Arcade.classic;
+  const COURSES = [45, 65, 90]; // classic mode: finish line row for each course
   const PAD = 5;
   const HOP_T = 0.12;
   const SUITS = ['♠', '♥', '♦', '♣'];
@@ -21,7 +23,8 @@
   let state = 'title';
   let paused = false;
   let lanes, frog, time, camBottom, score, maxRow, coins, lives, suits, deathT, deathKind, particles, creepHold, started, nextLifeRow;
-  let high = store.get('frogger.high', 0);
+  let high = store.get(Arcade.modeKey('frogger.high'), 0);
+  let course = 0, finishRow = Infinity;
 
   const mod = (a, n) => ((a % n) + n) % n;
 
@@ -76,7 +79,7 @@
   }
 
   function makeGroup(r) {
-    const d = Math.min(1, r / 350);
+    const d = Math.min(1, r / 350 + (CLASSIC ? course * 0.3 : 0));
     const roll = Math.random();
     let type;
     if (lastGroup !== 'grass' && Math.random() < 0.55) type = 'grass';
@@ -103,6 +106,11 @@
     while (lanes.length <= upTo) {
       const r = lanes.length;
       if (r < 4) { lanes.push(grassLane(r, true)); continue; }
+      if (r >= finishRow) {
+        lanes.push(r === finishRow ? { type: 'finish', trees: new Set(), items: [], coin: -1, card: -1, suit: 0 } : grassLane(r, true));
+        pending = [];
+        continue;
+      }
       if (!pending.length) makeGroup(r);
       lanes.push(pending.shift());
     }
@@ -120,6 +128,8 @@
   // Game flow
   // ---------------------------------------------------------------------------
   function newGame() {
+    course = 0;
+    finishRow = CLASSIC ? COURSES[0] : Infinity;
     lanes = [];
     pending = [];
     lastGroup = 'grass';
@@ -179,11 +189,7 @@
   function respawn() {
     lives--;
     if (lives <= 0) {
-      state = 'over';
-      $('o-score').textContent = score.toLocaleString();
-      $('o-rows').textContent = maxRow;
-      $('o-coins').textContent = coins;
-      $('over').hidden = false;
+      endGame(false);
       return;
     }
     let r = Math.max(Math.ceil(camBottom) + 2, 1);
@@ -201,8 +207,40 @@
     state = 'play';
   }
 
+  function endGame(won) {
+    state = 'over';
+    $('o-score').textContent = score.toLocaleString();
+    $('o-rows').textContent = CLASSIC ? `${course + 1}/${COURSES.length}` : maxRow;
+    $('o-coins').textContent = coins;
+    Arcade.endScreen(won, won ? `All ${COURSES.length} courses crossed with ${lives} ${lives === 1 ? 'life' : 'lives'} to spare!` : '');
+    $('over').hidden = false;
+  }
+
+  // Classic mode: reaching the finish line completes the course
+  function finishCourse() {
+    const bonus = 1000 * (course + 1) + lives * 250;
+    score += bonus;
+    if (score > high) { high = score; store.set(Arcade.modeKey('frogger.high'), high); }
+    burst(frog.x, frog.row, '#ffd23f');
+    if (course === COURSES.length - 1) return endGame(true);
+    course++;
+    finishRow = COURSES[course];
+    toast(`COURSE ${course} CLEAR! +${bonus} · Course ${course + 1} is longer and faster`, 2800);
+    Sound.arp([523, 659, 784, 1046], 0.09, 'square', 0.05);
+    lanes = [];
+    pending = [];
+    lastGroup = 'grass';
+    ensureLanes(40);
+    frog = { x: 6, row: 1, dir: 3, hop: null, queue: [] };
+    camBottom = 0;
+    maxRow = 1;
+    started = false;
+    creepHold = 0;
+  }
+
   function land() {
     const lane = lanes[frog.row];
+    if (CLASSIC && frog.row >= finishRow) { finishCourse(); return; }
     if (lane.type === 'grass') {
       const c = Math.round(frog.x);
       if (lane.coin === c) { lane.coin = -1; coins++; score += 50; Sound.arp([880, 1320], 0.05, 'square', 0.04); burst(c, frog.row, '#ffd23f'); }
@@ -224,7 +262,7 @@
       maxRow = frog.row;
       if (maxRow >= nextLifeRow) { nextLifeRow += 100; lives++; toast(`ROW ${maxRow}! EXTRA LIFE`); Sound.arp([660, 880, 1100, 1320], 0.07); }
     }
-    if (score > high) { high = score; store.set('frogger.high', high); }
+    if (score > high) { high = score; store.set(Arcade.modeKey('frogger.high'), high); }
   }
 
   function burst(x, row, c) {
@@ -361,6 +399,20 @@
     if (lane.type === 'grass') {
       ctx.fillStyle = r % 2 ? '#5fbf3f' : '#56b33a';
       ctx.fillRect(0, y, W, T);
+    } else if (lane.type === 'finish') {
+      const sq = T / 2;
+      for (let k = 0; k * sq < W; k++) for (let j = 0; j < 2; j++) {
+        ctx.fillStyle = (k + j) % 2 ? '#111' : '#f5f5f5';
+        ctx.fillRect(k * sq, y + j * sq, sq, sq);
+      }
+      ctx.fillStyle = '#ffd23f';
+      ctx.font = `${Math.round(T * 0.34)}px "Press Start 2P", monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#000a';
+      ctx.fillRect(boardLeft + COLS * T / 2 - T * 2.6, y + T * 0.2, T * 4.7, T * 0.6);
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillText(course === COURSES.length - 1 ? 'FINAL FINISH' : 'FINISH', boardLeft + COLS * T / 2 - T / 2, y + T / 2);
     } else if (lane.type === 'road') {
       ctx.fillStyle = '#3b3b4a';
       ctx.fillRect(0, y, W, T);
@@ -547,7 +599,7 @@
     const set = (id, v, html) => { if (last[id] !== v) { last[id] = v; html ? ($(id).innerHTML = v) : ($(id).textContent = v); } };
     set('score', score.toLocaleString());
     set('high', high.toLocaleString());
-    set('rows', String(maxRow));
+    set('rows', CLASSIC ? `${maxRow}/${finishRow} · C${course + 1}` : String(maxRow));
     set('lives', '🐸'.repeat(Math.max(0, Math.min(lives, 8))));
     set('suits', SUITS.map((s, i) => `<span class="suit ${suits[i] ? 'got' : ''} ${i === 1 || i === 2 ? 'red' : ''}">${s}</span>`).join(''), true);
   }

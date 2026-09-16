@@ -12,6 +12,15 @@
   const PADDLE_Y = FH - 70;
   const DANGER_Y = PADDLE_Y - 46;
   const SUITS = ['♠', '♥', '♦', '♣'];
+  const CLASSIC = Arcade.classic;
+  // Classic mode levels: . empty, 1-3 hit points, # armored (not needed to clear), * brick with a power-up
+  const LEVELS = [
+    { name: 'WARM-UP', map: ['111111111111', '111111111111', '1*11111111*1', '111111111111', '111111111111'] },
+    { name: 'PYRAMID', map: ['.....22.....', '....2112....', '...211*12...', '..21111112..', '.2111**1112.', '211111111112'] },
+    { name: 'FORTRESS', map: ['2#22222222#2', '2.3......3.2', '2.3.1**1.3.2', '2.3.1111.3.2', '2.33333333.2', '222222222222'] },
+    { name: 'CHECKERBOARD', map: ['3.3.3.3.3.3.', '.2.2.2.2.2.2', '1*1.1.1.1*1.', '.1.1.1.1.1.1', '##.##..##.##', '222222222222'] },
+    { name: 'THE CITADEL', map: ['333333333333', '3#22222222#3', '32*111111*23', '321333333123', '321111111123', '3##.####.##3', '222222222222'] },
+  ];
 
   let scale = 1, offX = 0, offY = 0;
   const view = setupCanvas(canvas, (v) => {
@@ -36,7 +45,8 @@
   let paused = false;
   let rows, balls, paddle, drops, bullets, particles, popups;
   let score, lives, rowsSpawned, elapsed, combo, suits, timers, shake, nextLifeAt, waiting, bricksBroken, laserCooldown;
-  let high = store.get('breakout.high', 0);
+  let high = store.get(Arcade.modeKey('breakout.high'), 0);
+  let level = 0, endgameHelp = false;
 
   // ---------------------------------------------------------------------------
   // Brick rows
@@ -84,14 +94,53 @@
   // ---------------------------------------------------------------------------
   // Game flow
   // ---------------------------------------------------------------------------
+  function buildLevel(n) {
+    return LEVELS[n].map.map((line, i) => ({
+      y: CEIL + BH * (2 + i),
+      cells: [...line].map((ch) => {
+        if (ch === '.') return null;
+        const armored = ch === '#';
+        const hp = armored ? 6 : ch === '*' ? 1 : +ch;
+        const pool = ['multi', 'wide', 'laser', 'slow', 'fire', 'card'];
+        return { hp, max: hp, armored, color: ROW_COLORS[i % ROW_COLORS.length], drop: ch === '*' ? pool[Math.floor(rand(0, pool.length))] : null, flash: 0 };
+      }),
+    }));
+  }
+  const bricksLeft = () => rows.reduce((n, r) => n + r.cells.filter((c) => c && !c.armored).length, 0);
+
+  function endGame(won) {
+    state = 'over';
+    $('o-score').textContent = score.toLocaleString();
+    $('o-bricks').textContent = bricksBroken;
+    $('o-time').textContent = `${Math.floor(elapsed / 60)}:${String(Math.floor(elapsed % 60)).padStart(2, '0')}`;
+    Arcade.endScreen(won, won ? `All ${LEVELS.length} levels cleared!` : '');
+    $('over').hidden = false;
+  }
+
+  function nextLevel() {
+    addScore(2000 * (level + 1) + lives * 500);
+    if (level === LEVELS.length - 1) return endGame(true);
+    level++;
+    rows = buildLevel(level);
+    endgameHelp = false;
+    drops = []; bullets = [];
+    timers = { wide: 0, laser: 0, slow: 0, fire: 0 };
+    serve();
+    toast(`LEVEL ${level + 1}: ${LEVELS[level].name}`, 2600);
+    Sound.arp([523, 659, 784, 1046], 0.09, 'square', 0.05);
+  }
+
   function newGame() {
     rows = [];
     rowsSpawned = 0;
+    level = 0;
+    endgameHelp = false;
     let y = CEIL + BH * 9;
     rows.push(makeRow(y));
     while (rows[0].y > CEIL) rows.unshift(makeRow(rows[0].y - BH));
     // makeRow numbers rows as they are created; renumber colours top-down for a tidy start
     rows.forEach((r, i) => r.cells.forEach((c) => { if (c) c.color = ROW_COLORS[i % ROW_COLORS.length]; }));
+    if (CLASSIC) rows = buildLevel(0);
     paddle = { x: FW / 2, w: 96, targetX: FW / 2 };
     balls = [];
     drops = []; bullets = []; particles = []; popups = [];
@@ -115,7 +164,7 @@
     state = 'play';
   }
 
-  const baseSpeed = () => Math.min(640, 400 + elapsed * 1.1) * (timers.slow > 0 ? 0.65 : 1);
+  const baseSpeed = () => (CLASSIC ? Math.min(600, 380 + level * 40 + elapsed * 0.3) : Math.min(640, 400 + elapsed * 1.1)) * (timers.slow > 0 ? 0.65 : 1);
   const descentSpeed = () => Math.min(34, 6 + elapsed * 0.09);
 
   function launch() {
@@ -143,7 +192,7 @@
     score += n;
     if (x !== undefined) popups.push({ x, y, text: '+' + n, t: 0 });
     if (score >= nextLifeAt) { nextLifeAt += 20000; lives++; toast('EXTRA LIFE!'); Sound.arp([523, 659, 784, 1046], 0.07); }
-    if (score > high) { high = score; store.set('breakout.high', high); }
+    if (score > high) { high = score; store.set(Arcade.modeKey('breakout.high'), high); }
   }
 
   function loseLife(reason) {
@@ -154,11 +203,7 @@
     drops = []; bullets = [];
     combo = 0;
     if (lives <= 0) {
-      state = 'over';
-      $('o-score').textContent = score.toLocaleString();
-      $('o-bricks').textContent = bricksBroken;
-      $('o-time').textContent = `${Math.floor(elapsed / 60)}:${String(Math.floor(elapsed % 60)).padStart(2, '0')}`;
-      $('over').hidden = false;
+      endGame(false);
       return;
     }
     toast(reason);
@@ -317,10 +362,12 @@
       if (waiting > 4) launch();
     } else {
       elapsed += dt;
-      const dy = descentSpeed() * dt;
-      for (const r of rows) r.y += dy;
+      if (!CLASSIC) {
+        const dy = descentSpeed() * dt;
+        for (const r of rows) r.y += dy;
+      }
     }
-    refillTop();
+    if (!CLASSIC) refillTop();
 
     for (const b of balls) if (!b.stuck) stepBall(b, dt);
     const before = balls.length;
@@ -354,6 +401,16 @@
     drops = drops.filter((d) => !d.got && d.y < FH + 20);
 
     for (const r of rows) for (const c of r.cells) if (c && c.flash > 0) c.flash -= dt;
+    if (CLASSIC && state === 'play') {
+      const left = bricksLeft();
+      if (left === 0) nextLevel();
+      else if (left <= 3 && !endgameHelp) {
+        // last few bricks: drop a laser so the hunt doesn't drag on
+        endgameHelp = true;
+        drops.push({ x: clamp(paddle.x, 40, FW - 40), y: CEIL + 20, type: 'laser', suit: 0 });
+        toast('LAST BRICKS — LASERS INCOMING');
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -503,6 +560,7 @@
     set('high', high.toLocaleString());
     set('lives', '●'.repeat(Math.max(0, Math.min(lives, 8))));
     set('combo', combo >= 4 ? `COMBO x${Math.min(5, 1 + Math.floor(combo / 4))}` : '');
+    if (CLASSIC) set('level', `LEVEL ${level + 1}/${LEVELS.length} · ${bricksLeft()} LEFT`);
     const active = Object.entries(timers).filter(([, v]) => v > 0).map(([k, v]) => `<span style="color:${POWERS[k].color}">${POWERS[k].label}${Math.ceil(v)}</span>`).join(' ');
     set('powers', active, true);
     set('suits', SUITS.map((s, i) => `<span class="suit ${suits[i] ? 'got' : ''} ${i === 1 || i === 2 ? 'red' : ''}">${s}</span>`).join(''), true);

@@ -59,11 +59,17 @@
     boardY = Math.floor(top + (availH - VIEW_ROWS * S) / 2);
   }
 
-  let mode = store.get('tetris.mode', 'tower');
+  const CLASSIC = Arcade.classic;
+  let mode = store.get(Arcade.modeKey('tetris.mode'), CLASSIC ? 'sprint' : 'tower');
+  if (CLASSIC && mode === 'tower') mode = 'sprint';
+  if (!CLASSIC && mode === 'sprint') mode = 'tower';
+  // Classic goals: Sprint = 40 lines against the clock, Marathon = reach 150 lines
+  const goal = () => (mode === 'sprint' ? 40 : CLASSIC && mode === 'marathon' ? 150 : Infinity);
+  const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
   let state = 'title';
   let paused = false;
   let rows, piece, bag, queue, hold, holdUsed, score, lines, level, time, gravityT, lockT, lockMoves, camBottom, camDraw, tide, tideChecked, leaks, maxHeight, particles, flashes, combo, backToBack, lastClear, das;
-  const highKey = () => `tetris.high.${mode}`;
+  const highKey = () => `tetris.high.${mode}${CLASSIC && mode === 'marathon' ? '.classic' : ''}`;
 
   // ---------------------------------------------------------------------------
   // Board
@@ -97,7 +103,7 @@
     const highestCell = Math.max(...ROT[type].states[0].map(([, y]) => y));
     const p = { type, rot: 0, x: type === 'O' ? 4 : 3, y: spawnTop - highestCell };
     if (!fits(p, 0, p.x, p.y)) {
-      if (mode === 'marathon') { p.y += 1; if (!fits(p, 0, p.x, p.y)) return gameOver('TOPPED OUT'); }
+      if (mode !== 'tower') { p.y += 1; if (!fits(p, 0, p.x, p.y)) return gameOver('TOPPED OUT'); }
     }
     piece = p;
     lockT = 0;
@@ -127,7 +133,7 @@
     paused = false;
     newGame();
     state = 'play';
-    $('mode-label').textContent = mode === 'tower' ? 'TOWER' : 'MARATHON';
+    $('mode-label').textContent = mode.toUpperCase();
   }
 
   function gameOver(reason) {
@@ -139,8 +145,30 @@
     $('o-reason').textContent = reason;
     $('o-score').textContent = score.toLocaleString();
     $('o-lines').textContent = lines;
-    $('o-third-label').textContent = mode === 'tower' ? 'HEIGHT' : 'LEVEL';
-    $('o-third').textContent = mode === 'tower' ? maxHeight : level;
+    $('o-third-label').textContent = mode === 'tower' ? 'HEIGHT' : mode === 'sprint' ? 'TIME' : 'LEVEL';
+    $('o-third').textContent = mode === 'tower' ? maxHeight : mode === 'sprint' ? fmt(time) : level;
+    Arcade.endScreen(false);
+    $('over').hidden = false;
+  }
+
+  function win() {
+    state = 'over';
+    piece = null;
+    const high = store.get(highKey(), 0);
+    if (score > high) store.set(highKey(), score);
+    let msg = `${goal()} lines cleared!`;
+    if (mode === 'sprint') {
+      const bestKey = 'tetris.best.sprint';
+      const best = store.get(bestKey, 0);
+      if (!best || time < best) { store.set(bestKey, time); msg = `40 lines in ${fmt(time)} — new best time!`; }
+      else msg = `40 lines in ${fmt(time)} (best ${fmt(best)})`;
+    }
+    $('o-reason').textContent = '';
+    $('o-score').textContent = score.toLocaleString();
+    $('o-lines').textContent = lines;
+    $('o-third-label').textContent = mode === 'sprint' ? 'TIME' : 'LEVEL';
+    $('o-third').textContent = mode === 'sprint' ? fmt(time) : level;
+    Arcade.endScreen(true, msg);
     $('over').hidden = false;
   }
 
@@ -230,10 +258,11 @@
         flashes.push({ y, t: 0 });
         for (let x = 0; x < COLS; x++) particles.push({ x: x + 0.5, y: y + 0.5, vx: rand(-4, 4), vy: rand(2, 8), t: 0, life: rand(0.4, 0.8), c: COLORS[rows[y].cells[x]] });
       }
-      if (mode === 'marathon') {
+      if (mode !== 'tower') {
         for (let i = full.length - 1; i >= 0; i--) rows.splice(full[i], 1);
-        const newLevel = 1 + Math.floor(lines / 10);
+        const newLevel = mode === 'sprint' ? 1 : 1 + Math.floor(lines / 10);
         if (newLevel > level) { level = newLevel; toast(`LEVEL ${level}`); }
+        if (lines >= goal()) { piece = null; return win(); }
       } else {
         for (const y of full) rows[y].gold = true;
         if (n === 4 && leaks > 0) { leaks--; toast('TETRIS! One leak repaired'); }
@@ -242,7 +271,7 @@
       Sound.tone(140, 120, 0.05, 'square', 0.03);
     }
 
-    if (mode === 'marathon') {
+    if (mode !== 'tower') {
       if (lockedTop >= VIEW_ROWS && !full.length) return gameOver('LOCKED OUT');
     } else {
       const h = topRow() + 1;
@@ -467,7 +496,7 @@
     set('score', score.toLocaleString());
     set('high', Math.max(score, store.get(highKey(), 0)).toLocaleString());
     set('lines', String(lines));
-    set('level', mode === 'tower' ? `${'💧'.repeat(leaks)}${'·'.repeat(MAX_LEAKS - leaks)}` : `LEVEL ${level}`);
+    set('level', mode === 'tower' ? `${'💧'.repeat(leaks)}${'·'.repeat(MAX_LEAKS - leaks)}` : mode === 'sprint' ? `${Math.max(0, 40 - lines)} LEFT · ${fmt(time).slice(0, -1)}` : CLASSIC ? `LEVEL ${level} · ${lines}/150` : `LEVEL ${level}`);
   }
 
   function act(action) {
@@ -512,10 +541,10 @@
 
   function setMode(m) {
     mode = m;
-    store.set('tetris.mode', m);
-    document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
+    store.set(Arcade.modeKey('tetris.mode'), m);
+    document.querySelectorAll('button[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
   }
-  document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  document.querySelectorAll('button[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
   setMode(mode);
 
   $('play-btn').addEventListener('click', start);
