@@ -446,7 +446,7 @@
       .overlay:has(.lb) > .panel, .win:has(.lb) > .win-panel { margin: 24px auto; }
       .lb-open { font: 600 14px Inter, system-ui, sans-serif; color: #fff; background: #ffffff22; border: 1px solid #ffffff40; border-radius: 10px; padding: 8px 11px; cursor: pointer; }
       .lb-open:hover { background: #ffffff35; }
-      @media (max-width: 560px) { .lb-open { font-size: 0; padding: 8px 9px; } .lb-open::before { content: '🏆'; font-size: 15px; } }
+      @media (max-width: 560px) { .lb-open span { display: none; } }
     `;
     document.head.appendChild(st);
   }
@@ -694,7 +694,8 @@
     const b = document.createElement('button');
     b.type = 'button';
     b.className = className;
-    b.textContent = '🏆 Leaderboard';
+    b.innerHTML = '🏆<span> Leaderboard</span>'; // toolbars hide the label on small screens
+    b.title = 'Leaderboard';
     b.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();

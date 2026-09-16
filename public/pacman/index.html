@@ -7,6 +7,11 @@
   <meta name="description" content="Pac-Man in an endless, procedurally generated maze that stretches forever in every direction.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#05050f">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Infinite Arcade">
@@ -72,8 +77,18 @@
     .dpad { position: fixed; left: 14px; bottom: 14px; display: none; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 4px; opacity: .55; }
     .dpad button { font-size: 20px; background: #1b1b3a; color: #fff; border: 1px solid #3b4bff; border-radius: 10px; touch-action: none; }
     @media (pointer: coarse) { .dpad { display: grid; } .hud { font-size: 10px; } }
+    /* phones: let descriptions flow, keep the HUD on one line, and scroll tall panels */
+    @media (max-width: 480px) {
+      .overlay { overflow-y: auto; padding: 16px 14px; }
+      .panel p { line-height: 1.8; margin: 12px 0; }
+      .panel p br { display: none; }
+      .btn { padding: 14px 20px; margin: 6px; }
+      .hud { padding: 8px 10px; gap: 8px; font-size: 10px; }
+      .hud .label { font-size: 7px; white-space: nowrap; }
+    }
   </style>
   <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -111,13 +126,13 @@
   <div class="overlay" id="title">
     <div class="panel">
       <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>PAC-MAN</h1>
-      <p class="only-infinite">The maze never ends. Every direction is a brand-new,<br>randomly generated labyrinth — go as far as you dare.</p>
-      <p class="only-classic">Four walled mazes, each randomly built. Eat every dot<br>to clear a maze — clear all four to win.</p>
+      <p class="only-infinite">The maze never ends. Every direction is a brand-new, <br>randomly generated labyrinth — go as far as you dare.</p>
+      <p class="only-classic">Four walled mazes, each randomly built. Eat every dot <br>to clear a maze — clear all four to win.</p>
       <div class="legend">
         <span>● dot 10</span><span>⬤ power 50</span><span><b>♠♥♦♣</b> card 500</span>
       </div>
-      <p>Collect all four card suits for an <span class="keys">extra life</span>.<br>
-        <span class="keys">ARROWS / WASD</span> to move · <span class="keys">P</span> pause · <span class="keys">M</span> mute<br>
+      <p>Collect all four card suits for an <span class="keys">extra life</span>. <br>
+        <span class="keys">ARROWS / WASD</span> to move · <span class="keys">P</span> pause · <span class="keys">M</span> mute <br>
         Swipe on touch screens.</p>
       <button class="btn" id="play-btn">PLAY</button>
       <a class="btn alt" href="/">ARCADE</a>

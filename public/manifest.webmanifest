@@ -1,0 +1,24 @@
+{
+  "name": "Infinite Arcade",
+  "short_name": "Arcade",
+  "description": "Endless Pac-Man, Snake, Minesweeper, Frogger, Breakout, Asteroids, Tetris and a space shooter, plus Klondike, Spider and FreeCell solitaire.",
+  "id": "/",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05050f",
+  "theme_color": "#05050f",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Daily Challenge", "short_name": "Daily", "url": "/daily/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Pac-Man", "url": "/pacman/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Klondike Solitaire", "short_name": "Solitaire", "url": "/solitaire/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Leaderboards", "url": "/leaderboards/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

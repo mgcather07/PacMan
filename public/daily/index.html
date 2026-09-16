@@ -7,6 +7,11 @@
   <meta name="description" content="A new challenge every day: everyone plays the same maze, road, brick wall, piece order and card deals. Post your best and climb today's leaderboard.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#05050f">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Infinite Arcade">
@@ -36,7 +41,7 @@
     .namebar { margin: 0 auto 16px; }
     .streak { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 640px; margin: 0 auto 22px; padding: 12px 16px; border-radius: 16px; background: #dc143c14; border: 1px solid #dc143c44; }
     .streak .flame { font-size: 30px; line-height: 1; filter: grayscale(var(--gray, 0)); }
-    .streak .txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .streak .txt { flex: 1 1 200px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
     .streak b { font: 13px/1.4 "Press Start 2P", monospace; color: #ff3b5c; }
     .streak small { color: #b8939b; font-size: 13px; }
     .streak .share-today { margin-left: auto; font: 10px "Press Start 2P", monospace; color: #fff; background: #dc143c; border: 0; border-radius: 10px; padding: 11px 12px; cursor: pointer; box-shadow: 0 3px 0 #6e0a1c; white-space: nowrap; }
@@ -74,6 +79,7 @@
     .note { text-align: center; color: #666; font-size: 13px; margin-top: 28px; }
   </style>
   <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
 </head>
 <body>
   <main>

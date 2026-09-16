@@ -7,6 +7,11 @@
   <meta name="description" content="Breakout where the wall never ends. Smash the bricks before they reach your paddle.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#05050f">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Infinite Arcade">
@@ -36,6 +41,7 @@
     .legend b { display: inline-block; width: 26px; text-align: center; border-radius: 8px; color: #000; padding: 3px 0; margin-right: 6px; }
   </style>
   <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
 </head>
 <body>
   <canvas id="game" class="game"></canvas>
@@ -68,8 +74,8 @@
   <div class="overlay" id="title">
     <div class="panel">
       <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>BREAKOUT</h1>
-      <p class="only-infinite">The wall never ends — it keeps sliding down, faster and tougher.<br>Break it before it reaches the red line.</p>
-      <p class="only-classic">Five hand-built levels. Clear every breakable brick to advance<br>(armored bricks are optional). Finish level five to win.</p>
+      <p class="only-infinite">The wall never ends — it keeps sliding down, faster and tougher. <br>Break it before it reaches the red line.</p>
+      <p class="only-classic">Five hand-built levels. Clear every breakable brick to advance <br>(armored bricks are optional). Finish level five to win.</p>
       <div class="legend">
         <span><b style="background:#3fd8ff">M</b>multiball</span>
         <span><b style="background:#7dff6a">W</b>wide paddle</span>
@@ -78,7 +84,7 @@
         <span><b style="background:#ff8a3d">F</b>fireball</span>
         <span><b style="background:#fff">♠</b>card suit</span>
       </div>
-      <p>Silver and gold bricks take extra hits; armored ones take six.<br>
+      <p>Silver and gold bricks take extra hits; armored ones take six. <br>
         <span class="k">MOUSE / TOUCH</span> or <span class="k">ARROWS</span> to move · <span class="k">CLICK / SPACE</span> to launch &amp; fire</p>
       <button class="btn" id="play-btn">PLAY</button>
       <a class="btn alt" href="/">ARCADE</a>

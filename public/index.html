@@ -7,6 +7,11 @@
   <meta name="description" content="Pac-Man, Snake, Minesweeper, Frogger, Breakout, Asteroids, Tetris and a space shooter that never end, plus Klondike, Spider and FreeCell solitaire.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#05050f">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Infinite Arcade">
@@ -116,8 +121,12 @@
     .home-links .lb-link { margin-top: 0; }
     .daily-link { display: inline-block; font: 11px "Press Start 2P", monospace; color: #fff; background: #dc143c; text-decoration: none; padding: 11px 14px; border-radius: 10px; box-shadow: 0 4px 0 #6e0a1c; }
     .daily-link:hover { background: #f0264f; }
+    .install-link { background: none; cursor: pointer; color: #3fd8ff; border-color: #3fd8ff55; }
+    .install-link:hover { background: #3fd8ff18; }
+    .install-link[hidden] { display: none; }
   </style>
   <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
 </head>
 <body>
   <canvas id="bg"></canvas>
@@ -130,7 +139,7 @@
         <button role="tab" data-tab="infinite">∞ Infinite</button>
         <button role="tab" data-tab="classic">🏆 Classic</button>
       </nav>
-      <div class="home-links"><a class="daily-link" href="/daily/">📅 Daily Challenge</a><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a></div>
+      <div class="home-links"><a class="daily-link" href="/daily/">📅 Daily Challenge</a><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a><button type="button" class="lb-link install-link" data-install hidden>📲 Install app</button></div>
       <div id="namebar" class="home-namebar"></div>
     </header>
 

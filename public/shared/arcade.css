@@ -78,3 +78,15 @@ a { color: inherit; }
 .end-message { color: #fff !important; font-size: 11px !important; }
 #over.won h1, #over.won h2 { color: #7dff6a; }
 .stats span span { margin: 0; }
+
+/* Phones: let descriptions flow instead of breaking where the desktop layout does, and keep the HUD on one line */
+@media (max-width: 480px) {
+  .overlay { padding: 16px 14px calc(16px + env(safe-area-inset-bottom)); }
+  .panel p { line-height: 1.8; margin: 12px 0; }
+  .panel p br { display: none; }
+  .btn { padding: 14px 20px; margin: 6px; }
+  .hud { padding: calc(8px + env(safe-area-inset-top)) 10px 8px; gap: 8px; font-size: 10px; }
+  .hud .label { font-size: 7px; white-space: nowrap; }
+  .hud .dim { font-size: 7px; }
+  .hud-buttons { bottom: calc(10px + env(safe-area-inset-bottom)); right: 10px; }
+}

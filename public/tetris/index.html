@@ -7,6 +7,11 @@
   <meta name="description" content="Build an endless tower while the tide rises beneath you, or play classic marathon falling blocks that never end.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#05050f">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Infinite Arcade">
@@ -31,9 +36,12 @@
     .touch .row { display: flex; gap: 8px; }
     .touch .pad-btn { width: 60px; height: 60px; font-size: 18px; }
     .touch .pad-btn.wide { width: 90px; font-size: 10px; }
+    /* phones: sound/home move to the top so they don't touch the ▶ pad */
+    @media (pointer: coarse) and (max-width: 520px) { .hud-buttons { bottom: auto; top: 58px; } }
     .modes { max-width: 520px; margin: 0 auto; }
   </style>
   <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
 </head>
 <body>
   <canvas id="game" class="game"></canvas>
@@ -84,9 +92,9 @@
         <button data-mode="sprint" class="only-classic">SPRINT<small>clear 40 lines · fastest time</small></button>
         <button data-mode="marathon" class="only-classic">MARATHON<small>reach 150 lines to win</small></button>
       </div>
-      <p class="only-classic">Hit the line goal and you win. Sprint keeps your best time;<br>Marathon speeds up every 10 lines on the way to 150.</p>
-      <p class="only-infinite"><span class="k">Tower:</span> the board has no ceiling — the camera climbs with you<br>while a tide rises from below. Complete rows (they turn gold)<br>before the tide reaches them — every unfinished row it reaches<br>leaks. Five leaks and your tower floods. A Tetris repairs a leak.</p>
-      <p><span class="k">← →</span> move · <span class="k">↓</span> soft drop · <span class="k">SPACE</span> hard drop<br><span class="k">↑ / X</span> rotate · <span class="k">Z</span> rotate back · <span class="k">C / SHIFT</span> hold · <span class="k">P</span> pause</p>
+      <p class="only-classic">Hit the line goal and you win. Sprint keeps your best time; <br>Marathon speeds up every 10 lines on the way to 150.</p>
+      <p class="only-infinite"><span class="k">Tower:</span> the board has no ceiling — the camera climbs with you <br>while a tide rises from below. Complete rows (they turn gold) <br>before the tide reaches them — every unfinished row it reaches <br>leaks. Five leaks and your tower floods. A Tetris repairs a leak.</p>
+      <p><span class="k">← →</span> move · <span class="k">↓</span> soft drop · <span class="k">SPACE</span> hard drop <br><span class="k">↑ / X</span> rotate · <span class="k">Z</span> rotate back · <span class="k">C / SHIFT</span> hold · <span class="k">P</span> pause</p>
       <button class="btn" id="play-btn">PLAY</button>
       <a class="btn alt" href="/">ARCADE</a>
     </div>

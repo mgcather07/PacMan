@@ -170,7 +170,7 @@
       const players = data.global.players || {};
       const rows = Object.keys(GAMES).map((g) => ({ g, label: gameLabel(g), value: plays[g] || 0 })).sort((a, b) => b.value - a.value);
       const total = rows.reduce((s, r) => s + r.value, 0);
-      bars($('games'), rows, rows[0] ? rows[0].value : 0, (r) => `<b>${num(r.value)}</b>${total ? ` · ${Math.round((r.value / total) * 100)}%` : ''}${range === 'all' ? `<br><span class="muted">${num(players[r.g])} players</span>` : ''}`);
+      bars($('games'), rows, rows[0] ? rows[0].value : 0, (r) => `<b>${num(r.value)}</b>${total ? ` · ${Math.round((r.value / total) * 100)}%` : ''}${range === 'all' ? ` <br><span class="muted">${num(players[r.g])} players</span>` : ''}`);
     }
 
     function render() {
@@ -219,7 +219,7 @@
         data.recentPlayers.map((p) => `<tr><td>${who(p)}</td><td>${gameLabel(p.lastGame)}</td><td class="n muted">${ago(p.lastPlayedAt)}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Nobody yet.</td></tr>'
       }</tbody>`;
 
-      $('foot').innerHTML = `Updated ${new Date(data.generatedAt).toLocaleTimeString()} · Days are UTC · A “play” is a started game (first move for solitaire and Minesweeper).<br>More detail (countries, devices, pages) in Firebase console → Analytics.`;
+      $('foot').innerHTML = `Updated ${new Date(data.generatedAt).toLocaleTimeString()} · Days are UTC · A “play” is a started game (first move for solitaire and Minesweeper). <br>More detail (countries, devices, pages) in Firebase console → Analytics.`;
     }
 
     $('range').addEventListener('click', (e) => {

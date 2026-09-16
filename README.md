@@ -75,6 +75,17 @@ To remove an entry, use the Firebase console or `firebase firestore:delete board
 
 Daily games use the Infinite rules and post to `boards/daily-<game>-<YYYYMMDD>`. The rules only accept new results on yesterday's, today's or tomorrow's board (UTC) so every time zone can play its own date, and older boards stay readable.
 
+## Install as an app
+
+The site is a Progressive Web App: `public/manifest.webmanifest` (name, icons incl. a maskable one, shortcuts to Daily / Pac-Man / Solitaire / Leaderboards) and `public/sw.js`.
+
+- **Install:** the home page shows **📲 Install app** when the browser can install it (Chrome, Edge, Android use the native prompt; iPhone/iPad Safari shows "Share → Add to Home Screen" steps). Handled by `public/shared/pwa.js`, which also registers the service worker on every page.
+- **Offline:** all pages, scripts and styles are pre-cached. Requests are network-first (new deploys show up immediately) with a 3.5s fallback to the cache, so games load and play without a connection. Google Fonts are cached; Firebase, leaderboards and analytics always use the network, and a game started offline just can't post its score. Bump `CACHE` in `sw.js` only if you need to force-clear old caches.
+
+## Phones
+
+Title screens let their text flow on narrow screens, HUDs stay on one line, overlays scroll when they're taller than the screen, the music toggle shrinks to a round ♫ button, and touch controls don't overlap the sound/home buttons (Asteroids moves them above the pads; Tetris moves them to the top).
+
 ## Menu music
 
 The home page, `/daily/`, `/leaderboards/` and the arcade games' title screens play an original chiptune loop (`public/shared/music.js`): 16 bars at 124 BPM with a square-wave lead, triangle bass, arpeggios and synthesized drums, all generated live with Web Audio (no audio files). Browsers block sound until a user gesture, so it starts on the first click, tap or key press; the ♫ button in the bottom-left turns it off and the choice is remembered (`localStorage['arcade.music']`). It pauses while the tab is hidden. On a game page it only plays while the title screen is showing (`ArcadeMusic.mount({ screen: 'title' })`) and fades out when a round starts; if the first click is PLAY, it stays quiet. The games keep their own sound effects.
