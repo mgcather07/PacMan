@@ -33,7 +33,16 @@
     .date { text-align: center; font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
     .countdown { text-align: center; color: #b8939b; margin: 6px 0 18px; font-variant-numeric: tabular-nums; }
     .how { max-width: 640px; margin: 0 auto 18px; text-align: center; color: #9a9ab8; line-height: 1.55; }
-    .namebar { margin: 0 auto 22px; }
+    .namebar { margin: 0 auto 16px; }
+    .streak { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 640px; margin: 0 auto 22px; padding: 12px 16px; border-radius: 16px; background: #dc143c14; border: 1px solid #dc143c44; }
+    .streak .flame { font-size: 30px; line-height: 1; filter: grayscale(var(--gray, 0)); }
+    .streak .txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .streak b { font: 13px/1.4 "Press Start 2P", monospace; color: #ff3b5c; }
+    .streak small { color: #b8939b; font-size: 13px; }
+    .streak .share-today { margin-left: auto; font: 10px "Press Start 2P", monospace; color: #fff; background: #dc143c; border: 0; border-radius: 10px; padding: 11px 12px; cursor: pointer; box-shadow: 0 3px 0 #6e0a1c; white-space: nowrap; }
+    .streak .share-today:disabled { opacity: .45; cursor: default; box-shadow: none; }
+    .streak .share-today:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #6e0a1c; }
+    @media (max-width: 520px) { .streak .share-today { margin-left: 0; width: 100%; } }
     .namebar .lb-chip .lb-edit { color: #ff8fa3; background: #dc143c1f; border-color: #dc143c66; }
     .namebar .lb-chip .lb-edit:hover { background: #dc143c38; }
     .tabs { display: flex; justify-content: center; gap: 6px; margin: 0 auto 24px; padding: 6px; border-radius: 16px; background: #ffffff0d; border: 1px solid #ffffff1a; width: fit-content; }
@@ -64,6 +73,7 @@
     .play.again { background: #ffffff14; color: #ff8fa3; box-shadow: none; border: 1px solid #dc143c55; }
     .note { text-align: center; color: #666; font-size: 13px; margin-top: 28px; }
   </style>
+  <script src="/shared/analytics.js"></script>
 </head>
 <body>
   <main>
@@ -73,6 +83,11 @@
     <p class="countdown" id="countdown"></p>
     <p class="how">Every day each game gets one shared setup — the same maze, road, brick wall, piece order and card deal for everyone. Play as many times as you like; your best result counts.</p>
     <div id="namebar" class="namebar"></div>
+    <div class="streak" id="streak">
+      <span class="flame" aria-hidden="true">🔥</span>
+      <div class="txt"><b id="streak-title">Daily streak</b><small id="streak-sub">Finish any challenge each day to build a streak.</small></div>
+      <button type="button" class="share-today" id="share-today" disabled>📤 SHARE TODAY</button>
+    </div>
     <nav class="tabs" role="tablist">
       <button role="tab" data-day="today" aria-selected="true">Today</button>
       <button role="tab" data-day="yesterday">Yesterday</button>
@@ -86,7 +101,7 @@
   <script src="/shared/leaderboard.js"></script>
   <script>
     (() => {
-      const { info, top, myEntry, user, nameBar, onName, fmtTime } = window.Leaderboard;
+      const { info, top, myEntry, user, nameBar, onName, onStreak, fmtTime, streak, profile, share, ICONS } = window.Leaderboard;
       const GAMES = [
         { id: 'pacman', icon: '🟡', twist: 'Same maze for everyone' },
         { id: 'snake', icon: '🐍', twist: 'Same world, rocks and food' },
@@ -109,6 +124,42 @@
 
       nameBar(document.getElementById('namebar'));
 
+      // streak banner
+      function renderStreak() {
+        const s = streak();
+        const el = document.getElementById('streak');
+        el.style.setProperty('--gray', s.current ? 0 : 1);
+        document.getElementById('streak-title').textContent = s.current ? `${s.current}-DAY STREAK` : 'NO STREAK YET';
+        document.getElementById('streak-sub').textContent = s.playedToday
+          ? `Today’s done — come back tomorrow.${s.best > 1 ? ` Best: ${s.best} days.` : ''}`
+          : s.current
+            ? `Finish any challenge today to keep it going!${s.best > s.current ? ` Best: ${s.best} days.` : ''}`
+            : `Finish any challenge each day to build a streak.${s.best ? ` Best: ${s.best} days.` : ''}`;
+      }
+      renderStreak();
+      onStreak(renderStreak);
+      profile(true).catch(() => {});
+
+      // "Share today" — a summary of every challenge you've posted today
+      const results = {}; // game → { text }
+      const shareBtn = document.getElementById('share-today');
+      function summary() {
+        const s = streak();
+        const lines = GAMES.filter((g) => results[g.id]).map((g) => `${ICONS[g.id]} ${Leaderboard.DAILY_GAMES[g.id][0]}: ${results[g.id]}`);
+        return [
+          `📅 Infinite Arcade Daily · ${Daily.label(today)}`,
+          ...lines,
+          `${lines.length}/${GAMES.length} challenges${s.current > 1 ? ` · 🔥 ${s.current}-day streak` : ''}`,
+          'https://pacman-d28dc.web.app/daily/',
+        ].join('\n');
+      }
+      shareBtn.addEventListener('click', async () => {
+        try {
+          const how = await share(summary(), { kind: 'daily_summary' });
+          if (how === 'copied') { shareBtn.textContent = '✓ COPIED!'; setTimeout(() => { shareBtn.textContent = '📤 SHARE TODAY'; }, 2200); }
+        } catch (e) { console.error(e); }
+      });
+
       function tick() {
         const ms = Daily.msUntilTomorrow();
         const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60;
@@ -126,6 +177,7 @@
         document.getElementById('date').textContent = Daily.label(day) + (isToday ? '' : ' (yesterday)');
         document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String((b.dataset.day === 'today') === isToday)));
         document.getElementById('progress').textContent = '';
+        document.getElementById('streak').hidden = !isToday;
         grid.innerHTML = GAMES.map((g) => {
           const board = Daily.board(g.id, day);
           const meta = info(board);
@@ -165,6 +217,7 @@
               played++;
               card.classList.add('played');
               mine.innerHTML = `✅ Your best: <b>${fmt(board, me)}</b> · #${me.rank.toLocaleString()}`;
+              if (isToday) { results[g.id] = `${fmt(board, me)} (#${me.rank.toLocaleString()})`; shareBtn.disabled = false; }
               const btn = card.querySelector('.play');
               if (btn) { btn.classList.add('again'); btn.textContent = 'BEAT YOUR BEST ▶'; }
             } else {

@@ -103,6 +103,8 @@
       render();
       if (game.onNewGame) game.onNewGame(S, opts);
       runAuto();
+      playCounted = false;
+      if (window.Leaderboard && game.leaderboard) Leaderboard.startRun(game.leaderboard(opts), { play: false });
     }
 
     const snapshot = () => JSON.stringify(S);
@@ -117,8 +119,11 @@
       render();
     }
 
+    let playCounted = false;
     function startTimer() {
       if (!timerOn && !game.isWon(S)) { timerOn = true; lastTick = performance.now(); }
+      // the first move is what counts as playing this deal
+      if (!playCounted && window.Leaderboard && game.leaderboard) { playCounted = true; Leaderboard.played(game.leaderboard(opts)); }
     }
 
     function applyMove(from, i, to) {

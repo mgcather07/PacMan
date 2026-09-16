@@ -153,6 +153,7 @@
     paused = false;
     newGame();
     state = 'play';
+    if (window.Leaderboard) Leaderboard.startRun(Daily.board('frogger') || (Arcade.classic ? 'frogger-classic' : 'frogger'));
   }
 
   function tryHop(di) {

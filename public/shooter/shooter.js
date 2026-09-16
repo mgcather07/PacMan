@@ -54,6 +54,7 @@
     paused = false;
     newGame();
     state = 'play';
+    if (window.Leaderboard) Leaderboard.startRun(Daily.board('shooter') || (Arcade.classic ? 'shooter-classic' : 'shooter'));
   }
 
   // ---------------------------------------------------------------------------

@@ -37,17 +37,29 @@ Mode detection and the shared win screen live in `public/shared/arcade.js` (`Arc
 
 ## Leaderboards
 
-Online top-10 boards for every game live in Cloud Firestore, with a page at `/leaderboards/`.
+Online top-10 boards for every game live in Cloud Firestore, with a page at `/leaderboards/`. All writes go through Cloud Functions (`functions/index.js`); clients can only read.
 
-- **Players:** every visitor who uses a leaderboard signs in with Firebase **Anonymous Auth** (one hidden ID per browser). Their display name is stored in `players/{uid}` and can be changed any time from the home page, the Leaderboards page, the 🏆 pop-up or a game-over screen; renaming updates all of their entries.
+- **Players:** every visitor signs in with Firebase **Anonymous Auth** (one hidden ID per browser). Their display name is stored in `players/{uid}` and can be changed any time from the home page, the Leaderboards page, the 🏆 pop-up or a game-over screen; the `setName` function renames all of their entries.
+- **Verified runs:** when a round starts, the game calls `Leaderboard.startRun(board)`, which asks the `startRun` function to start a clock on the server (`runs/{id}`). At game over, `submitScore` checks the result against how long the run actually lasted: a score may not exceed a generous per-game cap (`SCORE_CAP`, base + points/second), a winning time may not beat a humanly possible minimum (`MIN_TIME`) or be longer than the run, each run can only be posted once, and daily boards only accept yesterday/today/tomorrow. Rejected results are logged (`firebase functions:log`). Old runs are removed by a Firestore TTL policy on `expireAt`.
 - **Scores:** one entry per player per board at `boards/{board}/scores/{uid}`, kept at their best. Score boards rank highest first; time boards (Tetris Sprint, classic Minesweeper, solitaire) rank the fastest win first.
-- **App Check** (reCAPTCHA Enterprise key `6LcCJb8t…`) is **enforced** on Firestore and Authentication, so requests must come from the real site.
-- **`firestore.rules`:** reads of known boards are public. Writes require sign-in, must target your own uid, pass validation (1–16 safe characters, integer score, time ≤ 24h, time boards must be wins, server timestamp, no extra fields) and may only improve your best or change just the name. Nothing can be deleted by clients; `players` profiles are private to their owner.
-- `public/shared/leaderboard.js` loads Firebase (App, App Check, Auth, Firestore Lite) from gstatic only when a leaderboard is used.
+- **App Check** (reCAPTCHA Enterprise key `6LcCJb8t…`) is **enforced** on Firestore, Authentication and every callable function, so requests must come from the real site.
+- **`firestore.rules`:** leaderboards are publicly readable, `players/{uid}` is readable only by its owner, and everything else (`runs`, `stats`, `config`) is server-only. No client writes at all.
+- `public/shared/leaderboard.js` loads Firebase (App, App Check, Auth, Firestore Lite, Functions) from gstatic the first time a game starts or a leaderboard is opened.
 
-**Local testing:** App Check blocks localhost unless you register a debug token (Firebase console → App Check → Apps → Manage debug tokens) and run `localStorage.setItem('appcheck.debug', '<token>')` in the browser on `http://localhost:5173`. Delete the token when you're done.
+**Local testing:** App Check blocks localhost unless you register a debug token (Firebase console → App Check → Apps → Manage debug tokens) and run `localStorage.setItem('appcheck.debug', '<token>')` in the browser on `http://localhost:5173`. Local test games write to the real database, so delete the test data and the token when you're done.
 
-Deploy rules with `firebase deploy --only firestore:rules`. To remove an entry, use the Firebase console or `firebase firestore:delete boards/<board>/scores/<uid>`.
+To remove an entry, use the Firebase console or `firebase firestore:delete boards/<board>/scores/<uid>`.
+
+## Streaks and sharing
+
+- **Daily streaks:** finishing any daily challenge records that day in `players/{uid}.days` (server-side, in `submitScore`). The current streak counts back from today (or from yesterday, until today's challenge is done). It shows as 🔥 N on the name chip, as a banner on `/daily/`, and after each daily game.
+- **Share:** after posting a score, **📤 Share** opens the phone's share sheet (or copies to the clipboard on desktop), e.g. `📅 Infinite Arcade Daily · Wed, Sep 16 / 🐸 Frogger: 1,240 pts (#3 of 12) / 🔥 5-day streak / link`. **Share today** on `/daily/` copies a summary of every challenge you've posted that day.
+
+## Analytics
+
+- **Google Analytics 4** (`public/shared/analytics.js`, the property linked to Firebase, `G-28C6FMQP9X`) records page views plus `game_start` and `game_end` (params `game`, `mode`, `board`, plus `score`, `won` and `duration` on `game_end`), `share` and `name_set`. See Firebase console → Analytics, or analytics.google.com. Nothing is sent from localhost. To break reports down by game, register `game`, `mode` and `board` as event-scoped custom dimensions (GA → Admin → Custom definitions).
+- **Player stats in Firestore:** `startRun` / `logPlay` count plays in `players/{uid}.plays`, `stats/global` (all-time plays and unique players per game, per mode) and `stats/global/days/{YYYYMMDD}` (UTC; plays, active and new players, finishes). Arcade games count a play when a round starts; solitaire and Minesweeper count it on the first move.
+- **Dashboard:** `/admin/` (not linked, `noindex`) shows most-played games, plays per day, top players with their favorite games, streak leaders, recent players and daily-challenge entries. Sign in with Google; the `adminStats` function only answers accounts whose email is in the Firestore doc `config/admins` (`emails` array, or `uids` for anonymous test accounts). Google must be enabled under Authentication → Sign-in method.
 
 ## Daily Challenges
 
@@ -78,5 +90,5 @@ python3 -m http.server 5173 --directory public
 ## Deploy
 
 ```bash
-firebase deploy --only hosting,firestore:rules
+firebase deploy --only hosting,firestore,functions
 ```

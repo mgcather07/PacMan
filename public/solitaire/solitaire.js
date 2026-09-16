@@ -83,6 +83,8 @@
     void board.offsetWidth;
     cardEls.forEach((el) => el.classList.remove('no-anim'));
     render(true);
+    playCounted = false;
+    if (window.Leaderboard) Leaderboard.startRun(boardId(), { play: false });
   }
 
   const snapshot = () => JSON.stringify(S);
@@ -477,7 +479,13 @@
   // Timer, win, controls
   // ---------------------------------------------------------------------------
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-  function startTimer() { if (!timerOn && !S.found.every((p) => p.length === 13)) { timerOn = true; lastTick = performance.now(); } }
+  const boardId = () => Daily.board('klondike') || `klondike-${drawMode}`;
+  let playCounted = false;
+  function startTimer() {
+    if (!timerOn && !S.found.every((p) => p.length === 13)) { timerOn = true; lastTick = performance.now(); }
+    // the first move is what counts as playing this deal
+    if (!playCounted && window.Leaderboard) { playCounted = true; Leaderboard.played(boardId()); }
+  }
   setInterval(() => {
     if (timerOn && !document.hidden) {
       const now = performance.now();
@@ -506,7 +514,7 @@
     $('win-record').textContent = rec;
     celebrate(() => {
       $('win').hidden = false;
-      if (window.Leaderboard) Leaderboard.offer(Daily.board('klondike') || `klondike-${drawMode}`, { score: S.score, time: elapsed, won: true }, document.querySelector('#win .win-panel'));
+      if (window.Leaderboard) Leaderboard.offer(boardId(), { score: S.score, time: elapsed, won: true }, document.querySelector('#win .win-panel'));
     });
   }
 
@@ -571,7 +579,7 @@
   }
 
   $('new-btn').addEventListener('click', newGame);
-  if (window.Leaderboard) Leaderboard.button(() => Daily.board('klondike') || `klondike-${drawMode}`, document.querySelector('.actions'), 'lb-open');
+  if (window.Leaderboard) Leaderboard.button(boardId, document.querySelector('.actions'), 'lb-open');
   $('win-new').addEventListener('click', newGame);
   $('undo-btn').addEventListener('click', undo);
   $('hint-btn').addEventListener('click', showHint);

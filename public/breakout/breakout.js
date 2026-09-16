@@ -167,6 +167,7 @@
     paused = false;
     newGame();
     state = 'play';
+    if (window.Leaderboard) Leaderboard.startRun(Daily.board('breakout') || (Arcade.classic ? 'breakout-classic' : 'breakout'));
   }
 
   const baseSpeed = () => (CLASSIC ? Math.min(600, 380 + level * 40 + elapsed * 0.3) : Math.min(640, 400 + elapsed * 1.1)) * (timers.slow > 0 ? 0.65 : 1);

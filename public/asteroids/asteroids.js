@@ -119,6 +119,7 @@
     paused = false;
     newGame();
     state = 'play';
+    if (window.Leaderboard) Leaderboard.startRun(Daily.board('asteroids') || (Arcade.classic ? 'asteroids-classic' : 'asteroids'));
   }
 
   function addScore(n, x, y) {

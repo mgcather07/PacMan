@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Arcade Stats</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #07070f; --card: #10101f; --line: #ffffff17; --muted: #9a9ab8; --accent: #ffe600; --red: #dc143c; --green: #7dff6a; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { background: var(--bg); color: #eee; font-family: Inter, system-ui, sans-serif; }
+    main { max-width: 1120px; margin: 0 auto; padding: 22px 16px 60px; }
+    .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .top a { font: 11px "Press Start 2P", monospace; color: var(--muted); text-decoration: none; }
+    h1 { font: 20px/1.4 "Press Start 2P", monospace; color: var(--accent); margin: 0; }
+    .who { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; flex-wrap: wrap; }
+    button { font: 700 13px Inter, system-ui, sans-serif; border-radius: 10px; border: 1px solid #ffffff30; background: #ffffff12; color: #fff; padding: 8px 12px; cursor: pointer; }
+    button.primary { background: var(--accent); color: #1b1400; border: 0; padding: 12px 18px; font-size: 15px; }
+    .gate { max-width: 460px; margin: 60px auto; text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 28px; }
+    .gate p { color: var(--muted); line-height: 1.5; }
+    .err { color: #ff8a8a; }
+    .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+    @media (max-width: 900px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 480px) { .kpis { grid-template-columns: repeat(2, 1fr); } .kpi .v { font-size: 22px; } }
+    .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+    .kpi .v { font: 800 28px Inter, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+    .kpi .l { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+    section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; min-width: 0; }
+    section.wide { grid-column: 1 / -1; }
+    h2 { font: 11px/1.5 "Press Start 2P", monospace; color: #fff; margin: 0 0 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    h2 .seg { margin-left: auto; display: flex; gap: 4px; }
+    h2 .seg button { font-size: 12px; padding: 5px 9px; }
+    h2 .seg button[aria-pressed="true"] { background: var(--accent); color: #1b1400; border-color: transparent; }
+    .bars { display: flex; flex-direction: column; gap: 8px; }
+    .bar { display: grid; grid-template-columns: 150px 1fr 110px; gap: 10px; align-items: center; font-size: 14px; }
+    .bar .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar .track { display: block; height: 14px; background: #ffffff0d; border-radius: 7px; overflow: hidden; }
+    .bar .fill { display: block; height: 100%; background: linear-gradient(90deg, #ffe600, #ff9f3d); border-radius: 7px; }
+    .bar .num { text-align: right; font-variant-numeric: tabular-nums; color: #ccc; font-size: 13px; }
+    .bar .num b { color: #fff; }
+    .chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding-top: 8px; }
+    .chart .col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; }
+    .chart .col i { display: block; width: 100%; background: #3fa7ff; border-radius: 3px 3px 0 0; min-height: 1px; }
+    .chart .col.today i { background: var(--accent); }
+    .chart .col:hover i { filter: brightness(1.3); }
+    .chart-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 6px; }
+    .tip { color: var(--muted); font-size: 12px; min-height: 16px; margin-top: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+    td { padding: 8px; border-bottom: 1px solid #ffffff0b; vertical-align: middle; }
+    td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .anon { color: var(--muted); font-style: italic; }
+    .games { color: #ccc; font-size: 13px; white-space: nowrap; }
+    .scroll { overflow-x: auto; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #dc143c26; color: #ff8fa3; font-weight: 700; font-size: 12px; }
+    .muted { color: var(--muted); }
+    .foot { color: #666; font-size: 12px; margin-top: 18px; text-align: center; line-height: 1.6; }
+    [hidden] { display: none !important; }
+    @media (max-width: 560px) { .bar { grid-template-columns: 110px 1fr 84px; } h1 { font-size: 15px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a href="/">⌂ ARCADE</a>
+      <h1>📊 ARCADE STATS</h1>
+      <div class="who" id="who" hidden><span id="who-name"></span><button id="refresh" type="button">↻ Refresh</button><button id="signout" type="button">Sign out</button></div>
+    </div>
+
+    <div class="gate" id="gate">
+      <p id="gate-msg">Sign in with the Google account that’s allowed to see player stats.</p>
+      <button class="primary" id="signin" type="button">Sign in with Google</button>
+      <p class="err" id="gate-err"></p>
+    </div>
+
+    <div id="dash" hidden>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid">
+        <section>
+          <h2>🎮 Most played <span class="seg" id="range"><button data-r="all" aria-pressed="true">All time</button><button data-r="7">7 days</button><button data-r="1">Today</button></span></h2>
+          <div class="bars" id="games"></div>
+        </section>
+        <section>
+          <h2>📈 Plays per day <span class="muted" style="font: 12px Inter, sans-serif">last 30 days · UTC</span></h2>
+          <div class="chart" id="chart"></div>
+          <div class="chart-axis"><span id="axis-start"></span><span id="axis-end"></span></div>
+          <div class="tip" id="chart-tip">Hover a bar for details.</div>
+        </section>
+        <section class="wide">
+          <h2>🏆 Top players <span class="muted" style="font: 12px Inter, sans-serif">by games played</span></h2>
+          <div class="scroll"><table id="players"></table></div>
+        </section>
+        <section>
+          <h2>🕹️ By mode</h2>
+          <div class="bars" id="modes"></div>
+        </section>
+        <section>
+          <h2>📅 Daily challenge entries</h2>
+          <div class="bars" id="daily"></div>
+        </section>
+        <section>
+          <h2>🔥 Longest streaks</h2>
+          <div class="scroll"><table id="streaks"></table></div>
+        </section>
+        <section>
+          <h2>🕒 Recently active</h2>
+          <div class="scroll"><table id="recent"></table></div>
+        </section>
+      </div>
+      <p class="foot" id="foot"></p>
+    </div>
+  </main>
+
+  <script type="module">
+    const V = '10.12.2';
+    const base = `https://www.gstatic.com/firebasejs/${V}`;
+    const CONFIG = {
+      apiKey: 'AIzaSyAXwWoC_s2DCQ9TuUmOLM6PFx-zCHcSSaY', authDomain: 'pacman-d28dc.firebaseapp.com', projectId: 'pacman-d28dc',
+      storageBucket: 'pacman-d28dc.firebasestorage.app', messagingSenderId: '725739379550', appId: '1:725739379550:web:406602b02db3de61188dcf',
+    };
+    const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (local) { try { self.FIREBASE_APPCHECK_DEBUG_TOKEN = localStorage.getItem('appcheck.debug') || true; } catch (e) { /* ignore */ } }
+    const [{ initializeApp }, check, authMod, fnMod] = await Promise.all([
+      import(`${base}/firebase-app.js`), import(`${base}/firebase-app-check.js`), import(`${base}/firebase-auth.js`), import(`${base}/firebase-functions.js`),
+    ]);
+    const app = initializeApp(CONFIG, 'arcade-admin');
+    check.initializeAppCheck(app, { provider: new check.ReCaptchaEnterpriseProvider('6LcCJb8tAAAAAPHRbjst_r22hHsVpodTajC2y-ae'), isTokenAutoRefreshEnabled: true });
+    const auth = authMod.getAuth(app);
+    const adminStats = fnMod.httpsCallable(fnMod.getFunctions(app, 'us-central1'), 'adminStats', { timeout: 60000 });
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (n) => (n || 0).toLocaleString();
+    const GAMES = {
+      pacman: ['🟡', 'Pac-Man'], snake: ['🐍', 'Snake'], minesweeper: ['💣', 'Minesweeper'], frogger: ['🐸', 'Frogger'], breakout: ['🧱', 'Breakout'],
+      asteroids: ['☄️', 'Asteroids'], tetris: ['🟪', 'Tetris'], shooter: ['🚀', 'Space Shooter'], klondike: ['🂡', 'Klondike'], spider: ['🕷️', 'Spider'], freecell: ['🃏', 'FreeCell'],
+    };
+    const MODES = { infinite: '♾️ Infinite', classic: '🏆 Classic', daily: '📅 Daily', solitaire: '🃏 Solitaire' };
+    const gameLabel = (g) => (GAMES[g] ? `${GAMES[g][0]} ${GAMES[g][1]}` : esc(g || '—'));
+    const dayLabel = (k) => new Date(Date.UTC(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    function ago(ms) {
+      if (!ms) return '—';
+      const s = (Date.now() - ms) / 1000;
+      if (s < 60) return 'just now';
+      if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+      if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+      return `${Math.floor(s / 86400)}d ago`;
+    }
+    const who = (p) => (p.name ? `<b>${esc(p.name)}</b>` : `<span class="anon">Anonymous · ${esc(p.id)}</span>`);
+
+    let data = null, range = 'all';
+
+    function bars(el, rows, max, fmt) {
+      el.innerHTML = rows.length ? rows.map((r) => `<div class="bar"><span class="name">${r.label}</span><span class="track"><span class="fill" style="width:${max ? Math.max(1, (r.value / max) * 100) : 0}%;${r.color ? `background:${r.color}` : ''}"></span></span><span class="num">${fmt(r)}</span></div>`).join('')
+        : '<p class="muted">No data yet.</p>';
+    }
+
+    function renderGames() {
+      let plays = {};
+      if (range === 'all') plays = (data.global.plays || {});
+      else {
+        const n = +range;
+        data.days.slice(-n).forEach((d) => Object.entries(d.plays || {}).forEach(([g, v]) => { plays[g] = (plays[g] || 0) + v; }));
+      }
+      const players = data.global.players || {};
+      const rows = Object.keys(GAMES).map((g) => ({ g, label: gameLabel(g), value: plays[g] || 0 })).sort((a, b) => b.value - a.value);
+      const total = rows.reduce((s, r) => s + r.value, 0);
+      bars($('games'), rows, rows[0] ? rows[0].value : 0, (r) => `<b>${num(r.value)}</b>${total ? ` · ${Math.round((r.value / total) * 100)}%` : ''}${range === 'all' ? `<br><span class="muted">${num(players[r.g])} players</span>` : ''}`);
+    }
+
+    function render() {
+      const g = data.global;
+      const today = data.days[data.days.length - 1] || {};
+      const week = data.days.slice(-7).reduce((s, d) => s + (d.totalPlays || 0), 0);
+      $('kpis').innerHTML = [
+        [num(g.totalPlays), 'Games played'], [num(data.players), 'Players'], [num(today.totalPlays), 'Plays today'],
+        [num(today.activePlayers), 'Active today'], [num(today.newPlayers), 'New today'], [num(week), 'Plays · 7 days'],
+      ].map(([v, l]) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+      renderGames();
+
+      const maxDay = Math.max(1, ...data.days.map((d) => d.totalPlays || 0));
+      $('chart').innerHTML = data.days.map((d, i) => `<div class="col ${i === data.days.length - 1 ? 'today' : ''}" data-i="${i}"><i style="height:${((d.totalPlays || 0) / maxDay) * 100}%"></i></div>`).join('');
+      $('axis-start').textContent = dayLabel(data.days[0].day);
+      $('axis-end').textContent = 'Today';
+      $('chart').querySelectorAll('.col').forEach((c) => c.addEventListener('mouseenter', () => {
+        const d = data.days[+c.dataset.i];
+        const topGames = Object.entries(d.plays || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${GAMES[k] ? GAMES[k][0] : k} ${v}`).join('  ');
+        $('chart-tip').textContent = `${dayLabel(d.day)}: ${num(d.totalPlays)} plays · ${num(d.activePlayers)} players${topGames ? ' · ' + topGames : ''}`;
+      }));
+
+      const modes = g.modes || {};
+      const modeRows = Object.keys(MODES).map((m) => ({ label: MODES[m], value: modes[m] || 0, color: 'linear-gradient(90deg,#3fa7ff,#c77dff)' }));
+      bars($('modes'), modeRows, Math.max(0, ...modeRows.map((r) => r.value)), (r) => `<b>${num(r.value)}</b>`);
+
+      const dc = data.dailyCounts || {};
+      const days = Object.keys(dc).sort();
+      const todayKey = String(data.today);
+      const dailyRows = Object.keys(GAMES).map((k) => ({ label: gameLabel(k), value: (dc[todayKey] || {})[k] || 0, yest: (dc[days[0]] || {})[k] || 0, color: 'linear-gradient(90deg,#ff3b5c,#a50d2b)' }));
+      bars($('daily'), dailyRows, Math.max(0, ...dailyRows.map((r) => r.value)), (r) => `<b>${num(r.value)}</b> <span class="muted">· ${num(r.yest)} yday</span>`);
+
+      $('players').innerHTML = `<thead><tr><th>#</th><th>Player</th><th class="n">Games</th><th>Favorite</th><th>Top games</th><th class="n">Streak</th><th class="n">Last played</th></tr></thead><tbody>${
+        data.topPlayers.map((p, i) => {
+          const topG = Object.entries(p.plays || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${GAMES[k] ? GAMES[k][0] : k} ${v}`).join(' · ');
+          return `<tr><td class="muted">${i + 1}</td><td>${who(p)}</td><td class="n"><b>${num(p.totalPlays)}</b></td><td>${gameLabel(p.favorite)}</td><td class="games">${topG}</td><td class="n">${p.streak ? `<span class="pill">🔥 ${p.streak}</span>` : '<span class="muted">—</span>'}</td><td class="n muted">${ago(p.lastPlayedAt)}</td></tr>`;
+        }).join('') || '<tr><td colspan="7" class="muted">No players yet.</td></tr>'
+      }</tbody>`;
+
+      $('streaks').innerHTML = `<thead><tr><th>Player</th><th class="n">Best</th><th class="n">Current</th><th class="n">Dailies</th></tr></thead><tbody>${
+        data.streakLeaders.map((p) => `<tr><td>${who(p)}</td><td class="n"><b>${p.bestStreak}</b></td><td class="n">${p.streak ? `<span class="pill">🔥 ${p.streak}</span>` : '—'}</td><td class="n">${num(p.dailyFinishes)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No streaks yet.</td></tr>'
+      }</tbody>`;
+
+      $('recent').innerHTML = `<thead><tr><th>Player</th><th>Last game</th><th class="n">When</th></tr></thead><tbody>${
+        data.recentPlayers.map((p) => `<tr><td>${who(p)}</td><td>${gameLabel(p.lastGame)}</td><td class="n muted">${ago(p.lastPlayedAt)}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Nobody yet.</td></tr>'
+      }</tbody>`;
+
+      $('foot').innerHTML = `Updated ${new Date(data.generatedAt).toLocaleTimeString()} · Days are UTC · A “play” is a started game (first move for solitaire and Minesweeper).<br>More detail (countries, devices, pages) in Firebase console → Analytics.`;
+    }
+
+    $('range').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      range = b.dataset.r;
+      $('range').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderGames();
+    });
+
+    async function load() {
+      $('gate-err').textContent = '';
+      $('refresh').disabled = true;
+      try {
+        data = (await adminStats()).data;
+        $('gate').hidden = true;
+        $('dash').hidden = false;
+        render();
+      } catch (e) {
+        console.error(e);
+        $('dash').hidden = true;
+        $('gate').hidden = false;
+        $('signin').hidden = false;
+        $('gate-msg').textContent = e.code === 'functions/permission-denied'
+          ? `${auth.currentUser.email || `Account ${auth.currentUser.uid}`} isn’t on the admin list.`
+          : 'Couldn’t load stats.';
+        $('gate-err').textContent = e.code === 'functions/permission-denied' ? 'Sign in with a different account, or add it to config/admins in Firestore.' : (e.message || String(e));
+      } finally {
+        $('refresh').disabled = false;
+      }
+    }
+
+    $('signin').addEventListener('click', async () => {
+      $('gate-err').textContent = '';
+      try {
+        if (local && new URLSearchParams(location.search).has('anon')) await authMod.signInAnonymously(auth);
+        else await authMod.signInWithPopup(auth, new authMod.GoogleAuthProvider());
+      } catch (e) {
+        console.error(e);
+        $('gate-err').textContent = e.code === 'auth/operation-not-allowed'
+          ? 'Google sign-in isn’t enabled yet: Firebase console → Authentication → Sign-in method → Google → Enable.'
+          : e.code === 'auth/popup-closed-by-user' ? '' : (e.message || String(e));
+      }
+    });
+    $('signout').addEventListener('click', () => authMod.signOut(auth));
+    $('refresh').addEventListener('click', load);
+
+    authMod.onAuthStateChanged(auth, (u) => {
+      $('who').hidden = !u;
+      if (u) {
+        $('who-name').textContent = u.email || `anonymous ${u.uid.slice(0, 6)}`;
+        $('signin').hidden = true;
+        $('gate-msg').textContent = 'Loading stats…';
+        load();
+      } else {
+        $('dash').hidden = true;
+        $('gate').hidden = false;
+        $('signin').hidden = false;
+        $('gate-msg').textContent = 'Sign in with the Google account that’s allowed to see player stats.';
+      }
+    });
+  </script>
+</body>
+</html>

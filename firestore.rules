@@ -1,80 +1,16 @@
 rules_version = '2';
 
 // Public arcade leaderboards.
-// Every player signs in anonymously and owns one entry per board: boards/{board}/scores/{uid}.
-// App Check is enforced on Firestore, so requests must also come from the real site.
+// All writes go through Cloud Functions (functions/index.js), which time each game on the server,
+// reject implausible results, keep one best entry per player per board and record play statistics.
+// Clients (signed in anonymously, with App Check enforced) can only read.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // daily challenge boards: daily-<game>-<YYYYMMDD>
-    function dailyName(board) {
-      return board.matches('^daily-(pacman|snake|minesweeper|frogger|breakout|asteroids|tetris|shooter|klondike|spider|freecell)-[0-9]{8}$');
-    }
-    function dayKey(t) {
-      return t.year() * 10000 + t.month() * 100 + t.day();
-    }
-    // new daily results may only go to yesterday's, today's or tomorrow's board (covers every time zone)
-    function currentDaily(board) {
-      return dailyName(board) && int(board.split('-')[2]) in [
-        dayKey(request.time - duration.value(1, 'd')), dayKey(request.time), dayKey(request.time + duration.value(1, 'd'))
-      ];
-    }
-
-    function knownBoard(board) {
-      return dailyName(board) || board in [
-        'pacman', 'snake', 'minesweeper', 'frogger', 'breakout', 'asteroids', 'tetris-tower', 'tetris-marathon', 'shooter',
-        'pacman-classic', 'snake-classic', 'frogger-classic', 'breakout-classic', 'asteroids-classic', 'shooter-classic',
-        'tetris-sprint', 'tetris-marathon150', 'mines-beginner', 'mines-intermediate', 'mines-expert',
-        'klondike-1', 'klondike-3', 'spider-1', 'spider-2', 'spider-4', 'freecell'
-      ];
-    }
-
-    // boards ranked by fastest winning time instead of highest score
-    function timeBoard(board) {
-      return board.matches('^daily-(klondike|spider|freecell)-[0-9]{8}$') || board in [
-        'tetris-sprint', 'mines-beginner', 'mines-intermediate', 'mines-expert',
-        'klondike-1', 'klondike-3', 'spider-1', 'spider-2', 'spider-4', 'freecell'
-      ];
-    }
-
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function validName(name) {
-      return name is string && name.size() >= 1 && name.size() <= 16 && name.matches('^[A-Za-z0-9 _.!?\\-]+$');
-    }
-
-    function validEntry(board, uid, d) {
-      return d.keys().hasOnly(['uid', 'name', 'score', 'time', 'won', 'updatedAt'])
-        && d.keys().hasAll(['uid', 'name', 'score', 'time', 'won', 'updatedAt'])
-        && d.uid == uid
-        && validName(d.name)
-        && d.score is int && d.score >= 0 && d.score <= 100000000
-        && d.time is number && d.time >= 0 && d.time <= 86400
-        && d.won is bool
-        && (!timeBoard(board) || (d.won == true && d.time > 0))
-        && d.updatedAt == request.time;
-    }
-
-    // a new result may only replace your entry if it is better
-    function improves(board, next, prev) {
-      return timeBoard(board) ? next.time < prev.time : next.score > prev.score;
-    }
-
-    // renaming keeps the result exactly as it was
-    function renameOnly(next, prev) {
-      return next.score == prev.score && next.time == prev.time && next.won == prev.won;
-    }
-
+    // leaderboard entries: boards/{board}/scores/{uid}
     match /boards/{board}/scores/{uid} {
-      allow read: if knownBoard(board);
-      allow create: if knownBoard(board) && (!dailyName(board) || currentDaily(board)) && signedIn() && request.auth.uid == uid
-        && validEntry(board, uid, request.resource.data);
-      allow update: if knownBoard(board) && (!dailyName(board) || currentDaily(board)) && signedIn() && request.auth.uid == uid
-        && validEntry(board, uid, request.resource.data)
-        && (improves(board, request.resource.data, resource.data) || renameOnly(request.resource.data, resource.data));
-      allow delete: if false;
+      allow read: if true;
+      allow write: if false;
     }
 
     // lets a player find all of their own entries across boards in one query (scores are public anyway)
@@ -82,16 +18,13 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    // private player profile: just the display name
+    // private player profile: name, daily streak days, play counts
     match /players/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name', 'updatedAt'])
-        && validName(request.resource.data.name)
-        && request.resource.data.updatedAt == request.time;
-      allow delete: if false;
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
 
+    // runs, stats and config are server-only
     match /{document=**} {
       allow read, write: if false;
     }

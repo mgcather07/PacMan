@@ -645,6 +645,7 @@
     paused = false;
     newGame();
     state = 'play';
+    if (window.Leaderboard) Leaderboard.startRun(Daily.board('snake') || (CLASSIC ? 'snake-classic' : 'snake'));
   }
   $('play-btn').addEventListener('click', start);
   if (window.Leaderboard) Leaderboard.button(Daily.board('snake') || (CLASSIC ? 'snake-classic' : 'snake'), document.querySelector('#title .panel'), 'btn alt');

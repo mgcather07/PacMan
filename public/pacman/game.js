@@ -850,6 +850,7 @@
     $('over').hidden = true;
     paused = false;
     newGame();
+    if (window.Leaderboard) Leaderboard.startRun(Daily.board('pacman') || (CLASSIC ? 'pacman-classic' : 'pacman'));
   }
 
   $('play-btn').addEventListener('click', start);

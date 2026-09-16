@@ -1,12 +1,13 @@
 /*
- * Online leaderboards backed by Cloud Firestore.
+ * Online leaderboards, daily streaks and sharing, backed by Cloud Firestore + Cloud Functions.
  *
- * Players sign in anonymously (one hidden ID per device) and own one entry per board at
- * boards/{board}/scores/{uid}; it only changes when they beat their own best. Their display name
- * lives in players/{uid} and can be changed at any time, which renames all of their entries.
- * App Check (reCAPTCHA Enterprise) proves requests come from this site.
- * Firebase is only downloaded the first time a leaderboard is used.
+ * Players sign in anonymously (one hidden ID per device). Games call startRun() when a round begins,
+ * which starts a clock on the server; when the round ends, offer() sends the result to the
+ * submitScore function, which rejects anything implausible for how long the run lasted and keeps one
+ * best entry per player at boards/{board}/scores/{uid}. The display name and daily-challenge days live
+ * in players/{uid}. App Check (reCAPTCHA Enterprise) proves requests come from this site.
  *
+ *   Leaderboard.startRun(boardId)                                  → call when a game starts (counts a play)
  *   Leaderboard.offer(boardId, { score, time, won }, containerEl)  → posts the result and shows the top 10
  *   Leaderboard.open(boardId)                                      → modal with the top 10
  *   Leaderboard.button(boardIdOrFn, parentEl)                      → "🏆 Leaderboard" button
@@ -81,16 +82,19 @@
           try { token = localStorage.getItem('appcheck.debug'); } catch (e) { /* ignore */ }
           self.FIREBASE_APPCHECK_DEBUG_TOKEN = token || true;
         }
-        const [appMod, checkMod, authMod, fs] = await withTimeout(Promise.all([
+        const [appMod, checkMod, authMod, fs, fnMod] = await withTimeout(Promise.all([
           import(`${base}/firebase-app.js`),
           import(`${base}/firebase-app-check.js`),
           import(`${base}/firebase-auth.js`),
           import(`${base}/firebase-firestore-lite.js`),
+          import(`${base}/firebase-functions.js`),
         ]), 20000, 'loading Firebase');
         const app = appMod.initializeApp(CONFIG, 'arcade-leaderboards');
         checkMod.initializeAppCheck(app, { provider: new checkMod.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
         const auth = authMod.getAuth(app);
-        return { fs, db: fs.getFirestore(app), auth, authMod };
+        const functions = fnMod.getFunctions(app, 'us-central1');
+        const call = async (name, data) => (await fnMod.httpsCallable(functions, name, { timeout: 30000 })(data)).data;
+        return { fs, db: fs.getFirestore(app), auth, authMod, call };
       })().catch((e) => { fbPromise = null; throw e; });
     }
     return fbPromise;
@@ -107,6 +111,22 @@
     }
     return userPromise;
   }
+
+  // Call a Cloud Function as the signed-in player
+  async function call(name, data) {
+    const fb = await firebase();
+    await user();
+    return withTimeout(fb.call(name, data), 35000, name);
+  }
+
+  const ICONS = { pacman: '🟡', snake: '🐍', minesweeper: '💣', frogger: '🐸', breakout: '🧱', asteroids: '☄️', tetris: '🟪', shooter: '🚀', klondike: '🂡', spider: '🕷️', freecell: '🃏' };
+  const gameOf = (board) => {
+    const m = /^daily-([a-z]+)-\d{8}$/.exec(board || '');
+    if (m) return m[1];
+    const id = String(board || '').replace(/-(classic|tower|marathon|marathon150|sprint|beginner|intermediate|expert|1|2|3|4)$/, '');
+    return id === 'mines' ? 'minesweeper' : id;
+  };
+  const modeOf = (board) => (info(board) ? info(board).group.toLowerCase() : 'unknown');
 
   // Daily challenge boards: daily-<game>-<YYYYMMDD>
   const DAILY_GAMES = {
@@ -159,74 +179,186 @@
   const cacheName = (n) => { try { localStorage.setItem('arcade.name', n); } catch (e) { /* ignore */ } };
   const nameListeners = new Set();
 
-  async function getName() {
-    const { fs, db } = await firebase();
-    const u = await user();
-    try {
-      const snap = await withTimeout(fs.getDoc(fs.doc(db, 'players', u.uid)), 12000, 'reading profile');
-      if (snap.exists()) { cacheName(snap.data().name); return snap.data().name; }
-    } catch (e) { /* fall back to the cached name */ }
-    return cachedName();
+  // ---------------------------------------------------------------------------
+  // Profile: name + daily streak (players/{uid}, readable only by its owner)
+  // ---------------------------------------------------------------------------
+  const cachedDays = () => { try { return JSON.parse(localStorage.getItem('arcade.days') || '{}'); } catch (e) { return {}; } };
+  const streakListeners = new Set();
+  function cacheDays(days, bestStreak) {
+    const prev = cachedDays();
+    const next = { days: Array.isArray(days) ? days.slice(-60) : (prev.days || []), best: Math.max(bestStreak || 0, prev.best || 0) };
+    try { localStorage.setItem('arcade.days', JSON.stringify(next)); } catch (e) { /* ignore */ }
+    const s = streak();
+    streakListeners.forEach((fn) => { try { fn(s); } catch (e) { /* ignore */ } });
   }
 
-  // Saves the name, then renames this player's existing entries in the background
+  // current streak counts back from today, or from yesterday if today's challenge isn't done yet
+  function streak() {
+    const { days = [], best = 0 } = cachedDays();
+    const set = new Set(days);
+    const today = window.Daily ? Daily.todayKey() : 0;
+    const shift = (k, n) => (window.Daily ? Daily.shiftKey(k, n) : k);
+    const playedToday = set.has(today);
+    let k = playedToday ? today : shift(today, -1);
+    let current = 0;
+    while (set.has(k)) { current++; k = shift(k, -1); }
+    return { current, best: Math.max(best, current), playedToday, atRisk: !playedToday && current > 0 };
+  }
+
+  let profilePromise = null;
+  function profile(refresh = false) {
+    if (!profilePromise || refresh) {
+      profilePromise = (async () => {
+        const { fs, db } = await firebase();
+        const u = await user();
+        const snap = await withTimeout(fs.getDoc(fs.doc(db, 'players', u.uid)), 12000, 'reading profile');
+        const data = snap.exists() ? snap.data() : {};
+        if (data.name) cacheName(data.name);
+        cacheDays(data.days || [], data.bestStreak || 0);
+        return { name: data.name || '', streak: streak() };
+      })().catch((e) => { profilePromise = null; throw e; });
+    }
+    return profilePromise;
+  }
+
+  async function getName() {
+    try { return (await profile()).name || cachedName(); } catch (e) { return cachedName(); }
+  }
+
+  // Saves the name; the server renames all of this player's existing entries
   async function setName(raw) {
-    const name = cleanName(raw);
-    if (!name) throw new Error('bad-name');
-    const { fs, db } = await firebase();
-    const u = await user();
-    await withTimeout(fs.setDoc(fs.doc(db, 'players', u.uid), { name, updatedAt: fs.serverTimestamp() }), 20000, 'saving name');
+    const clean = cleanName(raw);
+    if (!clean) throw new Error('bad-name');
+    const { name } = await call('setName', { name: clean });
     cacheName(name);
     nameListeners.forEach((fn) => { try { fn(name); } catch (e) { console.error('[leaderboard] name listener', e); } });
-    renameEntries(name).catch((e) => console.warn('[leaderboard] could not rename existing entries yet:', e));
+    if (window.Analytics) Analytics.event('name_set');
     return name;
   }
 
-  async function renameEntries(name) {
-    const { fs, db } = await firebase();
-    const u = await user();
-    let docs;
+  // ---------------------------------------------------------------------------
+  // Runs: the server times every game so results can be checked
+  // ---------------------------------------------------------------------------
+  const runs = new Map(); // board → { promise: Promise<runId|null>, startedAt }
+
+  function track(name, board, extra = {}) {
+    if (window.Analytics && info(board)) Analytics.event(name, { game: gameOf(board), mode: modeOf(board), board, ...extra });
+  }
+
+  // Call when a round begins. play: false for games dealt before the player does anything (call played() later).
+  function startRun(board, { play = true } = {}) {
+    if (!info(board)) return Promise.resolve(null);
+    const promise = call('startRun', { board, play })
+      .then((r) => r.runId)
+      .catch((e) => { console.warn('[leaderboard] could not start a verified run:', e); return null; });
+    runs.set(board, { promise, startedAt: Date.now() });
+    if (play) track('game_start', board);
+    return promise;
+  }
+  // Counts a play for a run started with { play: false }
+  function played(board) {
+    if (!info(board)) return;
+    track('game_start', board);
+    call('logPlay', { board }).catch((e) => console.warn('[leaderboard] logPlay failed:', e));
+  }
+  // Continue a saved game's run (infinite Minesweeper)
+  function resumeRun(board, runId) {
+    if (runId) runs.set(board, { promise: Promise.resolve(runId), startedAt: Date.now() });
+  }
+  const runId = (board) => (runs.get(board) ? runs.get(board).promise : Promise.resolve(null));
+
+  // Posting results (one entry per player per board, kept at their best)
+  async function submit(board, result) {
+    const run = runs.get(board);
+    const id = run && (await run.promise);
+    if (!id) throw Object.assign(new Error('no-run'), { code: 'no-run' });
     try {
-      const mine = await withTimeout(fs.getDocs(fs.query(fs.collectionGroup(db, 'scores'), fs.where('uid', '==', u.uid))), 20000, 'finding your entries');
-      docs = mine.docs;
+      const res = await call('submitScore', { runId: id, score: result.score || 0, time: result.time || 0, won: !!result.won });
+      if (!res.needName) runs.delete(board);
+      if (res.days) cacheDays(res.days, res.bestStreak);
+      if (res.name) cacheName(res.name);
+      return res;
     } catch (e) {
-      // index unavailable (e.g. still building): check each board, a few at a time
-      console.warn('[leaderboard] entry query unavailable, checking boards individually:', e && e.code);
-      docs = [];
-      const ids = Object.keys(BOARDS);
-      for (let i = 0; i < ids.length; i += 4) {
-        const snaps = await Promise.all(ids.slice(i, i + 4).map((b) => withTimeout(fs.getDoc(fs.doc(db, 'boards', b, 'scores', u.uid)), 12000, `checking ${b}`).catch(() => null)));
-        snaps.forEach((snap) => { if (snap && snap.exists()) docs.push(snap); });
-      }
+      if (e && /failed-precondition|not-found|deadline-exceeded/.test(e.code || '')) runs.delete(board);
+      throw e;
     }
-    let changed = 0;
-    for (const d of docs) {
-      const data = d.data();
-      if (data.name === name) continue;
-      await withTimeout(fs.setDoc(d.ref, { uid: u.uid, name, score: data.score, time: data.time, won: data.won, updatedAt: fs.serverTimestamp() }), 15000, 'renaming entry');
-      changed++;
-    }
-    if (changed) nameListeners.forEach((fn) => { try { fn(name); } catch (e) { /* ignore */ } });
-    return changed;
   }
 
   // ---------------------------------------------------------------------------
-  // Posting results (one entry per player per board, kept at their best)
+  // Sharing
   // ---------------------------------------------------------------------------
-  async function submit(board, result) {
-    const { fs, db } = await firebase();
-    const u = await user();
-    const name = cachedName() || (await getName());
-    if (!name) throw new Error('no-name');
-    const score = Math.max(0, Math.min(100000000, Math.round(result.score || 0)));
-    const time = Math.max(0, Math.min(86400, Math.round((result.time || 0) * 100) / 100));
-    const ref = fs.doc(db, 'boards', board, 'scores', u.uid);
-    const snap = await withTimeout(fs.getDoc(ref), 15000, 'reading your best');
-    const prev = snap.exists() ? snap.data() : null;
-    const improved = !prev || (isTime(board) ? time < prev.time : score > prev.score);
-    if (improved) await withTimeout(fs.setDoc(ref, { uid: u.uid, name, score, time, won: !!result.won, updatedAt: fs.serverTimestamp() }), 20000, 'posting score');
-    const best = improved ? { score, time } : prev;
-    return { improved, first: !prev, best, rank: await rankOf(board, best), uid: u.uid, name };
+  const SITE = 'https://pacman-d28dc.web.app';
+  function shareText(board, res) {
+    const meta = info(board);
+    const game = gameOf(board);
+    const shown = meta.type === 'time' ? fmtTime(res.best.time) : `${res.best.score.toLocaleString()} pts`;
+    const place = res.rank ? ` (#${res.rank.toLocaleString()}${res.total ? ` of ${res.total.toLocaleString()}` : ''})` : '';
+    const s = streak();
+    if (meta.group === 'Daily') {
+      const name = DAILY_GAMES[game][0];
+      return [
+        `📅 Infinite Arcade Daily · ${window.Daily ? Daily.label(meta.day) : dayLabel(meta.day)}`,
+        `${ICONS[game] || '🎮'} ${name}: ${shown}${place}`,
+        ...(s.current > 1 ? [`🔥 ${s.current}-day streak`] : []),
+        `${SITE}${meta.href}`,
+      ].join('\n');
+    }
+    return [`${ICONS[game] || '🎮'} ${meta.title}: ${shown}${place}`, `Can you beat it? ${SITE}${meta.href}`].join('\n');
+  }
+
+  // Native share sheet on phones, clipboard elsewhere. Resolves to 'shared', 'copied' or 'cancelled'.
+  async function share(text, { board, kind = 'score' } = {}) {
+    const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    let method = 'clipboard';
+    try {
+      if (touch && navigator.share) {
+        method = 'share_sheet';
+        await navigator.share({ text });
+      } else {
+        let copied = false;
+        if (navigator.clipboard && window.isSecureContext) {
+          try { await navigator.clipboard.writeText(text); copied = true; } catch (e) { /* fall back below */ }
+        }
+        if (!copied) {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+          document.body.appendChild(ta);
+          ta.select();
+          copied = document.execCommand('copy');
+          ta.remove();
+          if (!copied) throw new Error('copy failed');
+        }
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return 'cancelled';
+      throw e;
+    }
+    if (window.Analytics) Analytics.event('share', { method, content_type: kind, item_id: board || 'daily-summary', game: board ? gameOf(board) : 'all' });
+    return method === 'share_sheet' ? 'shared' : 'copied';
+  }
+
+  // "📤 Share" button that flips to "✓ Copied!" for a moment
+  function shareButton(getText, opts, className = 'lb-btn lb-share') {
+    injectCss();
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = className;
+    const label = '📤 Share';
+    b.textContent = label;
+    b.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        const how = await share(typeof getText === 'function' ? getText() : getText, opts);
+        if (how === 'copied') { b.textContent = '✓ Copied — paste it anywhere'; setTimeout(() => { b.textContent = label; }, 2200); }
+      } catch (err) {
+        console.error('[leaderboard] share failed:', err);
+        b.textContent = 'Couldn’t copy'; setTimeout(() => { b.textContent = label; }, 2200);
+      }
+    });
+    return b;
   }
 
   // This player's entry on a board (with rank), or null if they haven't posted there
@@ -279,6 +411,12 @@
       .lb-chip .lb-edit:hover { background: #ffe60026; }
       .lb-chip.empty { padding-left: 14px; }
       .lb-chip .lb-pre { white-space: nowrap; }
+      .lb-streak { flex: none; display: inline-flex; align-items: center; gap: 3px; padding: 5px 8px; border-radius: 999px; background: #dc143c26; border: 1px solid #dc143c66; color: #ff8fa3; font: 800 12px Inter, system-ui, sans-serif; line-height: 1; }
+      .lb-streak.dim { background: #ffffff0d; border-color: #ffffff26; color: #b8b8d0; }
+      .lb-share-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 10px; }
+      .lb-btn.lb-share { background: #dc143c; color: #fff; box-shadow: 0 3px 0 #6e0a1c; }
+      .lb-btn.lb-share:active { transform: translateY(2px); box-shadow: 0 1px 0 #6e0a1c; }
+      .lb-streak-note { text-align: center; font: 700 14px Inter, system-ui, sans-serif; color: #ff8fa3; margin: 0 0 8px; }
       @media (max-width: 480px) {
         .lb-chip .lb-pre { display: none; }
         .lb-chip.empty .lb-who { white-space: normal; line-height: 1.3; }
@@ -384,18 +522,31 @@
     const bar = document.createElement('div');
     bar.className = 'lb-namebar';
     parent.appendChild(bar);
+    let editing = false;
+    const badge = () => {
+      const s = streak();
+      if (!s.current) return '';
+      const title = s.playedToday ? `${s.current}-day daily challenge streak` : `${s.current}-day streak — play today's challenge to keep it`;
+      return `<span class="lb-streak${s.playedToday ? '' : ' dim'}" title="${esc(title)}">🔥 ${s.current}</span>`;
+    };
     const render = (name) => {
+      if (editing) return;
       bar.innerHTML = name
-        ? `<div class="lb-chip"><span class="lb-avatar" aria-hidden="true">${esc(name.charAt(0).toUpperCase())}</span><span class="lb-who"><span class="lb-pre">Playing as</span> <b>${esc(name)}</b></span><button type="button" class="lb-edit">Change name</button></div>`
-        : `<div class="lb-chip empty"><span class="lb-who">Want your name on the leaderboards?</span><button type="button" class="lb-edit">Add your name</button></div>`;
+        ? `<div class="lb-chip"><span class="lb-avatar" aria-hidden="true">${esc(name.charAt(0).toUpperCase())}</span><span class="lb-who"><span class="lb-pre">Playing as</span> <b>${esc(name)}</b></span>${badge()}<button type="button" class="lb-edit">Change name</button></div>`
+        : `<div class="lb-chip empty"><span class="lb-who">Want your name on the leaderboards?</span>${badge()}<button type="button" class="lb-edit">Add your name</button></div>`;
       bar.querySelector('.lb-edit').addEventListener('click', async () => {
+        editing = true;
         bar.innerHTML = '';
         const saved = await nameForm(bar, { label: 'Your name appears on every leaderboard you’re on.', button: 'Save name', cancel: true });
+        editing = false;
         render(saved || cachedName());
       });
     };
     render(cachedName());
     nameListeners.add(render);
+    streakListeners.add(() => render(cachedName()));
+    // returning players: refresh the streak from the server in the background
+    if (cachedName() || (cachedDays().days || []).length) setTimeout(() => profile().catch(() => {}), 800);
     return bar;
   }
 
@@ -405,30 +556,70 @@
   function offer(board, result, container) {
     if (!info(board) || !container) return;
     injectCss();
+    const meta = info(board);
+    const daily = meta.group === 'Daily';
+    const run = runs.get(board);
+    track('game_end', board, {
+      score: Math.round(result.score || 0), won: !!result.won,
+      duration: Math.round(isTime(board) && result.time ? result.time : run ? (Date.now() - run.startedAt) / 1000 : 0),
+    });
     const old = container.querySelector('.lb');
     if (old) old.remove();
     const wrap = document.createElement('div');
     wrap.className = 'lb';
-    wrap.innerHTML = `<h3>${info(board).group === 'Daily' ? '📅' : '🏆'} ${esc(info(board).title.toUpperCase())}</h3><div class="lb-slot"></div><div class="lb-note"></div><ol></ol>`;
+    wrap.innerHTML = `<h3>${daily ? '📅' : '🏆'} ${esc(meta.title.toUpperCase())}</h3><div class="lb-slot"></div><div class="lb-note"></div><div class="lb-extra"></div><ol></ol>`;
     const anchor = container.querySelector('.stats, .win-stats, .grid3');
     if (anchor) anchor.after(wrap); else container.appendChild(wrap);
     const slot = wrap.querySelector('.lb-slot');
     const note = wrap.querySelector('.lb-note');
+    const extra = wrap.querySelector('.lb-extra');
     const list = wrap.querySelector('ol');
     shieldKeys(wrap);
+    loadInto(list, note, board);
 
-    if (!qualifies(board, result)) {
+    const canRank = qualifies(board, result);
+    // non-daily results that can't rank don't need the server; daily ones still count for the streak
+    if (!canRank && !daily) {
+      runs.delete(board);
       if (isTime(board)) setNote(note, 'Win to post a time.');
-      loadInto(list, note, board);
       return;
     }
 
     const shown = isTime(board) ? fmtTime(result.time || 0) : (result.score || 0).toLocaleString();
+    const showStreak = (res) => {
+      if (!daily) return;
+      const s = streak();
+      if (!s.current) return;
+      const p = document.createElement('p');
+      p.className = 'lb-streak-note';
+      p.textContent = s.current === 1 ? '🔥 Daily streak started — come back tomorrow!' : `🔥 ${s.current}-day streak!${s.current >= s.best && s.current > 1 ? ' Your best yet.' : ''}`;
+      extra.appendChild(p);
+    };
+    const showShare = (res) => {
+      const row = document.createElement('div');
+      row.className = 'lb-share-row';
+      row.appendChild(shareButton(() => shareText(board, res), { board, kind: daily ? 'daily' : 'score' }));
+      extra.appendChild(row);
+    };
+
     const post = async () => {
-      setNote(note, 'Posting your score…');
+      setNote(note, canRank ? 'Posting your score…' : 'Saving today’s challenge…');
       try {
         const res = await submit(board, result);
         if (!wrap.isConnected) return;
+        extra.innerHTML = '';
+        if (res.needName) {
+          setNote(note, '');
+          showStreak(res);
+          const saved = await nameForm(slot, { label: 'Put your name on the leaderboard', button: `Post ${shown}` });
+          if (saved) post();
+          return;
+        }
+        if (!res.posted) {
+          setNote(note, isTime(board) ? 'Win to post a time.' : '');
+          showStreak(res);
+          return;
+        }
         const change = '<button type="button" class="lb-textbtn">Change name</button>';
         slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(res.name)}</b> ${change}</div>`;
         slot.querySelector('.lb-textbtn').addEventListener('click', async () => {
@@ -437,27 +628,30 @@
           slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(saved || cachedName())}</b></div>`;
           if (saved) { setNote(note, 'Name updated on all your scores.', 'ok'); loadInto(list, note, board); }
         });
-        if (res.improved) setNote(note, `${res.first ? 'On the board' : 'New personal best'}! You're #${res.rank.toLocaleString()}.`, 'ok');
+        if (res.improved) setNote(note, `${res.first ? 'On the board' : 'New personal best'}! You're #${res.rank.toLocaleString()} of ${res.total.toLocaleString()}.`, 'ok');
         else setNote(note, `Your best is still ${fmtEntry(board, res.best)} (#${res.rank.toLocaleString()}). Beat it to climb!`);
+        showStreak(res);
+        showShare(res);
         loadInto(list, note, board);
       } catch (e) {
         console.error('[leaderboard] posting score failed:', e);
-        setNote(note, 'Could not post your score — check your connection.', 'err');
-        loadInto(list, note, board);
+        const code = (e && e.code) || '';
+        if (code === 'no-run') setNote(note, 'The leaderboard was unreachable when this game started, so this result can’t be posted.', 'err');
+        else if (/failed-precondition/.test(code)) setNote(note, 'This result couldn’t be verified, so it wasn’t posted.', 'err');
+        else if (/deadline-exceeded/.test(code)) setNote(note, 'This game ran too long ago to post.', 'err');
+        else {
+          setNote(note, 'Could not post your score — check your connection.', 'err');
+          const retry = document.createElement('button');
+          retry.type = 'button';
+          retry.className = 'lb-textbtn';
+          retry.textContent = 'Try again';
+          retry.addEventListener('click', () => { retry.remove(); post(); });
+          note.appendChild(document.createTextNode(' '));
+          note.appendChild(retry);
+        }
       }
     };
-
-    loadInto(list, note, board);
-    if (cachedName()) { post(); return; }
-    // no name cached on this device: check the profile, otherwise ask for one
-    setNote(note, '');
-    getName().then((existing) => {
-      if (!wrap.isConnected) return;
-      if (existing) { post(); return; }
-      nameForm(slot, { label: 'Put your name on the leaderboard', button: `Post ${shown}` }).then((saved) => { if (saved) post(); });
-    }).catch(() => {
-      nameForm(slot, { label: 'Put your name on the leaderboard', button: `Post ${shown}` }).then((saved) => { if (saved) post(); });
-    });
+    post();
   }
 
   // ---------------------------------------------------------------------------
@@ -510,5 +704,9 @@
     return b;
   }
 
-  window.Leaderboard = { BOARDS, info, dailyBoards, DAILY_GAMES, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime, onName: (fn) => nameListeners.add(fn) };
+  window.Leaderboard = {
+    BOARDS, info, dailyBoards, DAILY_GAMES, ICONS, gameOf, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime,
+    startRun, played, resumeRun, runId, profile, streak, share, shareText, shareButton,
+    onName: (fn) => nameListeners.add(fn), onStreak: (fn) => streakListeners.add(fn),
+  };
 })();

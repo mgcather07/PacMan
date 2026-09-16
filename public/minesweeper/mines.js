@@ -186,9 +186,12 @@
 
   function act(x, y, flag) {
     const k = key(x, y);
+    const fresh = !G.safe;
     if (G.revealed.has(k)) chord(x, y);
     else if (flag) toggleFlag(x, y);
     else reveal(x, y);
+    // the first reveal is what counts as playing this field
+    if (fresh && G.safe && window.Leaderboard) Leaderboard.played(boardId());
   }
 
   // ---------------------------------------------------------------------------
@@ -227,6 +230,16 @@
     }
   }
 
+  const boardId = () => Daily.board('minesweeper') || (CLASSIC ? `mines-${diff}` : 'minesweeper');
+  // the server times each field; an infinite field keeps its run in the save so it can be resumed
+  function startRun() {
+    if (!window.Leaderboard) return;
+    const field = G;
+    Leaderboard.startRun(boardId(), { play: false }).then((id) => {
+      if (id && G === field && !CLASSIC && !DAILY) { G.runId = id; changed(); }
+    });
+  }
+
   function newField() {
     G = freshGame();
     cam = { x: 0, y: 0, z: cam.z };
@@ -238,6 +251,7 @@
     $('over').hidden = true;
     $('hint').classList.remove('gone');
     changed();
+    startRun();
   }
 
   // ---------------------------------------------------------------------------
@@ -435,7 +449,7 @@
     }
     if (window.Arcade) Arcade.endScreen(!!won, msg);
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(Daily.board('minesweeper') || (CLASSIC ? `mines-${diff}` : 'minesweeper'), { score: G.score, time: elapsed(), won: !!won }, document.querySelector('#over .panel'));
+    if (window.Leaderboard) Leaderboard.offer(boardId(), { score: G.score, time: elapsed(), won: !!won }, document.querySelector('#over .panel'));
     if (!CLASSIC && !DAILY) { try { localStorage.removeItem('infmines.game'); } catch (e) { /* ignore */ } }
   }
 
@@ -549,7 +563,7 @@
   }
   let homeAnim = null;
 
-  if (window.Leaderboard) Leaderboard.button(() => Daily.board('minesweeper') || (CLASSIC ? `mines-${diff}` : 'minesweeper'), document.querySelector('.actions'), 'lb-open');
+  if (window.Leaderboard) Leaderboard.button(boardId, document.querySelector('.actions'), 'lb-open');
   $('mode-btn').addEventListener('click', (e) => { setFlagMode(!flagMode); e.currentTarget.blur(); });
   $('home-btn').addEventListener('click', goHome);
   $('new-btn').addEventListener('click', () => {
@@ -610,6 +624,8 @@
     newField();
   } else {
     if (!load()) newField();
+    else if (window.Leaderboard && G.runId) Leaderboard.resumeRun(boardId(), G.runId);
+    else startRun();
     cam.z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, cam.z || Math.round(Math.min(W, H) / 18)));
     if (!G.safe) cam.z = Math.max(24, Math.min(40, Math.round(Math.min(W, H) / 18)));
   }

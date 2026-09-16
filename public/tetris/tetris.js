@@ -139,6 +139,7 @@
     newGame();
     state = 'play';
     $('mode-label').textContent = mode.toUpperCase();
+    if (window.Leaderboard) Leaderboard.startRun(boardId());
   }
 
   function gameOver(reason) {
