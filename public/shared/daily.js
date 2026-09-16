@@ -67,6 +67,8 @@
         .daily-banner { display: inline-flex; align-items: center; gap: 8px; margin: 6px auto 4px; padding: 8px 14px; border-radius: 999px;
           background: #dc143c24; border: 1px solid #dc143c88; color: #ff8fa3; font: 600 13px Inter, system-ui, sans-serif; line-height: 1.3; }
         .daily-banner b { color: #fff; }
+        [data-daily] .lb-chip .lb-edit { color: #ff8fa3; background: #dc143c1f; border-color: #dc143c66; }
+        [data-daily] .lb-chip .lb-edit:hover { background: #dc143c38; }
         .daily-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: #dc143c2e;
           border: 1px solid #dc143c88; color: #ff8fa3; font: 700 12px Inter, system-ui, sans-serif; white-space: nowrap; }
       `;

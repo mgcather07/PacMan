@@ -272,7 +272,7 @@
       .lb-namebar .lb-form, .lb-namebar .lb-label, .lb-namebar .lb-note { width: 100%; }
       .lb-namebar > div:not(.lb-chip) { width: 100%; max-width: 420px; }
       .lb-chip { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 6px 6px 6px 8px; border-radius: 999px; background: #ffffff0d; border: 1px solid #ffffff1f; font: 14px Inter, system-ui, -apple-system, sans-serif; color: #b8b8d0; line-height: 1; }
-      .lb-avatar { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #ffe600, #ff9f3d); color: #1b1400; font: 800 13px Inter, system-ui, sans-serif; }
+      .lb-avatar { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #ff3b5c, #a50d2b); color: #fff; font: 800 13px Inter, system-ui, sans-serif; }
       .lb-chip .lb-who { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
       .lb-chip .lb-who b { color: #fff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .lb-chip .lb-edit { flex: none; font: 600 13px Inter, system-ui, sans-serif; color: #ffe600; background: #ffe60014; border: 1px solid #ffe60040; border-radius: 999px; padding: 7px 12px; cursor: pointer; line-height: 1; }
