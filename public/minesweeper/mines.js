@@ -434,6 +434,7 @@
     }
     if (window.Arcade) Arcade.endScreen(!!won, msg);
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(CLASSIC ? `mines-${diff}` : 'minesweeper', { score: G.score, time: elapsed(), won: !!won }, document.querySelector('#over .panel'));
     if (!CLASSIC) { try { localStorage.removeItem('infmines.game'); } catch (e) { /* ignore */ } }
   }
 
@@ -547,6 +548,7 @@
   }
   let homeAnim = null;
 
+  if (window.Leaderboard) Leaderboard.button(() => (CLASSIC ? `mines-${diff}` : 'minesweeper'), document.querySelector('.actions'), 'lb-open');
   $('mode-btn').addEventListener('click', (e) => { setFlagMode(!flagMode); e.currentTarget.blur(); });
   $('home-btn').addEventListener('click', goHome);
   $('new-btn').addEventListener('click', () => {

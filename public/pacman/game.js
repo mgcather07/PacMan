@@ -838,6 +838,7 @@
     $('final-level').textContent = CLASSIC ? `${level}/${LEVELS}` : level;
     if (window.Arcade) Arcade.endScreen(!!won, won ? `All ${LEVELS} mazes cleared!` : '');
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(CLASSIC ? 'pacman-classic' : 'pacman', { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function start() {
@@ -850,6 +851,7 @@
   }
 
   $('play-btn').addEventListener('click', start);
+  if (window.Leaderboard) Leaderboard.button(CLASSIC ? 'pacman-classic' : 'pacman', document.querySelector('#title .panel'), 'btn alt');
   $('again-btn').addEventListener('click', start);
   $('sound-btn').addEventListener('click', (e) => {
     Sound.on = !Sound.on;

@@ -20,6 +20,7 @@
     },
 
     variantKey: ({ suits }) => '.' + suits,
+    leaderboard: ({ suits }) => `spider-${suits}`,
 
     deal(cards) {
       const deck = cards.map((_, i) => i);

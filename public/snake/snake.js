@@ -633,6 +633,7 @@
     $('o-kills').textContent = kills;
     if (window.Arcade) Arcade.endScreen(!!won, won ? `All ${STAGES.length} arenas conquered!` : '');
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(CLASSIC ? 'snake-classic' : 'snake', { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function start() {
@@ -645,6 +646,7 @@
     state = 'play';
   }
   $('play-btn').addEventListener('click', start);
+  if (window.Leaderboard) Leaderboard.button(CLASSIC ? 'snake-classic' : 'snake', document.querySelector('#title .panel'), 'btn alt');
   $('again-btn').addEventListener('click', start);
   $('sound-btn').addEventListener('click', (e) => {
     Sound.on = !Sound.on;

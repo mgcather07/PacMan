@@ -86,6 +86,7 @@
     $('o-dist').textContent = CLASSIC ? `${wave}/${WAVES}` : Math.round(farthest / 100);
     Arcade.endScreen(won, won ? `All ${WAVES} waves cleared!` : '');
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'asteroids-classic' : 'asteroids', { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function spawnUfo() {
@@ -556,6 +557,7 @@
   bindPadButtons(keys);
 
   $('play-btn').addEventListener('click', start);
+  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'asteroids-classic' : 'asteroids', document.querySelector('#title .panel'), 'btn alt');
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

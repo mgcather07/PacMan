@@ -62,6 +62,7 @@
     $('o-kills').textContent = kills;
     Arcade.endScreen(won, won ? `All ${FINAL_WAVE} waves and 3 bosses defeated!` : '');
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'shooter-classic' : 'shooter', { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function startWave() {
@@ -624,6 +625,7 @@
   $('bomb-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); useBomb(); });
 
   $('play-btn').addEventListener('click', start);
+  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'shooter-classic' : 'shooter', document.querySelector('#title .panel'), 'btn alt');
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

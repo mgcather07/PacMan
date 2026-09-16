@@ -115,6 +115,7 @@
     $('o-time').textContent = `${Math.floor(elapsed / 60)}:${String(Math.floor(elapsed % 60)).padStart(2, '0')}`;
     Arcade.endScreen(won, won ? `All ${LEVELS.length} levels cleared!` : '');
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'breakout-classic' : 'breakout', { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function nextLevel() {
@@ -595,6 +596,7 @@
   });
 
   $('play-btn').addEventListener('click', start);
+  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'breakout-classic' : 'breakout', document.querySelector('#title .panel'), 'btn alt');
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

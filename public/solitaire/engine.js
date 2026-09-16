@@ -399,7 +399,10 @@
       $('win-time').textContent = fmt(elapsed);
       $('win-moves').textContent = S.moves;
       $('win-record').textContent = rec;
-      celebrate(() => { $('win').hidden = false; });
+      celebrate(() => {
+        $('win').hidden = false;
+        if (window.Leaderboard && game.leaderboard) Leaderboard.offer(game.leaderboard(opts), { score: S.score, time: elapsed, won: true }, document.querySelector('#win .win-panel'));
+      });
     }
 
     let celebRaf = 0;
@@ -472,6 +475,7 @@
     $('win-new').addEventListener('click', () => newGame(game.nextOpts ? game.nextOpts(opts) : null));
     $('undo-btn').addEventListener('click', undo);
     $('hint-btn').addEventListener('click', showHint);
+    if (window.Leaderboard && game.leaderboard) Leaderboard.button(() => game.leaderboard(opts), document.querySelector('.actions'), 'lb-open');
     window.addEventListener('keydown', (e) => {
       if (e.target.closest && e.target.closest('input, select')) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }

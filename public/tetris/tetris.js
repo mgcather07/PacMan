@@ -65,6 +65,7 @@
   if (!CLASSIC && mode === 'sprint') mode = 'tower';
   // Classic goals: Sprint = 40 lines against the clock, Marathon = reach 150 lines
   const goal = () => (mode === 'sprint' ? 40 : CLASSIC && mode === 'marathon' ? 150 : Infinity);
+  const boardId = () => (mode === 'tower' ? 'tetris-tower' : mode === 'sprint' ? 'tetris-sprint' : CLASSIC ? 'tetris-marathon150' : 'tetris-marathon');
   const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
   let state = 'title';
   let paused = false;
@@ -149,6 +150,7 @@
     $('o-third').textContent = mode === 'tower' ? maxHeight : mode === 'sprint' ? fmt(time) : level;
     Arcade.endScreen(false);
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(boardId(), { score, time, won: false }, document.querySelector('#over .panel'));
   }
 
   function win() {
@@ -170,6 +172,7 @@
     $('o-third').textContent = mode === 'sprint' ? fmt(time) : level;
     Arcade.endScreen(true, msg);
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(boardId(), { score, time, won: true }, document.querySelector('#over .panel'));
   }
 
   const gravityInterval = () => Math.pow(Math.max(0.05, 0.8 - (Math.min(level, 20) - 1) * 0.007), Math.min(level, 20) - 1);
@@ -548,6 +551,7 @@
   setMode(mode);
 
   $('play-btn').addEventListener('click', start);
+  if (window.Leaderboard) Leaderboard.button(boardId, document.querySelector('#title .panel'), 'btn alt');
   $('again-btn').addEventListener('click', start);
   $('menu-btn').addEventListener('click', () => { $('over').hidden = true; $('title').hidden = false; state = 'title'; });
   soundButton($('sound-btn'));

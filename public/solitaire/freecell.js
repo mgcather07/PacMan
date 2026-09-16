@@ -42,6 +42,7 @@
       return { piles, up: Array(52).fill(true), score: 0, moves: 0 };
     },
 
+    leaderboard: () => 'freecell',
     nextOpts: () => ({ number: 1 + Math.floor(Math.random() * 1000000) }),
 
     layout(width) {

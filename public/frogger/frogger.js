@@ -214,6 +214,7 @@
     $('o-coins').textContent = coins;
     Arcade.endScreen(won, won ? `All ${COURSES.length} courses crossed with ${lives} ${lives === 1 ? 'life' : 'lives'} to spare!` : '');
     $('over').hidden = false;
+    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'frogger-classic' : 'frogger', { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   // Classic mode: reaching the finish line completes the course
@@ -618,6 +619,7 @@
   });
   swipe(canvas, (d) => tryHop(d), () => tryHop(3));
   $('play-btn').addEventListener('click', start);
+  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'frogger-classic' : 'frogger', document.querySelector('#title .panel'), 'btn alt');
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

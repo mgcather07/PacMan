@@ -109,6 +109,8 @@
     .tabs button[aria-selected="true"] { background: #ffe600; color: #1b1400; box-shadow: 0 4px 18px #ffe60044; }
     body[data-tab="classic"] .tabs button[aria-selected="true"] { background: #7dff6a; box-shadow: 0 4px 18px #7dff6a44; }
     body[data-tab="classic"] h1 span { color: #7dff6a; text-shadow: 0 0 24px #7dff6a66, 5px 5px 0 #2e7d32; }
+    .lb-link { display: inline-block; margin-top: 16px; font: 11px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding: 10px 14px; border-radius: 10px; border: 1px solid #ffe60055; }
+    .lb-link:hover { background: #ffe60018; }
   </style>
 </head>
 <body>
@@ -122,6 +124,7 @@
         <button role="tab" data-tab="infinite">∞ Infinite</button>
         <button role="tab" data-tab="classic">🏆 Classic</button>
       </nav>
+      <div><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a></div>
     </header>
 
     <section class="grid">
@@ -259,6 +262,8 @@
         document.querySelectorAll('a.game[data-base]').forEach((a) => { a.href = a.dataset.base + (tab === 'classic' ? '?mode=classic' : ''); });
         try { localStorage.setItem('arcade.tab', tab); } catch (e) { /* ignore */ }
         if (push) history.replaceState(null, '', tab === 'classic' ? '#classic' : location.pathname);
+        const lbLink = document.querySelector('.lb-link');
+        if (lbLink) lbLink.href = '/leaderboards/#' + tab;
       }
       buttons.forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab, true)));
       let initial = location.hash === '#classic' ? 'classic' : location.hash === '#infinite' ? 'infinite' : null;

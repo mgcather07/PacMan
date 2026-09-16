@@ -501,7 +501,10 @@
     $('win-time').textContent = fmt(elapsed);
     $('win-moves').textContent = S.moves;
     $('win-record').textContent = rec;
-    celebrate(() => { $('win').hidden = false; });
+    celebrate(() => {
+      $('win').hidden = false;
+      if (window.Leaderboard) Leaderboard.offer(`klondike-${drawMode}`, { score: S.score, time: elapsed, won: true }, document.querySelector('#win .win-panel'));
+    });
   }
 
   // Classic bouncing-card cascade
@@ -565,6 +568,7 @@
   }
 
   $('new-btn').addEventListener('click', newGame);
+  if (window.Leaderboard) Leaderboard.button(() => `klondike-${drawMode}`, document.querySelector('.actions'), 'lb-open');
   $('win-new').addEventListener('click', newGame);
   $('undo-btn').addEventListener('click', undo);
   $('hint-btn').addEventListener('click', showHint);
