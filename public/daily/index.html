@@ -28,55 +28,132 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html, body { margin: 0; min-height: 100%; }
     body { background: radial-gradient(ellipse at 50% -10%, #3a0714 0%, #05050f 55%) fixed, #05050f; color: #eee; font-family: Inter, system-ui, sans-serif; }
-    main { max-width: 1100px; margin: 0 auto; padding: clamp(24px, 5vh, 56px) 18px 56px; }
-    .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 22px 22px; }
+    main { position: relative; max-width: 1120px; margin: 0 auto; padding: clamp(20px, 4vh, 44px) 16px 56px; }
+    .px { font-family: "Press Start 2P", monospace; font-weight: normal; }
+
+    /* ---- header ---- */
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
     .top a { font: 11px "Press Start 2P", monospace; color: #9a9ab8; text-decoration: none; }
     .top a:hover { color: #fff; }
-    h1 { font: clamp(20px, 5.4vw, 42px) "Press Start 2P", monospace; color: #ff3b5c; text-shadow: 0 0 26px #dc143c77, 4px 4px 0 #6e0a1c; margin: 6px 0 10px; text-align: center; line-height: 1.3; }
-    .date { text-align: center; font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
-    .countdown { text-align: center; color: #b8939b; margin: 6px 0 18px; font-variant-numeric: tabular-nums; }
-    .how { max-width: 640px; margin: 0 auto 18px; text-align: center; color: #9a9ab8; line-height: 1.55; }
-    .namebar { margin: 0 auto 16px; }
-    .streak { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 640px; margin: 0 auto 22px; padding: 12px 16px; border-radius: 16px; background: #dc143c14; border: 1px solid #dc143c44; }
-    .streak .flame { font-size: 30px; line-height: 1; filter: grayscale(var(--gray, 0)); }
-    .streak .txt { flex: 1 1 200px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .streak b { font: 13px/1.4 "Press Start 2P", monospace; color: #ff3b5c; }
-    .streak small { color: #b8939b; font-size: 13px; }
-    .streak .share-today { margin-left: auto; font: 10px "Press Start 2P", monospace; color: #fff; background: #dc143c; border: 0; border-radius: 10px; padding: 11px 12px; cursor: pointer; box-shadow: 0 3px 0 #6e0a1c; white-space: nowrap; }
-    .streak .share-today:disabled { opacity: .45; cursor: default; box-shadow: none; }
-    .streak .share-today:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #6e0a1c; }
-    @media (max-width: 520px) { .streak .share-today { margin-left: 0; width: 100%; } }
+    .hero { text-align: center; }
+    h1 { font: clamp(20px, 5.4vw, 44px)/1.3 "Press Start 2P", monospace; color: #ff3b5c; text-shadow: 0 0 26px #dc143c77, 4px 4px 0 #6e0a1c; margin: 4px 0 14px; }
+    .date { display: inline-block; font: 11px/1 "Press Start 2P", monospace; text-transform: uppercase; color: #fff; padding: 9px 12px 8px; border-radius: 4px; background: #dc143c2e; border: 1px solid #dc143c88; box-shadow: 3px 3px 0 #5a0717; }
+    .countdown { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; margin: 16px 0 10px; font: 9px "Press Start 2P", monospace; color: #b8939b; text-transform: uppercase; }
+    .countdown .digits { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; }
+    .countdown .d { min-width: 34px; padding: 7px 5px 6px; border-radius: 4px; background: #000; border: 1px solid #dc143c66; color: #ff3b5c; font-size: 13px; text-shadow: 0 0 8px #ff3b5c99; font-variant-numeric: tabular-nums; }
+    .countdown .colon { color: #ff3b5c; animation: blink 1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: .2; } }
+    .how { max-width: 600px; margin: 0 auto 16px; text-align: center; color: #9a9ab8; line-height: 1.55; font-size: 15px; }
+    .namebar { margin: 0 auto 20px; }
     .namebar .lb-chip .lb-edit { color: #ff8fa3; background: #dc143c1f; border-color: #dc143c66; }
     .namebar .lb-chip .lb-edit:hover { background: #dc143c38; }
-    .tabs { display: flex; justify-content: center; gap: 6px; margin: 0 auto 24px; padding: 6px; border-radius: 16px; background: #ffffff0d; border: 1px solid #ffffff1a; width: fit-content; }
-    .tabs button { font: 11px "Press Start 2P", monospace; color: #9a9ab8; background: transparent; border: 0; border-radius: 11px; padding: 13px 16px; cursor: pointer; }
-    .tabs button[aria-selected="true"] { background: #dc143c; color: #fff; }
-    .progress { text-align: center; color: #ff8fa3; font-weight: 700; margin: -8px 0 20px; min-height: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-    .card { position: relative; background: #0f0b12; border: 1px solid #ffffff1a; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-    .card.played { border-color: #dc143c66; box-shadow: 0 0 0 1px #dc143c22 inset; }
-    .card header { display: flex; align-items: center; gap: 10px; }
-    .card .icon { font-size: 26px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: #ffffff0d; }
-    .card h2 { margin: 0; font: 11px/1.6 "Press Start 2P", monospace; color: #fff; }
-    .card .twist { font-size: 13px; color: #9a9ab8; margin: 2px 0 0; }
-    .card .kind { margin-left: auto; font-size: 11px; color: #b8939b; white-space: nowrap; align-self: flex-start; }
-    .mine { font-size: 14px; padding: 8px 10px; border-radius: 10px; background: #ffffff08; color: #bbb; }
-    .mine b { color: #ff8fa3; }
-    .card ol { list-style: none; margin: 0; padding: 0; }
-    .card li { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; padding: 5px 2px; border-top: 1px solid #ffffff10; font-size: 14px; }
-    .card li:first-child { border-top: 0; }
-    .card li .rk { color: #888; font-weight: 800; }
-    .card li:nth-child(1) .rk { color: #ffd700; } .card li:nth-child(2) .rk { color: #d0d8e8; } .card li:nth-child(3) .rk { color: #e0a060; }
-    .card li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .card li .sc { font-variant-numeric: tabular-nums; font-weight: 700; }
-    .card li.me { background: #dc143c20; border-radius: 6px; }
-    .card li.empty { display: block; color: #777; text-align: center; padding: 10px 0; }
-    .play { margin-top: auto; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; font: 11px "Press Start 2P", monospace; color: #fff; background: #dc143c; border-radius: 12px; padding: 13px; box-shadow: 0 4px 0 #6e0a1c; }
-    .play:active { transform: translateY(3px); box-shadow: 0 1px 0 #6e0a1c; }
-    .play.again { background: #ffffff14; color: #ff8fa3; box-shadow: none; border: 1px solid #dc143c55; }
-    .note { text-align: center; color: #666; font-size: 13px; margin-top: 28px; }
+
+    /* ---- dashboard: streak + progress ---- */
+    .dash { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 16px; margin: 0 auto 26px; max-width: 980px; }
+    .panel { position: relative; border-radius: 6px; padding: 16px 18px; background: #12080dcc; border: 1px solid #dc143c55; box-shadow: 4px 4px 0 #3a0510; }
+    .panel h3 { margin: 0 0 12px; font: 9px "Press Start 2P", monospace; color: #b8939b; letter-spacing: 1px; text-transform: uppercase; }
+    .streak-main { display: flex; align-items: center; gap: 14px; }
+    .flame { font-size: 40px; line-height: 1; filter: grayscale(var(--gray, 0)) drop-shadow(0 0 10px #ff5a1f88); }
+    .flame.lit { animation: flicker 1.6s ease-in-out infinite; }
+    @keyframes flicker { 0%, 100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.08) rotate(2deg); } }
+    .streak-num { font: 22px/1.2 "Press Start 2P", monospace; color: #ff3b5c; text-shadow: 3px 3px 0 #5a0717; }
+    .streak-num small { font-size: 10px; color: #ff8fa3; text-shadow: none; margin-left: 4px; }
+    .streak-sub { color: #c7a9b0; font-size: 13px; margin-top: 6px; line-height: 1.4; }
+    .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 14px; }
+    .week div { display: flex; flex-direction: column; align-items: center; gap: 5px; font: 7px "Press Start 2P", monospace; color: #8a7479; }
+    .week i { display: block; width: 100%; max-width: 30px; aspect-ratio: 1; border-radius: 3px; background: #ffffff0a; border: 1px solid #ffffff1c; }
+    .week .on i { background: linear-gradient(135deg, #ff5a1f, #dc143c); border-color: #ff8a5c; box-shadow: 0 0 10px #ff3b3b66; }
+    .week .today i { outline: 2px dashed #ff8fa3; outline-offset: 2px; }
+    .week .today { color: #fff; }
+
+    .prog-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .prog-num { font: 22px/1.2 "Press Start 2P", monospace; color: #fff; text-shadow: 3px 3px 0 #3a0510; }
+    .prog-num small { font-size: 10px; color: #b8939b; text-shadow: none; }
+    .segments { display: grid; grid-template-columns: repeat(11, 1fr); gap: 5px; margin: 14px 0; }
+    .segments a { display: grid; place-items: center; height: 34px; border-radius: 3px; text-decoration: none; font-size: 15px; background: #ffffff08; border: 1px solid #ffffff1a; filter: grayscale(1); opacity: .55; transition: transform .12s; }
+    .segments a.done { filter: none; opacity: 1; background: color-mix(in srgb, var(--acc) 22%, transparent); border-color: var(--acc); box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 40%, transparent); }
+    .segments a:hover { transform: translateY(-2px); opacity: 1; filter: none; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .abtn { flex: 1 1 180px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; font: 10px/1.4 "Press Start 2P", monospace; text-transform: uppercase; text-decoration: none; text-align: center; cursor: pointer;
+      color: #fff; padding: 12px 12px 11px; border-radius: 4px; border: 1px solid #ff5c7a; background: #dc143c; box-shadow: 3px 3px 0 #5a0717; transition: transform .1s, box-shadow .1s; }
+    .abtn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #5a0717; }
+    .abtn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #5a0717; }
+    .abtn.ghost { background: #dc143c1a; border-color: #dc143c88; }
+    .abtn:disabled { opacity: .4; cursor: default; }
+    .all-done { text-align: center; font: 10px/1.6 "Press Start 2P", monospace; color: #ffd700; text-shadow: 0 0 12px #ffd70088; animation: glow 1.4s ease-in-out infinite; }
+    @keyframes glow { 50% { text-shadow: 0 0 22px #ffd700; } }
+
+    /* ---- tabs + filters ---- */
+    .controls { display: flex; justify-content: center; align-items: center; gap: 12px 18px; flex-wrap: wrap; margin: 0 auto 20px; }
+    .tabs, .filters { display: flex; gap: 6px; padding: 5px; border-radius: 6px; background: #ffffff0a; border: 1px solid #ffffff1a; }
+    .tabs button, .filters button { font: 10px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 11px 13px 10px; cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: #dc143c; color: #fff; box-shadow: 2px 2px 0 #5a0717; }
+    .filters button[aria-pressed="true"] { color: #fff; border-color: #dc143c88; background: #dc143c26; }
+    .filters b { color: #ff8fa3; font-weight: normal; }
+
+    /* ---- game cards ---- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 18px; }
+    .grid[data-filter="todo"] .card[data-state="done"], .grid[data-filter="done"] .card:not([data-state="done"]) { display: none; }
+    .card { --acc: #ffe600; position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 6px; background: #0c0a14;
+      border: 1px solid color-mix(in srgb, var(--acc) 30%, transparent); box-shadow: 4px 4px 0 color-mix(in srgb, var(--acc) 14%, #000); transition: transform .15s, box-shadow .15s; }
+    .card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 color-mix(in srgb, var(--acc) 24%, #000); }
+    .card[data-state="done"] { border-color: color-mix(in srgb, var(--acc) 65%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 8%, #0c0a14), #0c0a14 55%); }
+    .card header { display: flex; align-items: center; gap: 12px; padding-right: 64px; }
+    .card .icon { flex: none; font-size: 26px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 4px;
+      background: color-mix(in srgb, var(--acc) 12%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 50%, transparent); box-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 22%, #000); }
+    .card h2 { margin: 0 0 8px; font: 12px/1.4 "Press Start 2P", monospace; text-transform: uppercase; color: var(--acc); text-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 25%, #000); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips span { font: 7px/1 "Press Start 2P", monospace; text-transform: uppercase; letter-spacing: .4px; padding: 5px 6px 4px; border-radius: 3px;
+      color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent); }
+    .chips span.kind { color: #cfcfe6; border-color: #ffffff30; background: #ffffff0a; }
+    .stamp { position: absolute; top: 14px; right: 12px; font: 8px/1 "Press Start 2P", monospace; color: var(--acc); border: 2px solid var(--acc); border-radius: 4px; padding: 6px 6px 5px; transform: rotate(8deg); opacity: .9; background: #0c0a14; }
+    .stamp.medal { font-size: 22px; border: 0; padding: 0; transform: rotate(0); background: none; top: 10px; right: 14px; }
+
+    .mine { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 9px 12px; border-radius: 4px; background: #ffffff06; border: 1px dashed #ffffff1c; }
+    .mine .lbl { font: 7px/1.5 "Press Start 2P", monospace; color: #8f8fa8; text-transform: uppercase; }
+    .mine .val { font: 15px/1.2 "Press Start 2P", monospace; color: #fff; }
+    .mine .rank { margin-left: auto; text-align: right; font: 8px/1.6 "Press Start 2P", monospace; color: var(--acc); }
+    .mine .rank small { display: block; color: #8f8fa8; font-size: 7px; }
+    .mine.dim { color: #8f8fa8; font: 8px/1.6 "Press Start 2P", monospace; text-transform: uppercase; justify-content: center; }
+    .card[data-state="done"] .mine { border-style: solid; border-color: color-mix(in srgb, var(--acc) 35%, transparent); background: color-mix(in srgb, var(--acc) 7%, transparent); }
+
+    .board { list-style: none; margin: 0; padding: 0; }
+    .board li { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 8px; padding: 7px 6px; font-size: 14px; border-top: 1px solid #ffffff0d; }
+    .board li:first-child { border-top: 0; }
+    .board .rk { font: 9px "Press Start 2P", monospace; color: #6f6f88; }
+    .board li:nth-child(1) .rk { color: #ffd700; } .board li:nth-child(2) .rk { color: #d0d8e8; } .board li:nth-child(3) .rk { color: #e0a060; }
+    .board .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .board .sc { font: 10px "Press Start 2P", monospace; font-variant-numeric: tabular-nums; color: #eee; }
+    .board li.me { background: color-mix(in srgb, var(--acc) 14%, transparent); border-radius: 3px; }
+    .board li.me .nm { color: var(--acc); font-weight: 700; }
+    .board li.me .nm::after { content: ' (you)'; font-weight: 400; font-size: 12px; opacity: .8; }
+    .board li.empty { display: block; text-align: center; color: #77778f; font: 8px/1.8 "Press Start 2P", monospace; text-transform: uppercase; padding: 14px 0; }
+    .board li.winner .nm::before { content: '👑 '; }
+    .board li.skel { height: 33px; }
+    .board li.skel::after { content: ''; grid-column: 1 / -1; height: 12px; border-radius: 3px; background: linear-gradient(90deg, #ffffff08, #ffffff18, #ffffff08); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .players { font: 7px "Press Start 2P", monospace; color: #77778f; text-transform: uppercase; text-align: right; margin-top: -4px; min-height: 8px; }
+
+    .play { margin-top: auto; display: flex; justify-content: center; align-items: center; gap: 10px; text-decoration: none; font: 11px/1 "Press Start 2P", monospace; text-transform: uppercase;
+      color: #0b0b12; background: var(--acc); border: 1px solid var(--acc); border-radius: 4px; padding: 14px 12px 13px; box-shadow: 3px 3px 0 color-mix(in srgb, var(--acc) 35%, #000); transition: transform .1s, box-shadow .1s; }
+    .play:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 color-mix(in srgb, var(--acc) 35%, #000); }
+    .play:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 color-mix(in srgb, var(--acc) 35%, #000); }
+    .card[data-state="done"] .play { color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); }
+    .empty-filter { grid-column: 1 / -1; text-align: center; font: 10px/1.8 "Press Start 2P", monospace; color: #9a9ab8; padding: 30px 0; }
+    .note { text-align: center; color: #666; font-size: 13px; margin-top: 30px; }
+
+    @media (max-width: 760px) { .dash { grid-template-columns: 1fr; } }
+    @media (max-width: 420px) {
+      .grid { grid-template-columns: 1fr; }
+      .segments { gap: 3px; } .segments a { height: 28px; font-size: 12px; }
+      .countdown .d { min-width: 30px; font-size: 11px; }
+      .tabs button, .filters button { padding: 10px 9px 9px; font-size: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .flame.lit, .countdown .colon, .all-done, .board li.skel::after { animation: none; } }
   </style>
   <script src="/shared/analytics.js"></script>
   <script src="/shared/pwa.js"></script>
@@ -84,22 +161,46 @@
 <body>
   <main>
     <div class="top"><a href="/">⌂ ARCADE</a><a href="/leaderboards/">🏅 ALL LEADERBOARDS</a></div>
-    <h1>📅 DAILY CHALLENGE</h1>
-    <p class="date" id="date"></p>
-    <p class="countdown" id="countdown"></p>
-    <p class="how">Every day each game gets one shared setup — the same maze, road, brick wall, piece order and card deal for everyone. Play as many times as you like; your best result counts.</p>
+    <header class="hero">
+      <h1>📅 DAILY CHALLENGE</h1>
+      <span class="date" id="date"></span>
+      <div class="countdown" id="countdown" aria-live="off"></div>
+      <p class="how">Every game gets one shared setup today: the same maze, road, bricks, pieces and deals for everyone. Play as often as you like; your best counts.</p>
+    </header>
     <div id="namebar" class="namebar"></div>
-    <div class="streak" id="streak">
-      <span class="flame" aria-hidden="true">🔥</span>
-      <div class="txt"><b id="streak-title">Daily streak</b><small id="streak-sub">Finish any challenge each day to build a streak.</small></div>
-      <button type="button" class="share-today" id="share-today" disabled>📤 SHARE TODAY</button>
+
+    <section class="dash" id="dash">
+      <div class="panel">
+        <h3>Daily streak</h3>
+        <div class="streak-main">
+          <span class="flame" id="flame" aria-hidden="true">🔥</span>
+          <div><div class="streak-num" id="streak-num">0<small>DAYS</small></div><div class="streak-sub" id="streak-sub"></div></div>
+        </div>
+        <div class="week" id="week"></div>
+      </div>
+      <div class="panel">
+        <div class="prog-top"><h3>Today’s progress</h3><div class="prog-num" id="prog-num">0<small>/11</small></div></div>
+        <div class="segments" id="segments"></div>
+        <div class="all-done" id="all-done" hidden>🏆 ALL 11 CLEARED! 🏆</div>
+        <div class="actions">
+          <a class="abtn" id="play-next" href="#">▶ PLAY NEXT</a>
+          <button type="button" class="abtn ghost" id="share-today" disabled>📤 SHARE TODAY</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-day="today" aria-selected="true">Today</button>
+        <button role="tab" data-day="yesterday" aria-selected="false">Yesterday</button>
+      </nav>
+      <div class="filters" id="filters">
+        <button type="button" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" data-filter="todo" aria-pressed="false">To play <b id="n-todo"></b></button>
+        <button type="button" data-filter="done" aria-pressed="false">Done <b id="n-done"></b></button>
+      </div>
     </div>
-    <nav class="tabs" role="tablist">
-      <button role="tab" data-day="today" aria-selected="true">Today</button>
-      <button role="tab" data-day="yesterday">Yesterday</button>
-    </nav>
-    <p class="progress" id="progress"></p>
-    <section class="grid" id="grid"></section>
+    <section class="grid" id="grid" data-filter="all"></section>
     <p class="note">Challenges reset at midnight in your time zone. Scores are public.</p>
   </main>
 
@@ -107,135 +208,200 @@
   <script src="/shared/leaderboard.js"></script>
   <script>
     (() => {
-      const { info, top, myEntry, user, nameBar, onName, onStreak, fmtTime, streak, profile, share, ICONS } = window.Leaderboard;
+      const LB = window.Leaderboard;
+      const { info, top, myEntry, user, nameBar, onName, onStreak, fmtTime, streak, profile, share, ICONS } = LB;
       const GAMES = [
-        { id: 'pacman', icon: '🟡', twist: 'Same maze for everyone' },
-        { id: 'snake', icon: '🐍', twist: 'Same world, rocks and food' },
-        { id: 'minesweeper', icon: '💣', twist: 'Same endless minefield' },
-        { id: 'frogger', icon: '🐸', twist: 'Same roads, rivers and trains' },
-        { id: 'breakout', icon: '🧱', twist: 'Same brick wall' },
-        { id: 'asteroids', icon: '☄️', twist: 'Same asteroid spawns' },
-        { id: 'tetris', icon: '🟪', twist: 'Same piece order · Marathon' },
-        { id: 'shooter', icon: '🚀', twist: 'Same enemy waves' },
-        { id: 'klondike', icon: '🂡', twist: 'Same Draw 1 deal · fastest win' },
-        { id: 'spider', icon: '🕷️', twist: 'Same 1-suit deal · fastest win' },
-        { id: 'freecell', icon: '🃏', twist: 'Same numbered deal · fastest win' },
+        { id: 'pacman', acc: '#ffe600', twist: 'Same maze' },
+        { id: 'snake', acc: '#3cff8a', twist: 'Same world' },
+        { id: 'minesweeper', acc: '#c5ec7a', twist: 'Same minefield' },
+        { id: 'frogger', acc: '#7dff6a', twist: 'Same roads' },
+        { id: 'breakout', acc: '#3fd8ff', twist: 'Same bricks' },
+        { id: 'asteroids', acc: '#ffb347', twist: 'Same rocks' },
+        { id: 'tetris', acc: '#c77dff', twist: 'Same pieces' },
+        { id: 'shooter', acc: '#ff6b8a', twist: 'Same waves' },
+        { id: 'klondike', acc: '#7ee2a8', twist: 'Draw 1 deal' },
+        { id: 'spider', acc: '#5fd4e0', twist: '1-suit deal' },
+        { id: 'freecell', acc: '#b8e986', twist: 'Same deal' },
       ];
       const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-      const grid = document.getElementById('grid');
+      const $ = (id) => document.getElementById(id);
+      const grid = $('grid');
       const today = Daily.todayKey();
       let day = today;
-      let myId = null;
       let renderToken = 0;
+      const nameOf = (g) => LB.DAILY_GAMES[g][0];
+      const fmt = (board, e) => (info(board).type === 'time' ? fmtTime(e.time) : e.score.toLocaleString());
 
-      nameBar(document.getElementById('namebar'));
+      nameBar($('namebar'));
 
-      // streak banner
-      function renderStreak() {
-        const s = streak();
-        const el = document.getElementById('streak');
-        el.style.setProperty('--gray', s.current ? 0 : 1);
-        document.getElementById('streak-title').textContent = s.current ? `${s.current}-DAY STREAK` : 'NO STREAK YET';
-        document.getElementById('streak-sub').textContent = s.playedToday
-          ? `Today’s done — come back tomorrow.${s.best > 1 ? ` Best: ${s.best} days.` : ''}`
-          : s.current
-            ? `Finish any challenge today to keep it going!${s.best > s.current ? ` Best: ${s.best} days.` : ''}`
-            : `Finish any challenge each day to build a streak.${s.best ? ` Best: ${s.best} days.` : ''}`;
-      }
-      renderStreak();
-      onStreak(renderStreak);
-      profile(true).catch(() => {});
-
-      // "Share today" — a summary of every challenge you've posted today
-      const results = {}; // game → { text }
-      const shareBtn = document.getElementById('share-today');
-      function summary() {
-        const s = streak();
-        const lines = GAMES.filter((g) => results[g.id]).map((g) => `${ICONS[g.id]} ${Leaderboard.DAILY_GAMES[g.id][0]}: ${results[g.id]}`);
-        return [
-          `📅 Infinite Arcade Daily · ${Daily.label(today)}`,
-          ...lines,
-          `${lines.length}/${GAMES.length} challenges${s.current > 1 ? ` · 🔥 ${s.current}-day streak` : ''}`,
-          'https://pacman-d28dc.web.app/daily/',
-        ].join('\n');
-      }
-      shareBtn.addEventListener('click', async () => {
-        try {
-          const how = await share(summary(), { kind: 'daily_summary' });
-          if (how === 'copied') { shareBtn.textContent = '✓ COPIED!'; setTimeout(() => { shareBtn.textContent = '📤 SHARE TODAY'; }, 2200); }
-        } catch (e) { console.error(e); }
-      });
-
+      // ---- countdown ----
       function tick() {
         const ms = Daily.msUntilTomorrow();
         const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60;
-        document.getElementById('countdown').textContent = `New challenges in ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+        const d = (n) => `<span class="d">${String(n).padStart(2, '0')}</span>`;
+        $('countdown').innerHTML = `New challenges in <span class="digits">${d(h)}<span class="colon">:</span>${d(m)}<span class="colon">:</span>${d(s)}</span>`;
         if (Daily.todayKey() !== today) location.reload();
       }
       tick();
       setInterval(tick, 1000);
 
-      const fmt = (board, e) => (info(board).type === 'time' ? fmtTime(e.time) : e.score.toLocaleString());
+      // ---- streak panel ----
+      function renderStreak() {
+        const s = streak();
+        const flame = $('flame');
+        flame.style.setProperty('--gray', s.current ? 0 : 1);
+        flame.classList.toggle('lit', s.current > 0);
+        $('streak-num').innerHTML = `${s.current}<small>${s.current === 1 ? 'DAY' : 'DAYS'}</small>`;
+        $('streak-sub').textContent = s.playedToday
+          ? `Today’s done. Come back tomorrow!${s.best > 1 ? ` Best: ${s.best} days.` : ''}`
+          : s.current
+            ? `Finish any challenge today to keep it alive!${s.best > s.current ? ` Best: ${s.best}.` : ''}`
+            : `Finish any challenge to start a streak.${s.best ? ` Best: ${s.best} days.` : ''}`;
+        const played = new Set(LB.playedDays());
+        const letters = [];
+        for (let i = 6; i >= 0; i--) {
+          const k = Daily.shiftKey(today, -i);
+          const dt = new Date(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100);
+          const label = dt.toLocaleDateString(undefined, { weekday: 'narrow' });
+          letters.push(`<div class="${played.has(k) ? 'on' : ''} ${i === 0 ? 'today' : ''}" title="${dt.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}${played.has(k) ? ' · played' : ''}"><i></i>${esc(label)}</div>`);
+        }
+        $('week').innerHTML = letters.join('');
+      }
+      renderStreak();
+      onStreak(renderStreak);
+      profile(true).catch(() => {});
+
+      // ---- progress panel ----
+      const done = new Set(); // games finished today (posted entry or finished on this device)
+      const results = {};     // game → "score (#rank)" for sharing
+      function renderProgress() {
+        LB.dailyDone(today).forEach((g) => done.add(g));
+        const n = GAMES.filter((g) => done.has(g.id)).length;
+        $('prog-num').innerHTML = `${n}<small>/${GAMES.length}</small>`;
+        $('segments').innerHTML = GAMES.map((g) => `<a href="${esc(info(Daily.board(g.id, today)).href)}" class="${done.has(g.id) ? 'done' : ''}" style="--acc:${g.acc}" title="${esc(nameOf(g.id))}${done.has(g.id) ? ' · done' : ''}">${ICONS[g.id]}</a>`).join('');
+        const next = GAMES.find((g) => !done.has(g.id));
+        const nextBtn = $('play-next');
+        nextBtn.hidden = !next;
+        if (next) { nextBtn.href = info(Daily.board(next.id, today)).href; nextBtn.innerHTML = `▶ ${n ? 'Next' : 'Start'}: ${ICONS[next.id]} ${esc(nameOf(next.id))}`; }
+        $('all-done').hidden = !!next;
+        $('share-today').disabled = !Object.keys(results).length;
+        $('n-todo').textContent = GAMES.length - n;
+        $('n-done').textContent = n;
+      }
+
+      function summary() {
+        const s = streak();
+        const lines = GAMES.filter((g) => results[g.id]).map((g) => `${ICONS[g.id]} ${nameOf(g.id)}: ${results[g.id]}`);
+        return [
+          `📅 Infinite Arcade Daily · ${Daily.label(today)}`,
+          ...lines,
+          `${done.size}/${GAMES.length} challenges${s.current > 1 ? ` · 🔥 ${s.current}-day streak` : ''}`,
+          'https://pacman-d28dc.web.app/daily/',
+        ].join('\n');
+      }
+      $('share-today').addEventListener('click', async () => {
+        const btn = $('share-today');
+        try {
+          const how = await share(summary(), { kind: 'daily_summary' });
+          if (how === 'copied') { btn.textContent = '✓ COPIED!'; setTimeout(() => { btn.textContent = '📤 SHARE TODAY'; }, 2200); }
+        } catch (e) { console.error(e); }
+      });
+
+      // ---- filters ----
+      $('filters').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        grid.dataset.filter = b.dataset.filter;
+        $('filters').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        updateEmpty();
+      });
+      function updateEmpty() {
+        const old = grid.querySelector('.empty-filter');
+        if (old) old.remove();
+        const visible = [...grid.querySelectorAll('.card')].some((c) => getComputedStyle(c).display !== 'none');
+        if (!visible) grid.insertAdjacentHTML('beforeend', `<p class="empty-filter">${grid.dataset.filter === 'todo' ? '🏆 Nothing left to play today!' : 'Nothing finished yet. Pick a game!'}</p>`);
+      }
+
+      // ---- cards ----
+      function setState(card, state) { card.dataset.state = state; }
 
       function render() {
         const token = ++renderToken;
         const isToday = day === today;
-        document.getElementById('date').textContent = Daily.label(day) + (isToday ? '' : ' (yesterday)');
+        $('date').textContent = Daily.label(day) + (isToday ? '' : ' · final results');
         document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String((b.dataset.day === 'today') === isToday)));
-        document.getElementById('progress').textContent = '';
-        document.getElementById('streak').hidden = !isToday;
+        $('dash').hidden = !isToday;
+        $('filters').hidden = !isToday;
+        $('countdown').hidden = !isToday;
+        grid.dataset.filter = isToday ? $('filters').querySelector('[aria-pressed="true"]').dataset.filter : 'all';
+        if (isToday) renderProgress();
+
         grid.innerHTML = GAMES.map((g) => {
           const board = Daily.board(g.id, day);
           const meta = info(board);
-          return `<article class="card" data-board="${board}">
+          const localDone = isToday && done.has(g.id);
+          return `<article class="card" data-board="${board}" data-state="${localDone ? 'done' : 'todo'}" style="--acc:${g.acc}">
+            <span class="stamp" hidden></span>
             <header>
-              <span class="icon" aria-hidden="true">${g.icon}</span>
-              <div><h2>${esc(Leaderboard.DAILY_GAMES[g.id][0])}</h2><p class="twist">${esc(g.twist)}</p></div>
-              <span class="kind">${meta.type === 'time' ? 'fastest win' : 'high score'}</span>
+              <span class="icon" aria-hidden="true">${ICONS[g.id]}</span>
+              <div><h2>${esc(nameOf(g.id))}</h2><div class="chips"><span>▸ ${esc(g.twist)}</span><span class="kind">${meta.type === 'time' ? '⏱ Fastest win' : '★ High score'}</span></div></div>
             </header>
-            <div class="mine">Checking your result…</div>
-            <ol><li class="empty">Loading…</li></ol>
-            ${isToday ? `<a class="play" href="${meta.href}">PLAY TODAY'S ▶</a>` : ''}
+            <div class="mine dim">Checking…</div>
+            <ol class="board"><li class="skel"></li><li class="skel"></li><li class="skel"></li></ol>
+            <div class="players"></div>
+            ${isToday ? `<a class="play" href="${esc(meta.href)}">▶ ${localDone ? 'Beat your best' : 'Play'}</a>` : ''}
           </article>`;
         }).join('');
+        updateEmpty();
 
-        let played = 0, checked = 0;
         GAMES.forEach(async (g) => {
           const board = Daily.board(g.id, day);
           const card = grid.querySelector(`[data-board="${board}"]`);
-          const list = card.querySelector('ol');
+          const list = card.querySelector('.board');
           const mine = card.querySelector('.mine');
+          const stamp = card.querySelector('.stamp');
+          let myId = null;
           try {
-            const [entries, u] = await Promise.all([top(board, 5), user().catch(() => null)]);
+            const [entries, u, total] = await Promise.all([top(board, 5), user().catch(() => null), LB.count(board).catch(() => null)]);
             if (token !== renderToken) return;
             myId = u && u.uid;
             list.innerHTML = entries.length
-              ? entries.map((e, i) => `<li class="${e.id === myId ? 'me' : ''}"><span class="rk">#${i + 1}</span><span class="nm">${esc(e.name)}</span><span class="sc">${fmt(board, e)}</span></li>`).join('')
-              : `<li class="empty">${isToday ? 'No scores yet — be the first!' : 'Nobody played this one.'}</li>`;
+              ? entries.map((e, i) => `<li class="${e.id === myId ? 'me' : ''} ${!isToday && i === 0 ? 'winner' : ''}"><span class="rk">#${i + 1}</span><span class="nm">${esc(e.name)}</span><span class="sc">${fmt(board, e)}</span></li>`).join('')
+              : `<li class="empty">${isToday ? 'No scores yet.<br>Be the first!' : 'Nobody played this one'}</li>`;
+            if (total != null) card.querySelector('.players').textContent = total ? `${total.toLocaleString()} ${total === 1 ? 'player' : 'players'}` : '';
           } catch (e) {
+            if (token !== renderToken) return;
             list.innerHTML = '<li class="empty">Unavailable right now</li>';
           }
           try {
             const me = await myEntry(board);
             if (token !== renderToken) return;
-            checked++;
             if (me) {
-              played++;
-              card.classList.add('played');
-              mine.innerHTML = `✅ Your best: <b>${fmt(board, me)}</b> · #${me.rank.toLocaleString()}`;
-              if (isToday) { results[g.id] = `${fmt(board, me)} (#${me.rank.toLocaleString()})`; shareBtn.disabled = false; }
-              const btn = card.querySelector('.play');
-              if (btn) { btn.classList.add('again'); btn.textContent = 'BEAT YOUR BEST ▶'; }
+              const total = card.querySelector('.players').textContent.match(/[\d,]+/);
+              mine.className = 'mine';
+              mine.innerHTML = `<div><div class="lbl">Your best</div><div class="val">${fmt(board, me)}</div></div><div class="rank">#${me.rank.toLocaleString()}${total ? `<small>of ${total[0]}</small>` : ''}</div>`;
+              setState(card, 'done');
+              stamp.hidden = false;
+              if (me.rank <= 3) { stamp.className = 'stamp medal'; stamp.textContent = ['🥇', '🥈', '🥉'][me.rank - 1]; }
+              else { stamp.className = 'stamp'; stamp.textContent = '✓ DONE'; }
+              if (isToday) { done.add(g.id); results[g.id] = `${fmt(board, me)} (#${me.rank.toLocaleString()})`; }
+            } else if (isToday && done.has(g.id)) {
+              mine.className = 'mine dim';
+              mine.textContent = LB.info(board).type === 'time' ? 'Played · no win yet' : 'Played · no score posted';
+              stamp.hidden = false; stamp.className = 'stamp'; stamp.textContent = '✓ DONE';
             } else {
-              mine.textContent = isToday ? 'Not played yet today' : 'You didn’t play this one';
+              mine.className = 'mine dim';
+              mine.textContent = isToday ? 'Not played yet' : 'You didn’t play this one';
             }
           } catch (e) {
-            checked++;
+            if (token !== renderToken) return;
+            mine.className = 'mine dim';
             mine.textContent = 'Couldn’t load your result';
           }
-          if (checked === GAMES.length && isToday) {
-            document.getElementById('progress').textContent = played === GAMES.length ? '🏆 You played every challenge today!' : `You’ve played ${played} of ${GAMES.length} challenges today`;
-          }
+          const btn = card.querySelector('.play');
+          if (btn && card.dataset.state === 'done') btn.textContent = '▶ Beat your best';
+          if (isToday) renderProgress();
+          updateEmpty();
         });
       }
 
@@ -245,6 +411,8 @@
       }));
       render();
       onName(() => render());
+      // coming back from a game (bfcache or tab switch): refresh results
+      window.addEventListener('pageshow', (e) => { if (e.persisted) render(); });
     })();
   </script>
   <script src="/shared/music.js"></script>

@@ -192,8 +192,8 @@
     button.setAttribute('aria-pressed', String(playing));
     button.classList.toggle('on', playing);
     const label = playing ? 'Music on' : on ? 'Tap anywhere for music' : 'Music off';
-    button.innerHTML = (playing ? '<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>' : '<span class="note" aria-hidden="true">♫</span>')
-      + `<span class="label">${label}</span>`;
+    button.innerHTML = (playing ? '<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>' : '<span class="mt-note" aria-hidden="true">♫</span>')
+      + `<span class="mt-label">${label}</span>`;
     button.classList.toggle('muted', !playing && !on);
     button.title = playing ? 'Turn music off' : 'Turn music on';
     button.setAttribute('aria-label', playing ? 'Music on — turn off' : 'Music off — turn on');
@@ -215,12 +215,12 @@
       .music-toggle .eq i:nth-child(2) { animation-delay: -.3s; } .music-toggle .eq i:nth-child(3) { animation-delay: -.6s; }
       @keyframes music-eq { 0%, 100% { height: 3px; } 50% { height: 12px; } }
       @media (prefers-reduced-motion: reduce) { .music-toggle .eq i { animation: none; height: 8px; } }
-      .music-toggle .note { font-size: 15px; line-height: 1; }
-      .music-toggle.muted .note { opacity: .55; text-decoration: line-through; }
+      .music-toggle .mt-note { font-size: 15px; line-height: 1; }
+      .music-toggle.muted .mt-note { opacity: .55; text-decoration: line-through; }
       /* phones: a small round button so it doesn't cover the page */
       @media (max-width: 600px) {
         .music-toggle { left: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); width: 40px; height: 40px; padding: 0; justify-content: center; }
-        .music-toggle .label { display: none; }
+        .music-toggle .mt-label { display: none; }
       }
     `;
     document.head.appendChild(st);

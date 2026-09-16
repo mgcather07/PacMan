@@ -158,6 +158,37 @@
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
 
+  // how many players are on a board
+  async function count(board) {
+    const { fs, db } = await firebase();
+    return (await withTimeout(fs.getCount(fs.collection(db, 'boards', board, 'scores')), 15000, `counting ${board}`)).data().count;
+  }
+
+  // Daily challenges finished on this device (any result, posted or not): { YYYYMMDD: [game, …] }
+  const DONE_KEY = 'arcade.dailyDone';
+  const readDone = () => { try { return JSON.parse(localStorage.getItem(DONE_KEY) || '{}'); } catch (e) { return {}; } };
+  function markDailyDone(board) {
+    const meta = info(board);
+    if (!meta || meta.group !== 'Daily') return;
+    const done = readDone();
+    const list = new Set(done[meta.day] || []);
+    list.add(meta.game);
+    done[meta.day] = [...list];
+    // keep the last few days only
+    Object.keys(done).map(Number).sort((a, b) => b - a).slice(4).forEach((k) => { delete done[k]; });
+    try { localStorage.setItem(DONE_KEY, JSON.stringify(done)); } catch (e) { /* ignore */ }
+  }
+  const dailyDone = (key) => new Set(readDone()[key] || []);
+  // the next daily challenge (in menu order) this device hasn't finished, or null when all are done
+  function nextDaily(key, except) {
+    const done = dailyDone(key);
+    const order = Object.keys(DAILY_GAMES);
+    const start = Math.max(0, order.indexOf(except) + 1);
+    const game = [...order.slice(start), ...order.slice(0, start)].find((g) => g !== except && !done.has(g));
+    return game ? { game, name: DAILY_GAMES[game][0], icon: ICONS[game], href: `${DAILY_GAMES[game][2]}?daily=${key}` } : null;
+  }
+  const playedDays = () => cachedDays().days || [];
+
   async function rankOf(board, entry) {
     const { fs, db } = await firebase();
     const col = fs.collection(db, 'boards', board, 'scores');
@@ -276,6 +307,7 @@
       const res = await call('submitScore', { runId: id, score: result.score || 0, time: result.time || 0, won: !!result.won });
       if (!res.needName) runs.delete(board);
       if (res.days) cacheDays(res.days, res.bestStreak);
+      markDailyDone(board);
       if (res.name) cacheName(res.name);
       return res;
     } catch (e) {
@@ -414,8 +446,13 @@
       .lb-streak { flex: none; display: inline-flex; align-items: center; gap: 3px; padding: 5px 8px; border-radius: 999px; background: #dc143c26; border: 1px solid #dc143c66; color: #ff8fa3; font: 800 12px Inter, system-ui, sans-serif; line-height: 1; }
       .lb-streak.dim { background: #ffffff0d; border-color: #ffffff26; color: #b8b8d0; }
       .lb-share-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 10px; }
-      .lb-btn.lb-share { background: #dc143c; color: #fff; box-shadow: 0 3px 0 #6e0a1c; }
-      .lb-btn.lb-share:active { transform: translateY(2px); box-shadow: 0 1px 0 #6e0a1c; }
+      .lb-btn.lb-share { font: 10px/1.4 "Press Start 2P", monospace; text-transform: uppercase; background: #dc143c; color: #fff; border: 1px solid #ff5c7a; border-radius: 4px; padding: 11px 14px; box-shadow: 3px 3px 0 #5a0717; }
+      .lb-btn.lb-share:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #5a0717; }
+      .lb-btn.lb-share:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #5a0717; }
+      .lb-next-slot { display: flex; justify-content: center; margin: 2px 0 12px; }
+      .lb-next { display: inline-flex; align-items: center; gap: 8px; font: 10px/1.4 "Press Start 2P", monospace; text-transform: uppercase; color: #fff; text-decoration: none;
+        padding: 11px 14px; border-radius: 4px; background: linear-gradient(#dc143c33, #dc143c33), #12080d; border: 1px solid #dc143c99; box-shadow: 3px 3px 0 #5a0717; }
+      .lb-next:hover { background: linear-gradient(#dc143c55, #dc143c55), #12080d; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #5a0717; }
       .lb-streak-note { text-align: center; font: 700 14px Inter, system-ui, sans-serif; color: #ff8fa3; margin: 0 0 8px; }
       @media (max-width: 480px) {
         .lb-chip .lb-pre { display: none; }
@@ -567,12 +604,21 @@
     if (old) old.remove();
     const wrap = document.createElement('div');
     wrap.className = 'lb';
-    wrap.innerHTML = `<h3>${daily ? '📅' : '🏆'} ${esc(meta.title.toUpperCase())}</h3><div class="lb-slot"></div><div class="lb-note"></div><div class="lb-extra"></div><ol></ol>`;
+    wrap.innerHTML = `<h3>${daily ? '📅' : '🏆'} ${esc(meta.title.toUpperCase())}</h3><div class="lb-slot"></div><div class="lb-note"></div><div class="lb-extra"></div><div class="lb-next-slot"></div><ol></ol>`;
     const anchor = container.querySelector('.stats, .win-stats, .grid3');
     if (anchor) anchor.after(wrap); else container.appendChild(wrap);
     const slot = wrap.querySelector('.lb-slot');
     const note = wrap.querySelector('.lb-note');
     const extra = wrap.querySelector('.lb-extra');
+    const nextSlot = wrap.querySelector('.lb-next-slot');
+    // daily challenges: point to the next one you haven't finished today
+    const showNext = () => {
+      if (!daily) return;
+      const next = nextDaily(meta.day, meta.game);
+      nextSlot.innerHTML = next
+        ? `<a class="lb-next" href="${esc(next.href)}">NEXT: ${next.icon} ${esc(next.name)} ▶</a>`
+        : '<a class="lb-next" href="/daily/">🏆 ALL CHALLENGES DONE ▶</a>';
+    };
     const list = wrap.querySelector('ol');
     shieldKeys(wrap);
     loadInto(list, note, board);
@@ -608,6 +654,7 @@
         const res = await submit(board, result);
         if (!wrap.isConnected) return;
         extra.innerHTML = '';
+        showNext();
         if (res.needName) {
           setNote(note, '');
           showStreak(res);
@@ -635,6 +682,7 @@
         loadInto(list, note, board);
       } catch (e) {
         console.error('[leaderboard] posting score failed:', e);
+        showNext();
         const code = (e && e.code) || '';
         if (code === 'no-run') setNote(note, 'The leaderboard was unreachable when this game started, so this result can’t be posted.', 'err');
         else if (/failed-precondition/.test(code)) setNote(note, 'This result couldn’t be verified, so it wasn’t posted.', 'err');
@@ -707,7 +755,7 @@
 
   window.Leaderboard = {
     BOARDS, info, dailyBoards, DAILY_GAMES, ICONS, gameOf, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime,
-    startRun, played, resumeRun, runId, profile, streak, share, shareText, shareButton,
+    startRun, played, resumeRun, runId, profile, streak, share, shareText, shareButton, count, dailyDone, nextDaily, playedDays,
     onName: (fn) => nameListeners.add(fn), onStreak: (fn) => streakListeners.add(fn),
   };
 })();

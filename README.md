@@ -50,6 +50,12 @@ Online top-10 boards for every game live in Cloud Firestore, with a page at `/le
 
 To remove an entry, use the Firebase console or `firebase firestore:delete boards/<board>/scores/<uid>`.
 
+## Daily Challenge page
+
+`/daily/` is the hub for the day: a live countdown, a **streak panel** (flame, current/best streak, last 7 days), a **progress panel** (one lit tile per finished game, **▶ Next** to the first unplayed challenge, **Share today**), Today/Yesterday tabs, **All / To play / Done** filters, and an arcade-style card per game in its own color (your best + rank, 🥇🥈🥉 or ✓ DONE stamp, top 5, player count, Play / Beat your best). Yesterday shows final results with the winner crowned.
+
+"Done" means you posted a result or finished that challenge on this device (`Leaderboard.dailyDone(day)`, stored in `localStorage['arcade.dailyDone']`). After every daily game, the game-over panel links straight to the next challenge you haven't finished.
+
 ## Streaks and sharing
 
 - **Daily streaks:** finishing any daily challenge records that day in `players/{uid}.days` (server-side, in `submitScore`). The current streak counts back from today (or from yesterday, until today's challenge is done). It shows as 🔥 N on the name chip, as a banner on `/daily/`, and after each daily game.
