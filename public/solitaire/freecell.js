@@ -42,8 +42,9 @@
       return { piles, up: Array(52).fill(true), score: 0, moves: 0 };
     },
 
-    leaderboard: () => 'freecell',
-    nextOpts: () => ({ number: 1 + Math.floor(Math.random() * 1000000) }),
+    leaderboard: () => Daily.board('freecell') || 'freecell',
+    // daily challenge: everyone gets the same numbered deal today
+    nextOpts: () => ({ number: window.Daily && Daily.active ? 1 + (Daily.seed('freecell') % 1000000) : 1 + Math.floor(Math.random() * 1000000) }),
 
     layout(width) {
       const gap = Math.max(5, Math.round(width * 0.012));
@@ -211,7 +212,7 @@
     onNewGame(S, { number }) {
       document.getElementById('game-no').textContent = '#' + number;
       try { localStorage.setItem('freecell.last', String(number)); } catch (e) { /* ignore */ }
-      history.replaceState(null, '', '?game=' + number);
+      if (!(window.Daily && Daily.active)) history.replaceState(null, '', '?game=' + number);
     },
 
     renderExtra(S) {
@@ -221,7 +222,7 @@
 
   const engine = CardEngine(game);
   const fromUrl = parseInt(new URLSearchParams(location.search).get('game'), 10);
-  engine.newGame({ number: fromUrl >= 1 && fromUrl <= 1000000 ? fromUrl : game.nextOpts().number });
+  engine.newGame({ number: !(window.Daily && Daily.active) && fromUrl >= 1 && fromUrl <= 1000000 ? fromUrl : game.nextOpts().number });
 
   document.getElementById('choose-btn').addEventListener('click', () => {
     const v = prompt('Play which game number? (1 – 1,000,000)', engine.opts.number);

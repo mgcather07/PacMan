@@ -8,6 +8,9 @@
   const FW = 540, FH = 900;
   const TAU = Math.PI * 2;
   const CLASSIC = Arcade.classic;
+  const DAILY = !!(window.Daily && Daily.active);
+  let wrand = Math.random;
+  const wr = (a, b) => a + wrand() * (b - a);
   const FINAL_WAVE = 15; // classic mode: beat the wave-15 boss to win
   const SUITS = ['♠', '♥', '♦', '♣'];
   const NEBULAS = [['#1a0b3a', '#050314'], ['#0b2a3a', '#03060f'], ['#3a0b24', '#0f0308'], ['#0b3a1e', '#030f07'], ['#3a2a0b', '#0f0a03']];
@@ -35,6 +38,7 @@
   }
 
   function newGame() {
+    wrand = DAILY ? Daily.rng('shooter') : Math.random;
     player = { x: FW / 2, y: FH - 120, tx: FW / 2, ty: FH - 120, level: 1, fireT: 0, invuln: 2, shield: 0, alive: true, respawn: 0 };
     enemies = []; shots = []; eshots = []; drops = []; particles = []; popups = [];
     score = 0; lives = 3; bombs = 2; wave = 0; suits = [false, false, false, false];
@@ -62,7 +66,7 @@
     $('o-kills').textContent = kills;
     Arcade.endScreen(won, won ? `All ${FINAL_WAVE} waves and 3 bosses defeated!` : '');
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'shooter-classic' : 'shooter', { score, won: !!won }, document.querySelector('#over .panel'));
+    if (window.Leaderboard) Leaderboard.offer(Daily.board('shooter') || (Arcade.classic ? 'shooter-classic' : 'shooter'), { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function startWave() {
@@ -80,13 +84,13 @@
       let t = 1.2;
       const groups = 3 + Math.min(6, Math.floor(d / 2));
       for (let g = 0; g < groups; g++) {
-        const roll = Math.random();
+        const roll = wrand();
         if (roll < 0.3) addFormation(t, d);
         else if (roll < 0.5) addSwoopers(t, d);
         else if (roll < 0.68 && d >= 2) addGunship(t, d);
         else if (roll < 0.84 && d >= 3) addKamikazes(t, d);
         else addDrones(t, d);
-        t += rand(2.2, 3.4) * Math.max(0.55, 1 - d * 0.03);
+        t += wr(2.2, 3.4) * Math.max(0.55, 1 - d * 0.03);
       }
       Sound.arp([392, 523, 659], 0.09, 'square', 0.035);
     }
@@ -96,23 +100,23 @@
 
   function addDrones(t, d) {
     const n = 4 + Math.min(6, d);
-    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.35, fn: () => enemies.push(enemy('drone', rand(40, FW - 40), -30)) });
+    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.35, fn: () => enemies.push(enemy('drone', wr(40, FW - 40), -30)) });
   }
   function addFormation(t, d) {
-    const cx = rand(120, FW - 120), n = 5 + Math.min(4, Math.floor(d / 3));
+    const cx = wr(120, FW - 120), n = 5 + Math.min(4, Math.floor(d / 3));
     schedule.push({ t, fn: () => { for (let i = 0; i < n; i++) { const k = i - (n - 1) / 2; enemies.push(enemy('drone', cx + k * 42, -30 - Math.abs(k) * 36, { wobble: 0 })); } } });
   }
   function addSwoopers(t, d) {
-    const dir = Math.random() < 0.5 ? 1 : -1, n = 5 + Math.min(5, Math.floor(d / 2));
-    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.28, fn: () => enemies.push(enemy('swooper', dir > 0 ? -30 : FW + 30, rand(90, 180), { dir })) });
+    const dir = wrand() < 0.5 ? 1 : -1, n = 5 + Math.min(5, Math.floor(d / 2));
+    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.28, fn: () => enemies.push(enemy('swooper', dir > 0 ? -30 : FW + 30, wr(90, 180), { dir })) });
   }
   function addGunship(t, d) {
     const n = 1 + Math.floor(d / 6);
-    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.8, fn: () => enemies.push(enemy('gunship', rand(80, FW - 80), -60)) });
+    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.8, fn: () => enemies.push(enemy('gunship', wr(80, FW - 80), -60)) });
   }
   function addKamikazes(t, d) {
     const n = 3 + Math.min(5, Math.floor(d / 2));
-    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.45, fn: () => enemies.push(enemy('kamikaze', rand(40, FW - 40), -30)) });
+    for (let i = 0; i < n; i++) schedule.push({ t: t + i * 0.45, fn: () => enemies.push(enemy('kamikaze', wr(40, FW - 40), -30)) });
   }
 
   function enemy(type, x, y, extra = {}) {
@@ -625,7 +629,8 @@
   $('bomb-btn').addEventListener('pointerdown', (e) => { e.preventDefault(); useBomb(); });
 
   $('play-btn').addEventListener('click', start);
-  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'shooter-classic' : 'shooter', document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.button(Daily.board('shooter') || (Arcade.classic ? 'shooter-classic' : 'shooter'), document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.nameBar(document.querySelector('#title .panel'));
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

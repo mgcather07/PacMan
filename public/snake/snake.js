@@ -23,6 +23,7 @@
   const SPAWN_CLEAR = 7;
   // Classic mode: walled arena of cells |x| <= AX, |y| <= AY and three stages to clear
   const CLASSIC = !!(window.Arcade && Arcade.classic);
+  const DAILY = !!(window.Daily && Daily.active);
   const AX = 17, AY = 12;
   const STAGES = [{ goal: 12, ais: 1 }, { goal: 16, ais: 2 }, { goal: 20, ais: 3 }];
   const outside = (x, y) => CLASSIC && (Math.abs(x) > AX || Math.abs(y) > AY);
@@ -129,7 +130,7 @@
   }
 
   function newGame(seed) {
-    SEED = seed ?? ((Math.random() * 2 ** 31) | 0);
+    SEED = seed ?? (DAILY ? Daily.seed('snake') : (Math.random() * 2 ** 31) | 0);
     eaten.clear();
     dropped.clear();
     player = makeSnake(0, 0, 0, 5, '#3cff8a');
@@ -633,7 +634,7 @@
     $('o-kills').textContent = kills;
     if (window.Arcade) Arcade.endScreen(!!won, won ? `All ${STAGES.length} arenas conquered!` : '');
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(CLASSIC ? 'snake-classic' : 'snake', { score, won: !!won }, document.querySelector('#over .panel'));
+    if (window.Leaderboard) Leaderboard.offer(Daily.board('snake') || (CLASSIC ? 'snake-classic' : 'snake'), { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function start() {
@@ -646,7 +647,8 @@
     state = 'play';
   }
   $('play-btn').addEventListener('click', start);
-  if (window.Leaderboard) Leaderboard.button(CLASSIC ? 'snake-classic' : 'snake', document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.button(Daily.board('snake') || (CLASSIC ? 'snake-classic' : 'snake'), document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.nameBar(document.querySelector('#title .panel'));
   $('again-btn').addEventListener('click', start);
   $('sound-btn').addEventListener('click', (e) => {
     Sound.on = !Sound.on;

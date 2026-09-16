@@ -138,7 +138,8 @@
 
 
   // Infinite vs Classic (beatable) mode, chosen by ?mode=classic
-  const mode = new URLSearchParams(location.search).get('mode') === 'classic' ? 'classic' : 'infinite';
+  // daily challenges always use the endless (infinite) rules
+  const mode = !(window.Daily && Daily.active) && new URLSearchParams(location.search).get('mode') === 'classic' ? 'classic' : 'infinite';
   const classic = mode === 'classic';
   function applyMode() {
     document.documentElement.dataset.mode = mode;

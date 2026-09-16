@@ -6,8 +6,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // daily challenge boards: daily-<game>-<YYYYMMDD>
+    function dailyName(board) {
+      return board.matches('^daily-(pacman|snake|minesweeper|frogger|breakout|asteroids|tetris|shooter|klondike|spider|freecell)-[0-9]{8}$');
+    }
+    function dayKey(t) {
+      return t.year() * 10000 + t.month() * 100 + t.day();
+    }
+    // new daily results may only go to yesterday's, today's or tomorrow's board (covers every time zone)
+    function currentDaily(board) {
+      return dailyName(board) && int(board.split('-')[2]) in [
+        dayKey(request.time - duration.value(1, 'd')), dayKey(request.time), dayKey(request.time + duration.value(1, 'd'))
+      ];
+    }
+
     function knownBoard(board) {
-      return board in [
+      return dailyName(board) || board in [
         'pacman', 'snake', 'minesweeper', 'frogger', 'breakout', 'asteroids', 'tetris-tower', 'tetris-marathon', 'shooter',
         'pacman-classic', 'snake-classic', 'frogger-classic', 'breakout-classic', 'asteroids-classic', 'shooter-classic',
         'tetris-sprint', 'tetris-marathon150', 'mines-beginner', 'mines-intermediate', 'mines-expert',
@@ -17,7 +31,7 @@ service cloud.firestore {
 
     // boards ranked by fastest winning time instead of highest score
     function timeBoard(board) {
-      return board in [
+      return board.matches('^daily-(klondike|spider|freecell)-[0-9]{8}$') || board in [
         'tetris-sprint', 'mines-beginner', 'mines-intermediate', 'mines-expert',
         'klondike-1', 'klondike-3', 'spider-1', 'spider-2', 'spider-4', 'freecell'
       ];
@@ -55,9 +69,9 @@ service cloud.firestore {
 
     match /boards/{board}/scores/{uid} {
       allow read: if knownBoard(board);
-      allow create: if knownBoard(board) && signedIn() && request.auth.uid == uid
+      allow create: if knownBoard(board) && (!dailyName(board) || currentDaily(board)) && signedIn() && request.auth.uid == uid
         && validEntry(board, uid, request.resource.data);
-      allow update: if knownBoard(board) && signedIn() && request.auth.uid == uid
+      allow update: if knownBoard(board) && (!dailyName(board) || currentDaily(board)) && signedIn() && request.auth.uid == uid
         && validEntry(board, uid, request.resource.data)
         && (improves(board, request.resource.data, resource.data) || renameOnly(request.resource.data, resource.data));
       allow delete: if false;

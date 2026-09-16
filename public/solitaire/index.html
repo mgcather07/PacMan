@@ -37,7 +37,7 @@
     </div>
     <div class="actions">
       <select class="switch" title="Switch game" onchange="location.href=this.value"><option value="/solitaire/" selected>Klondike</option><option value="/spider/">Spider</option><option value="/freecell/">FreeCell</option></select>
-      <select id="draw-mode" title="Draw mode">
+      <select id="draw-mode" class="not-daily" title="Draw mode">
         <option value="1">Draw 1</option>
         <option value="3">Draw 3</option>
       </select>
@@ -66,6 +66,7 @@
     </div>
   </div>
 
+  <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
   <script src="solitaire.js"></script>
 </body>

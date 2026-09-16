@@ -108,7 +108,27 @@
     return userPromise;
   }
 
-  const isTime = (board) => BOARDS[board].type === 'time';
+  // Daily challenge boards: daily-<game>-<YYYYMMDD>
+  const DAILY_GAMES = {
+    pacman: ['Pac-Man', 'score', '/pacman/'], snake: ['Snake', 'score', '/snake/'], minesweeper: ['Minesweeper', 'score', '/minesweeper/'],
+    frogger: ['Frogger', 'score', '/frogger/'], breakout: ['Breakout', 'score', '/breakout/'], asteroids: ['Asteroids', 'score', '/asteroids/'],
+    tetris: ['Tetris', 'score', '/tetris/'], shooter: ['Space Shooter', 'score', '/shooter/'],
+    klondike: ['Klondike', 'time', '/solitaire/'], spider: ['Spider', 'time', '/spider/'], freecell: ['FreeCell', 'time', '/freecell/'],
+  };
+  function dayLabel(key) {
+    const d = new Date(Math.floor(key / 10000), Math.floor(key / 100) % 100 - 1, key % 100);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  function info(board) {
+    if (BOARDS[board]) return BOARDS[board];
+    const m = /^daily-([a-z]+)-(\d{8})$/.exec(board || '');
+    if (!m || !DAILY_GAMES[m[1]]) return null;
+    const [name, type, path] = DAILY_GAMES[m[1]];
+    return { title: `Daily ${name} · ${dayLabel(+m[2])}`, group: 'Daily', type, href: `${path}?daily=${m[2]}`, game: m[1], day: +m[2] };
+  }
+  const dailyBoards = (key) => Object.keys(DAILY_GAMES).map((g) => `daily-${g}-${key}`);
+
+  const isTime = (board) => info(board).type === 'time';
 
   async function top(board, n = 10) {
     const { fs, db } = await firebase();
@@ -209,6 +229,16 @@
     return { improved, first: !prev, best, rank: await rankOf(board, best), uid: u.uid, name };
   }
 
+  // This player's entry on a board (with rank), or null if they haven't posted there
+  async function myEntry(board) {
+    const { fs, db } = await firebase();
+    const u = await user();
+    const snap = await withTimeout(fs.getDoc(fs.doc(db, 'boards', board, 'scores', u.uid)), 12000, `reading your ${board} entry`);
+    if (!snap.exists()) return null;
+    const entry = snap.data();
+    return { ...entry, rank: await rankOf(board, entry) };
+  }
+
   // ---------------------------------------------------------------------------
   // UI helpers
   // ---------------------------------------------------------------------------
@@ -238,6 +268,7 @@
       .lb-you b { color: #fff; }
       .lb-textbtn { font: 600 13px Inter, system-ui, sans-serif; color: #ffe600; background: none; border: 0; padding: 2px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
       .lb-namebar { display: flex; justify-content: center; }
+      .panel > .lb-namebar { margin: 16px 0 4px; }
       .lb-namebar .lb-form, .lb-namebar .lb-label, .lb-namebar .lb-note { width: 100%; }
       .lb-namebar > div:not(.lb-chip) { width: 100%; max-width: 420px; }
       .lb-chip { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 6px 6px 6px 8px; border-radius: 999px; background: #ffffff0d; border: 1px solid #ffffff1f; font: 14px Inter, system-ui, -apple-system, sans-serif; color: #b8b8d0; line-height: 1; }
@@ -290,7 +321,7 @@
     listEl.innerHTML = entries.map((e, i) => `
       <li class="${e.id === myId ? 'me' : ''}">
         <span class="rk">#${i + 1}</span>
-        <span class="nm">${esc(e.name)}${e.won && !isTime(board) && BOARDS[board].group === 'Classic' ? ' 🏆' : ''}</span>
+        <span class="nm">${esc(e.name)}${e.won && !isTime(board) && info(board).group === 'Classic' ? ' 🏆' : ''}</span>
         <span class="sc">${fmtEntry(board, e)}</span>
       </li>`).join('');
   }
@@ -372,13 +403,13 @@
   // Game-over panel
   // ---------------------------------------------------------------------------
   function offer(board, result, container) {
-    if (!BOARDS[board] || !container) return;
+    if (!info(board) || !container) return;
     injectCss();
     const old = container.querySelector('.lb');
     if (old) old.remove();
     const wrap = document.createElement('div');
     wrap.className = 'lb';
-    wrap.innerHTML = `<h3>🏆 ${esc(BOARDS[board].title.toUpperCase())}</h3><div class="lb-slot"></div><div class="lb-note"></div><ol></ol>`;
+    wrap.innerHTML = `<h3>${info(board).group === 'Daily' ? '📅' : '🏆'} ${esc(info(board).title.toUpperCase())}</h3><div class="lb-slot"></div><div class="lb-note"></div><ol></ol>`;
     const anchor = container.querySelector('.stats, .win-stats, .grid3');
     if (anchor) anchor.after(wrap); else container.appendChild(wrap);
     const slot = wrap.querySelector('.lb-slot');
@@ -454,9 +485,9 @@
       nameListeners.add(() => { if (!modal.hidden) loadInto(modal.querySelector('ol'), modal.querySelector('.lb-note'), sel.value); });
     }
     const sel = modal.querySelector('select');
-    const family = BOARDS[board].href.split('?')[0];
-    const ids = Object.keys(BOARDS).filter((id) => BOARDS[id].href.split('?')[0] === family);
-    sel.innerHTML = ids.map((id) => `<option value="${id}" ${id === board ? 'selected' : ''}>${esc(BOARDS[id].title)}</option>`).join('');
+    const family = info(board).href.split('?')[0];
+    const ids = info(board).group === 'Daily' ? [board] : Object.keys(BOARDS).filter((id) => BOARDS[id].href.split('?')[0] === family);
+    sel.innerHTML = ids.map((id) => `<option value="${id}" ${id === board ? 'selected' : ''}>${esc(info(id).title)}</option>`).join('');
     sel.hidden = ids.length < 2;
     modal.querySelector('.lb-note').textContent = '';
     modal.hidden = false;
@@ -479,5 +510,5 @@
     return b;
   }
 
-  window.Leaderboard = { BOARDS, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime, onName: (fn) => nameListeners.add(fn) };
+  window.Leaderboard = { BOARDS, info, dailyBoards, DAILY_GAMES, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime, onName: (fn) => nameListeners.add(fn) };
 })();

@@ -39,7 +39,7 @@
     </div>
     <div class="actions">
       <select class="switch" title="Switch game" onchange="location.href=this.value"><option value="/solitaire/">Klondike</option><option value="/spider/">Spider</option><option value="/freecell/" selected>FreeCell</option></select>
-      <button id="choose-btn" title="Pick a game number">#<span> Game</span></button>
+      <button id="choose-btn" class="not-daily" title="Pick a game number">#<span> Game</span></button>
       <button id="restart-btn" class="hide-sm" title="Restart this deal">⟲<span> Restart</span></button>
       <button id="hint-btn" title="Hint (H)">💡<span> Hint</span></button>
       <button id="undo-btn" title="Undo (Ctrl+Z)">↶<span> Undo</span></button>
@@ -65,6 +65,7 @@
     </div>
   </div>
 
+  <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
   <script src="/solitaire/engine.js"></script>
   <script src="/solitaire/freecell.js"></script>

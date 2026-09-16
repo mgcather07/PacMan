@@ -61,6 +61,7 @@
     <p class="sub">Top 10 on every board. Finish a game to post your score — your best result on each board is kept.</p>
     <div id="namebar" class="namebar"></div>
     <nav class="tabs" role="tablist">
+      <button role="tab" data-group="Daily">📅 Today</button>
       <button role="tab" data-group="Infinite">∞ Infinite</button>
       <button role="tab" data-group="Classic">🏆 Classic</button>
       <button role="tab" data-group="Solitaire">🃏 Solitaire</button>
@@ -69,10 +70,11 @@
     <p class="note">Scores are public. Each device plays under one anonymous player ID; names are limited to letters, numbers and simple punctuation.</p>
   </main>
 
+  <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
   <script>
     (() => {
-      const { BOARDS, top, fmtTime, nameBar, user, onName } = window.Leaderboard;
+      const { BOARDS, top, fmtTime, nameBar, user, onName, info, dailyBoards } = window.Leaderboard;
       nameBar(document.getElementById('namebar'));
       let myId = null;
       user().then((u) => { myId = u.uid; if (current) show(current); return Leaderboard.getName(); }).catch(() => {});
@@ -86,12 +88,12 @@
         document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.group === group)));
         try { localStorage.setItem('arcade.lbtab', group); } catch (e) { /* ignore */ }
         history.replaceState(null, '', '#' + group.toLowerCase());
-        const ids = Object.keys(BOARDS).filter((id) => BOARDS[id].group === group);
+        const ids = group === 'Daily' ? dailyBoards(Daily.todayKey()) : Object.keys(BOARDS).filter((id) => BOARDS[id].group === group);
         grid.innerHTML = ids.map((id) => `
           <article class="board" data-board="${id}">
-            <header><h2>${esc(BOARDS[id].title)}</h2><span class="kind">${BOARDS[id].type === 'time' ? 'fastest win' : 'high score'}</span></header>
+            <header><h2>${esc(info(id).title)}</h2><span class="kind">${info(id).type === 'time' ? 'fastest win' : 'high score'}</span></header>
             <ol><li class="empty">Loading…</li></ol>
-            <a class="play" href="${BOARDS[id].href}">PLAY ▶</a>
+            <a class="play" href="${info(id).href}">PLAY ▶</a>
           </article>`).join('');
         ids.forEach(async (id) => {
           const list = grid.querySelector(`[data-board="${id}"] ol`);
@@ -99,7 +101,7 @@
             const entries = await top(id, 10);
             if (current !== group) return;
             list.innerHTML = entries.length
-              ? entries.map((e, i) => `<li class="${e.id === myId ? 'me' : ''}"><span class="rk">#${i + 1}</span><span class="nm">${esc(e.name)}</span><span class="sc">${BOARDS[id].type === 'time' ? fmtTime(e.time) : e.score.toLocaleString()}</span></li>`).join('')
+              ? entries.map((e, i) => `<li class="${e.id === myId ? 'me' : ''}"><span class="rk">#${i + 1}</span><span class="nm">${esc(e.name)}</span><span class="sc">${info(id).type === 'time' ? fmtTime(e.time) : e.score.toLocaleString()}</span></li>`).join('')
               : '<li class="empty">No scores yet — be the first!</li>';
           } catch (e) {
             list.innerHTML = '<li class="empty">Unavailable right now</li>';
@@ -108,10 +110,10 @@
       }
 
       document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => show(b.dataset.group)));
-      const fromHash = { '#infinite': 'Infinite', '#classic': 'Classic', '#solitaire': 'Solitaire' }[location.hash];
+      const fromHash = { '#daily': 'Daily', '#infinite': 'Infinite', '#classic': 'Classic', '#solitaire': 'Solitaire' }[location.hash];
       let saved = null;
       try { saved = localStorage.getItem('arcade.lbtab'); } catch (e) { /* ignore */ }
-      show(fromHash || (['Infinite', 'Classic', 'Solitaire'].includes(saved) ? saved : 'Infinite'));
+      show(fromHash || (['Daily', 'Infinite', 'Classic', 'Solitaire'].includes(saved) ? saved : 'Infinite'));
     })();
   </script>
 </body>

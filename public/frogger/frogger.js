@@ -7,6 +7,10 @@
 
   const COLS = 13;
   const CLASSIC = Arcade.classic;
+  const DAILY = !!(window.Daily && Daily.active);
+  // world randomness (lanes) comes from a seeded generator during daily challenges
+  let wrand = Math.random;
+  const wr = (a, b) => a + wrand() * (b - a);
   const COURSES = [45, 65, 90]; // classic mode: finish line row for each course
   const PAD = 5;
   const HOP_T = 0.12;
@@ -37,68 +41,68 @@
   function grassLane(r, safe) {
     const trees = new Set();
     if (!safe) {
-      const n = Math.floor(rand(0, 4));
-      for (let i = 0; i < n; i++) trees.add(Math.floor(rand(0, COLS)));
+      const n = Math.floor(wr(0, 4));
+      for (let i = 0; i < n; i++) trees.add(Math.floor(wr(0, COLS)));
     }
     let coin = -1, card = -1;
-    if (!safe && Math.random() < 0.28) { do { coin = Math.floor(rand(0, COLS)); } while (trees.has(coin)); }
-    if (!safe && r > 12 && Math.random() < 0.06) { do { card = Math.floor(rand(0, COLS)); } while (trees.has(card) || card === coin); }
-    return { type: 'grass', trees, coin, card, suit: Math.floor(rand(0, 4)) };
+    if (!safe && wrand() < 0.28) { do { coin = Math.floor(wr(0, COLS)); } while (trees.has(coin)); }
+    if (!safe && r > 12 && wrand() < 0.06) { do { card = Math.floor(wr(0, COLS)); } while (trees.has(card) || card === coin); }
+    return { type: 'grass', trees, coin, card, suit: Math.floor(wr(0, 4)) };
   }
 
   function movingLane(type, r, d, dir) {
     const lane = { type, items: [], speed: 0 };
     if (type === 'road') {
-      const truckLane = Math.random() < 0.3;
-      lane.speed = dir * rand(1.3, 2.6) * (1 + d * 1.3);
-      let x = rand(0, 3);
-      const spanTarget = COLS + PAD * 2 + Math.floor(rand(4, 12));
-      const color = ['#ff4d6d', '#ffd23f', '#3fa7ff', '#b37bff', '#ff8a3d', '#f5f5f5'][Math.floor(rand(0, 6))];
+      const truckLane = wrand() < 0.3;
+      lane.speed = dir * wr(1.3, 2.6) * (1 + d * 1.3);
+      let x = wr(0, 3);
+      const spanTarget = COLS + PAD * 2 + Math.floor(wr(4, 12));
+      const color = ['#ff4d6d', '#ffd23f', '#3fa7ff', '#b37bff', '#ff8a3d', '#f5f5f5'][Math.floor(wr(0, 6))];
       while (x < spanTarget - 3) {
-        const w = truckLane ? Math.floor(rand(2, 4)) : 1;
+        const w = truckLane ? Math.floor(wr(2, 4)) : 1;
         lane.items.push({ x0: x, w, kind: truckLane ? 'truck' : 'car', color: truckLane ? '#e8e8f0' : color });
-        x += w + rand(2.5, 6.5) * (1 - d * 0.35);
+        x += w + wr(2.5, 6.5) * (1 - d * 0.35);
       }
       lane.span = Math.max(spanTarget, Math.ceil(x));
     } else if (type === 'river') {
-      const turtles = Math.random() < 0.35;
-      lane.speed = dir * rand(0.9, 2.1) * (1 + d * 0.9);
+      const turtles = wrand() < 0.35;
+      lane.speed = dir * wr(0.9, 2.1) * (1 + d * 0.9);
       let x = 0;
       while (x < COLS + PAD * 2) {
-        const w = turtles ? Math.floor(rand(2, 4)) : Math.floor(rand(2, 5) * (1 - d * 0.3)) + 1;
-        lane.items.push({ x0: x, w, kind: turtles ? 'turtle' : 'log', dive: turtles && Math.random() < 0.5, phase: rand(0, 4) });
-        x += w + rand(1.6, 3.2) + d * 1.6;
+        const w = turtles ? Math.floor(wr(2, 4)) : Math.floor(wr(2, 5) * (1 - d * 0.3)) + 1;
+        lane.items.push({ x0: x, w, kind: turtles ? 'turtle' : 'log', dive: turtles && wrand() < 0.5, phase: wr(0, 4) });
+        x += w + wr(1.6, 3.2) + d * 1.6;
       }
       lane.span = Math.ceil(x);
     } else if (type === 'rail') {
       lane.speed = dir * (16 + d * 8);
-      lane.span = COLS + PAD * 2 + Math.floor(rand(40, 80));
-      lane.items.push({ x0: rand(0, lane.span), w: 16, kind: 'train' });
+      lane.span = COLS + PAD * 2 + Math.floor(wr(40, 80));
+      lane.items.push({ x0: wr(0, lane.span), w: 16, kind: 'train' });
     }
     return lane;
   }
 
   function makeGroup(r) {
     const d = Math.min(1, r / 350 + (CLASSIC ? course * 0.3 : 0));
-    const roll = Math.random();
+    const roll = wrand();
     let type;
-    if (lastGroup !== 'grass' && Math.random() < 0.55) type = 'grass';
+    if (lastGroup !== 'grass' && wrand() < 0.55) type = 'grass';
     else if (r > 18 && roll < 0.14) type = 'rail';
     else if (roll < 0.58) type = 'road';
     else type = 'river';
     if (type === lastGroup && type !== 'road') type = 'road';
     lastGroup = type;
     if (type === 'grass') {
-      const n = Math.random() < 0.6 ? 1 : 2;
+      const n = wrand() < 0.6 ? 1 : 2;
       for (let i = 0; i < n; i++) pending.push(grassLane(r + i, false));
       return;
     }
     const maxN = type === 'rail' ? (d > 0.4 ? 2 : 1) : 2 + Math.round(d * 3);
-    const n = 1 + Math.floor(rand(0, maxN));
-    let dir = Math.random() < 0.5 ? 1 : -1;
+    const n = 1 + Math.floor(wr(0, maxN));
+    let dir = wrand() < 0.5 ? 1 : -1;
     for (let i = 0; i < n; i++) {
       pending.push(movingLane(type, r + i, d, dir));
-      if (type !== 'rail' || Math.random() < 0.5) dir = -dir;
+      if (type !== 'rail' || wrand() < 0.5) dir = -dir;
     }
   }
 
@@ -128,6 +132,7 @@
   // Game flow
   // ---------------------------------------------------------------------------
   function newGame() {
+    wrand = DAILY ? Daily.rng('frogger') : Math.random;
     course = 0;
     finishRow = CLASSIC ? COURSES[0] : Infinity;
     lanes = [];
@@ -214,7 +219,7 @@
     $('o-coins').textContent = coins;
     Arcade.endScreen(won, won ? `All ${COURSES.length} courses crossed with ${lives} ${lives === 1 ? 'life' : 'lives'} to spare!` : '');
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'frogger-classic' : 'frogger', { score, won: !!won }, document.querySelector('#over .panel'));
+    if (window.Leaderboard) Leaderboard.offer(Daily.board('frogger') || (Arcade.classic ? 'frogger-classic' : 'frogger'), { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   // Classic mode: reaching the finish line completes the course
@@ -619,7 +624,8 @@
   });
   swipe(canvas, (d) => tryHop(d), () => tryHop(3));
   $('play-btn').addEventListener('click', start);
-  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'frogger-classic' : 'frogger', document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.button(Daily.board('frogger') || (Arcade.classic ? 'frogger-classic' : 'frogger'), document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.nameBar(document.querySelector('#title .panel'));
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

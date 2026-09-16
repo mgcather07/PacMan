@@ -31,6 +31,7 @@
   const DIRS = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 }]; // R D L U
   // Classic mode: a bounded maze of nodes -NX..NX × -NY..NY, cleared level by level
   const CLASSIC = !!(window.Arcade && Arcade.classic);
+  const DAILY = !!(window.Daily && Daily.active);
   const LEVELS = 4, NX = 4, NY = 3;
   const inNodes = (i, j) => !CLASSIC || (Math.abs(i) <= NX && Math.abs(j) <= NY);
   const NEIGHBOR = [[1, 0], [0, 1], [-1, 0], [0, -1]];
@@ -161,6 +162,7 @@
 
   // Classic: pick a seed whose bounded maze is fully connected so every dot is reachable
   function pickSeed() {
+    if (DAILY) { SEED = Daily.seed('pacman'); forcedCache.clear(); return; }
     for (let tries = 0; tries < 200; tries++) {
       SEED = (Math.random() * 2 ** 31) | 0;
       forcedCache.clear();
@@ -838,7 +840,7 @@
     $('final-level').textContent = CLASSIC ? `${level}/${LEVELS}` : level;
     if (window.Arcade) Arcade.endScreen(!!won, won ? `All ${LEVELS} mazes cleared!` : '');
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(CLASSIC ? 'pacman-classic' : 'pacman', { score, won: !!won }, document.querySelector('#over .panel'));
+    if (window.Leaderboard) Leaderboard.offer(Daily.board('pacman') || (CLASSIC ? 'pacman-classic' : 'pacman'), { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function start() {
@@ -851,7 +853,8 @@
   }
 
   $('play-btn').addEventListener('click', start);
-  if (window.Leaderboard) Leaderboard.button(CLASSIC ? 'pacman-classic' : 'pacman', document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.button(Daily.board('pacman') || (CLASSIC ? 'pacman-classic' : 'pacman'), document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.nameBar(document.querySelector('#title .panel'));
   $('again-btn').addEventListener('click', start);
   $('sound-btn').addEventListener('click', (e) => {
     Sound.on = !Sound.on;

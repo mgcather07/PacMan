@@ -112,6 +112,10 @@
     .lb-link { display: inline-block; margin-top: 16px; font: 11px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding: 10px 14px; border-radius: 10px; border: 1px solid #ffe60055; }
     .lb-link:hover { background: #ffe60018; }
     .home-namebar { margin: 14px auto 0; }
+    .home-links { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    .home-links .lb-link { margin-top: 0; }
+    .daily-link { display: inline-block; font: 11px "Press Start 2P", monospace; color: #2a1500; background: #ffb454; text-decoration: none; padding: 11px 14px; border-radius: 10px; box-shadow: 0 4px 0 #8a4b00; }
+    .daily-link:hover { background: #ffc478; }
   </style>
 </head>
 <body>
@@ -125,7 +129,7 @@
         <button role="tab" data-tab="infinite">∞ Infinite</button>
         <button role="tab" data-tab="classic">🏆 Classic</button>
       </nav>
-      <div><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a></div>
+      <div class="home-links"><a class="daily-link" href="/daily/">📅 Daily Challenge</a><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a></div>
       <div id="namebar" class="home-namebar"></div>
     </header>
 
@@ -254,6 +258,7 @@
     <footer>Arrow keys or WASD for Pac-Man &amp; Snake · right-click or long-press to flag in Minesweeper · Ctrl+Z to undo in Klondike, Spider &amp; FreeCell</footer>
   </main>
 
+  <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
   <script>
     if (window.Leaderboard) Leaderboard.nameBar(document.getElementById('namebar'));

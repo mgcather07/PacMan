@@ -60,12 +60,15 @@
   }
 
   const CLASSIC = Arcade.classic;
+  const DAILY = !!(window.Daily && Daily.active);
+  let bagRandom = Math.random;
   let mode = store.get(Arcade.modeKey('tetris.mode'), CLASSIC ? 'sprint' : 'tower');
   if (CLASSIC && mode === 'tower') mode = 'sprint';
   if (!CLASSIC && mode === 'sprint') mode = 'tower';
+  if (DAILY) mode = 'marathon'; // daily: same piece order for everyone, endless Marathon scoring
   // Classic goals: Sprint = 40 lines against the clock, Marathon = reach 150 lines
   const goal = () => (mode === 'sprint' ? 40 : CLASSIC && mode === 'marathon' ? 150 : Infinity);
-  const boardId = () => (mode === 'tower' ? 'tetris-tower' : mode === 'sprint' ? 'tetris-sprint' : CLASSIC ? 'tetris-marathon150' : 'tetris-marathon');
+  const boardId = () => Daily.board('tetris') || (mode === 'tower' ? 'tetris-tower' : mode === 'sprint' ? 'tetris-sprint' : CLASSIC ? 'tetris-marathon150' : 'tetris-marathon');
   const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
   let state = 'title';
   let paused = false;
@@ -90,7 +93,7 @@
 
   function refillBag() {
     const b = Object.keys(SHAPES);
-    for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+    for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(bagRandom() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
     bag.push(...b);
   }
   function nextType() {
@@ -117,6 +120,7 @@
   // Game flow
   // ---------------------------------------------------------------------------
   function newGame() {
+    bagRandom = DAILY ? Daily.rng('tetris') : Math.random;
     rows = [];
     bag = []; queue = [];
     hold = null; holdUsed = false;
@@ -544,14 +548,16 @@
 
   function setMode(m) {
     mode = m;
-    store.set(Arcade.modeKey('tetris.mode'), m);
+    if (!DAILY) store.set(Arcade.modeKey('tetris.mode'), m);
     document.querySelectorAll('button[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
   }
   document.querySelectorAll('button[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
   setMode(mode);
+  $('mode-label').textContent = mode.toUpperCase();
 
   $('play-btn').addEventListener('click', start);
   if (window.Leaderboard) Leaderboard.button(boardId, document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.nameBar(document.querySelector('#title .panel'));
   $('again-btn').addEventListener('click', start);
   $('menu-btn').addEventListener('click', () => { $('over').hidden = true; $('title').hidden = false; state = 'title'; });
   soundButton($('sound-btn'));

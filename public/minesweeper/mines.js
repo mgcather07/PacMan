@@ -33,6 +33,7 @@
 
   // Classic mode: a finite board with a fixed mine count, one life and a timer
   const CLASSIC = !!(window.Arcade && Arcade.classic);
+  const DAILY = !!(window.Daily && Daily.active);
   const DIFFS = {
     beginner: { w: 9, h: 9, m: 10, name: 'Beginner' },
     intermediate: { w: 16, h: 16, m: 40, name: 'Intermediate' },
@@ -48,7 +49,7 @@
 
   function freshGame() {
     return {
-      seed: (Math.random() * 2 ** 31) | 0,
+      seed: DAILY ? Daily.seed('minesweeper') : (Math.random() * 2 ** 31) | 0,
       safe: null,
       revealed: new Set(),
       flags: new Set(),
@@ -196,7 +197,7 @@
   let saveTimer = null;
   function changed() {
     dirty = true;
-    if (CLASSIC) return;
+    if (CLASSIC || DAILY) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(save, 800);
   }
@@ -213,7 +214,7 @@
     } catch (e) { /* ignore */ }
   }
   function load() {
-    if (CLASSIC) return false;
+    if (CLASSIC || DAILY) return false;
     try {
       const raw = JSON.parse(localStorage.getItem('infmines.game') || 'null');
       if (!raw || raw.over) return false;
@@ -434,8 +435,8 @@
     }
     if (window.Arcade) Arcade.endScreen(!!won, msg);
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(CLASSIC ? `mines-${diff}` : 'minesweeper', { score: G.score, time: elapsed(), won: !!won }, document.querySelector('#over .panel'));
-    if (!CLASSIC) { try { localStorage.removeItem('infmines.game'); } catch (e) { /* ignore */ } }
+    if (window.Leaderboard) Leaderboard.offer(Daily.board('minesweeper') || (CLASSIC ? `mines-${diff}` : 'minesweeper'), { score: G.score, time: elapsed(), won: !!won }, document.querySelector('#over .panel'));
+    if (!CLASSIC && !DAILY) { try { localStorage.removeItem('infmines.game'); } catch (e) { /* ignore */ } }
   }
 
   function setFlagMode(on) {
@@ -548,11 +549,11 @@
   }
   let homeAnim = null;
 
-  if (window.Leaderboard) Leaderboard.button(() => (CLASSIC ? `mines-${diff}` : 'minesweeper'), document.querySelector('.actions'), 'lb-open');
+  if (window.Leaderboard) Leaderboard.button(() => Daily.board('minesweeper') || (CLASSIC ? `mines-${diff}` : 'minesweeper'), document.querySelector('.actions'), 'lb-open');
   $('mode-btn').addEventListener('click', (e) => { setFlagMode(!flagMode); e.currentTarget.blur(); });
   $('home-btn').addEventListener('click', goHome);
   $('new-btn').addEventListener('click', () => {
-    if (!CLASSIC && G.safe && !G.over && !confirm('Start a brand-new minefield? Your current field will be lost.')) return;
+    if (!CLASSIC && !DAILY && G.safe && !G.over && !confirm('Start a brand-new minefield? Your current field will be lost.')) return;
     newField();
   });
   $('again-btn').addEventListener('click', newField);

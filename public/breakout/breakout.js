@@ -13,6 +13,9 @@
   const DANGER_Y = PADDLE_Y - 46;
   const SUITS = ['♠', '♥', '♦', '♣'];
   const CLASSIC = Arcade.classic;
+  const DAILY = !!(window.Daily && Daily.active);
+  let wrand = Math.random;
+  const wr = (a, b) => a + wrand() * (b - a);
   // Classic mode levels: . empty, 1-3 hit points, # armored (not needed to clear), * brick with a power-up
   const LEVELS = [
     { name: 'WARM-UP', map: ['111111111111', '111111111111', '1*11111111*1', '111111111111', '111111111111'] },
@@ -55,8 +58,8 @@
     const n = rowsSpawned++;
     const lvl = Math.floor(n / 18);
     const cells = Array(COLS).fill(null);
-    const pattern = n < 6 ? 0 : Math.floor(rand(0, 7));
-    const phase = Math.floor(rand(0, 4));
+    const pattern = n < 6 ? 0 : Math.floor(wr(0, 7));
+    const phase = Math.floor(wr(0, 4));
     for (let c = 0; c < COLS; c++) {
       let on;
       switch (pattern) {
@@ -65,21 +68,21 @@
         case 3: on = c < 4 || c > 7; break;
         case 4: on = (c + phase) % 4 !== 0; break;
         case 5: on = Math.abs(c - 5.5) < 2 + (n % 4); break;
-        case 6: on = Math.random() < 0.7; break;
+        case 6: on = wrand() < 0.7; break;
         default: on = true;
       }
       if (!on) continue;
       let hp = 1;
-      const r = Math.random();
+      const r = wrand();
       if (r < Math.min(0.35, lvl * 0.05)) hp = 3;
       else if (r < Math.min(0.6, 0.08 + lvl * 0.08)) hp = 2;
-      const armored = n > 20 && Math.random() < Math.min(0.12, 0.02 + lvl * 0.01);
+      const armored = n > 20 && wrand() < Math.min(0.12, 0.02 + lvl * 0.01);
       if (armored) hp = 6;
       let drop = null;
-      if (!armored && Math.random() < 0.07) {
+      if (!armored && wrand() < 0.07) {
         const pool = ['multi', 'multi', 'wide', 'wide', 'laser', 'slow', 'fire', 'card', 'card'];
-        if (Math.random() < 0.08) pool.push('life');
-        drop = pool[Math.floor(rand(0, pool.length))];
+        if (wrand() < 0.08) pool.push('life');
+        drop = pool[Math.floor(wr(0, pool.length))];
       }
       cells[c] = { hp, max: hp, armored, color: ROW_COLORS[n % ROW_COLORS.length], drop, flash: 0 };
     }
@@ -115,7 +118,7 @@
     $('o-time').textContent = `${Math.floor(elapsed / 60)}:${String(Math.floor(elapsed % 60)).padStart(2, '0')}`;
     Arcade.endScreen(won, won ? `All ${LEVELS.length} levels cleared!` : '');
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'breakout-classic' : 'breakout', { score, won: !!won }, document.querySelector('#over .panel'));
+    if (window.Leaderboard) Leaderboard.offer(Daily.board('breakout') || (Arcade.classic ? 'breakout-classic' : 'breakout'), { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function nextLevel() {
@@ -132,6 +135,7 @@
   }
 
   function newGame() {
+    wrand = DAILY ? Daily.rng('breakout') : Math.random;
     rows = [];
     rowsSpawned = 0;
     level = 0;
@@ -596,7 +600,8 @@
   });
 
   $('play-btn').addEventListener('click', start);
-  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'breakout-classic' : 'breakout', document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.button(Daily.board('breakout') || (Arcade.classic ? 'breakout-classic' : 'breakout'), document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.nameBar(document.querySelector('#title .panel'));
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

@@ -9,6 +9,9 @@
 
   const TAU = Math.PI * 2;
   const CLASSIC = Arcade.classic;
+  const DAILY = !!(window.Daily && Daily.active);
+  let wrand = Math.random;
+  const wr = (a, b) => a + wrand() * (b - a);
   const WAVES = 8; // classic mode: clear this many waves to win
   const mod = (a, n) => ((a % n) + n) % n;
   const SIZES = { 3: { r: 54, score: 20 }, 2: { r: 30, score: 50 }, 1: { r: 16, score: 100 } };
@@ -47,12 +50,12 @@
   const spawnRadius = () => Math.hypot(view.W, view.H) / 2 + 90;
 
   function spawnRock(size = 3) {
-    const ang = rand(0, TAU);
+    const ang = wr(0, TAU);
     const R = spawnRadius();
     const x = ship.x + Math.cos(ang) * R, y = ship.y + Math.sin(ang) * R;
     // drift roughly toward where the ship is heading
-    const toShip = Math.atan2(ship.y + ship.vy - y, ship.x + ship.vx - x) + rand(-0.9, 0.9);
-    const sp = rand(35, 110) * (1 + Math.min(1.5, time / 240));
+    const toShip = Math.atan2(ship.y + ship.vy - y, ship.x + ship.vx - x) + wr(-0.9, 0.9);
+    const sp = wr(35, 110) * (1 + Math.min(1.5, time / 240));
     rocks.push(makeRock(x, y, size, Math.cos(toShip) * sp + ship.vx * 0.3, Math.sin(toShip) * sp + ship.vy * 0.3));
   }
 
@@ -86,7 +89,7 @@
     $('o-dist').textContent = CLASSIC ? `${wave}/${WAVES}` : Math.round(farthest / 100);
     Arcade.endScreen(won, won ? `All ${WAVES} waves cleared!` : '');
     $('over').hidden = false;
-    if (window.Leaderboard) Leaderboard.offer(Arcade.classic ? 'asteroids-classic' : 'asteroids', { score, won: !!won }, document.querySelector('#over .panel'));
+    if (window.Leaderboard) Leaderboard.offer(Daily.board('asteroids') || (Arcade.classic ? 'asteroids-classic' : 'asteroids'), { score, won: !!won }, document.querySelector('#over .panel'));
   }
 
   function spawnUfo() {
@@ -98,6 +101,7 @@
   }
 
   function newGame() {
+    wrand = DAILY ? Daily.rng('asteroids') : Math.random;
     ship = { x: 0, y: 0, vx: 0, vy: 0, a: -Math.PI / 2, r: 13, invuln: 2.5, alive: true, respawn: 0, shield: 0 };
     rocks = []; bullets = []; ufos = []; ufoShots = []; pickups = []; particles = []; popups = [];
     score = 0; lives = 3; time = 0; farthest = 0; suits = [false, false, false, false];
@@ -105,7 +109,7 @@
     nextLifeAt = 10000; ufoTimer = rand(25, 35); kills = 0; fireCd = 0; thrustSnd = 0; shake = 0;
     wave = 0; waveDelay = 0;
     if (CLASSIC) { ship.x = view.W / 2; ship.y = view.H / 2; spawnWave(); }
-    else for (let i = 0; i < 8; i++) spawnRock(Math.random() < 0.7 ? 3 : 2);
+    else for (let i = 0; i < 8; i++) spawnRock(wrand() < 0.7 ? 3 : 2);
   }
 
   function start() {
@@ -327,7 +331,7 @@
     rocks = rocks.filter((r) => Math.hypot(r.x - ship.x, r.y - ship.y) < R * 2.4);
     const mass = rocks.reduce((m, r) => m + r.size, 0);
     const target = 22 + Math.min(40, time / 6 + farthest / 700);
-    if (mass < target && Math.random() < 0.2) spawnRock(Math.random() < 0.75 ? 3 : 2);
+    if (mass < target && Math.random() < 0.2) spawnRock(wrand() < 0.75 ? 3 : 2);
   }
 
   function hyperspace() {
@@ -557,7 +561,8 @@
   bindPadButtons(keys);
 
   $('play-btn').addEventListener('click', start);
-  if (window.Leaderboard) Leaderboard.button(Arcade.classic ? 'asteroids-classic' : 'asteroids', document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.button(Daily.board('asteroids') || (Arcade.classic ? 'asteroids-classic' : 'asteroids'), document.querySelector('#title .panel'), 'btn alt');
+  if (window.Leaderboard) Leaderboard.nameBar(document.querySelector('#title .panel'));
   $('again-btn').addEventListener('click', start);
   soundButton($('sound-btn'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });

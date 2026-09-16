@@ -38,7 +38,7 @@
     </div>
     <div class="actions">
       <select class="switch" title="Switch game" onchange="location.href=this.value"><option value="/solitaire/">Klondike</option><option value="/spider/" selected>Spider</option><option value="/freecell/">FreeCell</option></select>
-      <select id="variant" title="Number of suits">
+      <select id="variant" class="not-daily" title="Number of suits">
         <option value="1">1 suit</option>
         <option value="2">2 suits</option>
         <option value="4">4 suits</option>
@@ -67,6 +67,7 @@
     </div>
   </div>
 
+  <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
   <script src="/solitaire/engine.js"></script>
   <script src="/solitaire/spider.js"></script>

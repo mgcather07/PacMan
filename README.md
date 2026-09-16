@@ -49,6 +49,20 @@ Online top-10 boards for every game live in Cloud Firestore, with a page at `/le
 
 Deploy rules with `firebase deploy --only firestore:rules`. To remove an entry, use the Firebase console or `firebase firestore:delete boards/<board>/scores/<uid>`.
 
+## Daily Challenges
+
+`/daily/` lists today's challenge for every game, a countdown to midnight (local time), your best result on each and the top 5. Opening a game with `?daily=YYYYMMDD` (or `?daily=today`) makes its world come from a seed shared by everyone that day — `public/shared/daily.js` provides `Daily.seed(game)` / `Daily.rng(game)`:
+
+| Game | What's the same for everyone |
+|------|------------------------------|
+| Pac-Man, Snake, Minesweeper | the whole procedurally generated world |
+| Frogger, Breakout, Space Shooter | lane / brick-row / wave generation |
+| Asteroids | rock spawn sizes and speeds |
+| Tetris | the piece order (Marathon rules) |
+| Klondike (Draw 1), Spider (1 suit), FreeCell | the deal |
+
+Daily games use the Infinite rules and post to `boards/daily-<game>-<YYYYMMDD>`. The rules only accept new results on yesterday's, today's or tomorrow's board (UTC) so every time zone can play its own date, and older boards stay readable.
+
 No build step. Everything lives in `public/`.
 
 ## Run locally

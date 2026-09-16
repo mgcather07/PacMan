@@ -20,12 +20,13 @@
     },
 
     variantKey: ({ suits }) => '.' + suits,
-    leaderboard: ({ suits }) => `spider-${suits}`,
+    leaderboard: ({ suits }) => Daily.board('spider') || `spider-${suits}`,
 
     deal(cards) {
       const deck = cards.map((_, i) => i);
+      const shuffleRandom = window.Daily && Daily.active ? Daily.rng('spider') : Math.random;
       for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(shuffleRandom() * (i + 1));
         [deck[i], deck[j]] = [deck[j], deck[i]];
       }
       const piles = [];
@@ -180,6 +181,7 @@
   const sel = document.getElementById('variant');
   let suits = 1;
   try { suits = +localStorage.getItem('spider.suits') || 1; } catch (e) { /* ignore */ }
+  if (window.Daily && Daily.active) suits = 1; // daily deal is always 1 suit
   sel.value = String(suits);
   sel.addEventListener('change', () => {
     suits = +sel.value;

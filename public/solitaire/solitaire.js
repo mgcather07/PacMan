@@ -18,6 +18,8 @@
   let autoRunning = false;
   let drawMode = 1;
   try { drawMode = +localStorage.getItem('sol.draw') || 1; } catch (e) { /* ignore */ }
+  const DAILY = !!(window.Daily && Daily.active);
+  if (DAILY) drawMode = 1; // daily deal is always Draw 1
   $('draw-mode').value = String(drawMode);
 
   // ---------------------------------------------------------------------------
@@ -58,8 +60,9 @@
   // ---------------------------------------------------------------------------
   function newGame() {
     const deck = Array.from({ length: 52 }, (_, i) => i);
+    const shuffleRandom = DAILY ? Daily.rng('klondike') : Math.random;
     for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(shuffleRandom() * (i + 1));
       [deck[i], deck[j]] = [deck[j], deck[i]];
     }
     S = { stock: [], waste: [], found: [[], [], [], []], tab: [[], [], [], [], [], [], []], up: Array(52).fill(false), score: 0, moves: 0 };
@@ -503,7 +506,7 @@
     $('win-record').textContent = rec;
     celebrate(() => {
       $('win').hidden = false;
-      if (window.Leaderboard) Leaderboard.offer(`klondike-${drawMode}`, { score: S.score, time: elapsed, won: true }, document.querySelector('#win .win-panel'));
+      if (window.Leaderboard) Leaderboard.offer(Daily.board('klondike') || `klondike-${drawMode}`, { score: S.score, time: elapsed, won: true }, document.querySelector('#win .win-panel'));
     });
   }
 
@@ -568,7 +571,7 @@
   }
 
   $('new-btn').addEventListener('click', newGame);
-  if (window.Leaderboard) Leaderboard.button(() => `klondike-${drawMode}`, document.querySelector('.actions'), 'lb-open');
+  if (window.Leaderboard) Leaderboard.button(() => Daily.board('klondike') || `klondike-${drawMode}`, document.querySelector('.actions'), 'lb-open');
   $('win-new').addEventListener('click', newGame);
   $('undo-btn').addEventListener('click', undo);
   $('hint-btn').addEventListener('click', showHint);
