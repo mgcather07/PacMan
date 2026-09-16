@@ -63,6 +63,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // lets a player find all of their own entries across boards in one query (scores are public anyway)
+    match /{path=**}/scores/{uid} {
+      allow read: if true;
+    }
+
     // private player profile: just the display name
     match /players/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;

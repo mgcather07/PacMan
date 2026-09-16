@@ -61,6 +61,15 @@
   // ---------------------------------------------------------------------------
   // Firebase (lazy): App Check + anonymous Auth + Firestore Lite
   // ---------------------------------------------------------------------------
+  // Never let a stalled network request leave the UI waiting forever
+  function withTimeout(promise, ms, label) {
+    let timer;
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`timeout: ${label}`)), ms); }),
+    ]).finally(() => clearTimeout(timer));
+  }
+
   let fbPromise = null;
   function firebase() {
     if (!fbPromise) {
@@ -72,12 +81,12 @@
           try { token = localStorage.getItem('appcheck.debug'); } catch (e) { /* ignore */ }
           self.FIREBASE_APPCHECK_DEBUG_TOKEN = token || true;
         }
-        const [appMod, checkMod, authMod, fs] = await Promise.all([
+        const [appMod, checkMod, authMod, fs] = await withTimeout(Promise.all([
           import(`${base}/firebase-app.js`),
           import(`${base}/firebase-app-check.js`),
           import(`${base}/firebase-auth.js`),
           import(`${base}/firebase-firestore-lite.js`),
-        ]);
+        ]), 20000, 'loading Firebase');
         const app = appMod.initializeApp(CONFIG, 'arcade-leaderboards');
         checkMod.initializeAppCheck(app, { provider: new checkMod.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
         const auth = authMod.getAuth(app);
@@ -92,8 +101,8 @@
     if (!userPromise) {
       userPromise = (async () => {
         const { auth, authMod } = await firebase();
-        await auth.authStateReady();
-        return auth.currentUser || (await authMod.signInAnonymously(auth)).user;
+        await withTimeout(auth.authStateReady(), 15000, 'restoring sign-in');
+        return auth.currentUser || (await withTimeout(authMod.signInAnonymously(auth), 20000, 'anonymous sign-in')).user;
       })().catch((e) => { userPromise = null; throw e; });
     }
     return userPromise;
@@ -105,7 +114,7 @@
     const { fs, db } = await firebase();
     const col = fs.collection(db, 'boards', board, 'scores');
     const order = isTime(board) ? fs.orderBy('time', 'asc') : fs.orderBy('score', 'desc');
-    const snap = await fs.getDocs(fs.query(col, order, fs.limit(n)));
+    const snap = await withTimeout(fs.getDocs(fs.query(col, order, fs.limit(n))), 15000, `reading ${board}`);
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
 
@@ -113,7 +122,7 @@
     const { fs, db } = await firebase();
     const col = fs.collection(db, 'boards', board, 'scores');
     const ahead = isTime(board) ? fs.query(col, fs.where('time', '<', entry.time)) : fs.query(col, fs.where('score', '>', entry.score));
-    return (await fs.getCount(ahead)).data().count + 1;
+    return (await withTimeout(fs.getCount(ahead), 15000, `ranking ${board}`)).data().count + 1;
   }
 
   // ---------------------------------------------------------------------------
@@ -134,29 +143,51 @@
     const { fs, db } = await firebase();
     const u = await user();
     try {
-      const snap = await fs.getDoc(fs.doc(db, 'players', u.uid));
+      const snap = await withTimeout(fs.getDoc(fs.doc(db, 'players', u.uid)), 12000, 'reading profile');
       if (snap.exists()) { cacheName(snap.data().name); return snap.data().name; }
     } catch (e) { /* fall back to the cached name */ }
     return cachedName();
   }
 
-  // Saves the name and renames every existing entry this player owns
+  // Saves the name, then renames this player's existing entries in the background
   async function setName(raw) {
     const name = cleanName(raw);
     if (!name) throw new Error('bad-name');
     const { fs, db } = await firebase();
     const u = await user();
-    await fs.setDoc(fs.doc(db, 'players', u.uid), { name, updatedAt: fs.serverTimestamp() });
+    await withTimeout(fs.setDoc(fs.doc(db, 'players', u.uid), { name, updatedAt: fs.serverTimestamp() }), 20000, 'saving name');
     cacheName(name);
-    await Promise.all(Object.keys(BOARDS).map(async (board) => {
-      const ref = fs.doc(db, 'boards', board, 'scores', u.uid);
-      const snap = await fs.getDoc(ref);
-      if (!snap.exists() || snap.data().name === name) return;
-      const d = snap.data();
-      await fs.setDoc(ref, { uid: u.uid, name, score: d.score, time: d.time, won: d.won, updatedAt: fs.serverTimestamp() });
-    }));
-    nameListeners.forEach((fn) => fn(name));
+    nameListeners.forEach((fn) => { try { fn(name); } catch (e) { console.error('[leaderboard] name listener', e); } });
+    renameEntries(name).catch((e) => console.warn('[leaderboard] could not rename existing entries yet:', e));
     return name;
+  }
+
+  async function renameEntries(name) {
+    const { fs, db } = await firebase();
+    const u = await user();
+    let docs;
+    try {
+      const mine = await withTimeout(fs.getDocs(fs.query(fs.collectionGroup(db, 'scores'), fs.where('uid', '==', u.uid))), 20000, 'finding your entries');
+      docs = mine.docs;
+    } catch (e) {
+      // index unavailable (e.g. still building): check each board, a few at a time
+      console.warn('[leaderboard] entry query unavailable, checking boards individually:', e && e.code);
+      docs = [];
+      const ids = Object.keys(BOARDS);
+      for (let i = 0; i < ids.length; i += 4) {
+        const snaps = await Promise.all(ids.slice(i, i + 4).map((b) => withTimeout(fs.getDoc(fs.doc(db, 'boards', b, 'scores', u.uid)), 12000, `checking ${b}`).catch(() => null)));
+        snaps.forEach((snap) => { if (snap && snap.exists()) docs.push(snap); });
+      }
+    }
+    let changed = 0;
+    for (const d of docs) {
+      const data = d.data();
+      if (data.name === name) continue;
+      await withTimeout(fs.setDoc(d.ref, { uid: u.uid, name, score: data.score, time: data.time, won: data.won, updatedAt: fs.serverTimestamp() }), 15000, 'renaming entry');
+      changed++;
+    }
+    if (changed) nameListeners.forEach((fn) => { try { fn(name); } catch (e) { /* ignore */ } });
+    return changed;
   }
 
   // ---------------------------------------------------------------------------
@@ -170,10 +201,10 @@
     const score = Math.max(0, Math.min(100000000, Math.round(result.score || 0)));
     const time = Math.max(0, Math.min(86400, Math.round((result.time || 0) * 100) / 100));
     const ref = fs.doc(db, 'boards', board, 'scores', u.uid);
-    const snap = await fs.getDoc(ref);
+    const snap = await withTimeout(fs.getDoc(ref), 15000, 'reading your best');
     const prev = snap.exists() ? snap.data() : null;
     const improved = !prev || (isTime(board) ? time < prev.time : score > prev.score);
-    if (improved) await fs.setDoc(ref, { uid: u.uid, name, score, time, won: !!result.won, updatedAt: fs.serverTimestamp() });
+    if (improved) await withTimeout(fs.setDoc(ref, { uid: u.uid, name, score, time, won: !!result.won, updatedAt: fs.serverTimestamp() }), 20000, 'posting score');
     const best = improved ? { score, time } : prev;
     return { improved, first: !prev, best, rank: await rankOf(board, best), uid: u.uid, name };
   }
@@ -255,6 +286,7 @@
       const [entries, u] = await Promise.all([top(board, 10), user().catch(() => null)]);
       renderList(listEl, board, entries, u && u.uid);
     } catch (e) {
+      console.error('[leaderboard] loading board failed:', e);
       listEl.innerHTML = '<li class="empty">Leaderboard unavailable right now</li>';
       if (noteEl && !noteEl.textContent) setNote(noteEl, 'Check your connection and try again.', 'err');
     }
@@ -290,7 +322,8 @@
           wrap.remove();
           resolve(saved);
         } catch (err) {
-          setNote(note, 'Could not save your name — try again.', 'err');
+          console.error('[leaderboard] saving name failed:', err);
+          setNote(note, /timeout/.test(err && err.message) ? 'The connection timed out — tap Save to try again.' : 'Could not save your name — tap Save to try again.', 'err');
           form.querySelectorAll('input, button').forEach((el) => { el.disabled = false; });
         }
       });
@@ -362,6 +395,7 @@
         else setNote(note, `Your best is still ${fmtEntry(board, res.best)} (#${res.rank.toLocaleString()}). Beat it to climb!`);
         loadInto(list, note, board);
       } catch (e) {
+        console.error('[leaderboard] posting score failed:', e);
         setNote(note, 'Could not post your score — check your connection.', 'err');
         loadInto(list, note, board);
       }
