@@ -20,12 +20,14 @@
     "tanks",
     "pyramid",
     "match3",
+    "tripeaks",
     "klondike",
     "spider",
     "freecell"
   ],
   "timeGames": [
     "pyramid",
+    "tripeaks",
     "klondike",
     "spider",
     "freecell"
@@ -251,6 +253,16 @@
       "classic",
       "score"
     ],
+    "tripeaks": [
+      "tripeaks",
+      "infinite",
+      "score"
+    ],
+    "tripeaks-classic": [
+      "tripeaks",
+      "solitaire",
+      "time"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -383,6 +395,11 @@
       1200,
       2
     ],
+    "tripeaks": [
+      20000,
+      250,
+      0
+    ],
     "klondike": [
       50000,
       100,
@@ -406,6 +423,8 @@
     "tetris-sprint": 12,
     "pyramid": 25,
     "pyramid-classic": 25,
+    "tripeaks": 20,
+    "tripeaks-classic": 20,
     "klondike": 30,
     "klondike-1": 30,
     "klondike-3": 30,

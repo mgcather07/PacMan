@@ -419,6 +419,25 @@
       ],
     },
     {
+      id: 'tripeaks', name: 'TriPeaks', icon: '⛰️', color: '#7ec8e3', path: '/tripeaks/', category: 'cards', type: 'time', daily: 'Same deal', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [20000, 250, 0], dailyMinTime: 20, assets: ['/tripeaks/tripeaks.js', '/tripeaks/preview.js', '/solitaire/style.css'], preview: ['/tripeaks/preview.js'],
+      blurb: 'Three peaks, then three more, forever. Take any uncovered card one rank from the waste, chain them into a streak worth ten points a link, and clear the board to deal a fresh one — with a smaller stock and a bigger bonus every time.',
+      blurbClassic: 'One solvable deal over three peaks. Clear all twenty-eight cards to win — the board ranks the fastest climb.',
+      tags: ['Endless boards', 'Streak bonus', 'One-tap play'],
+      tagsClassic: ['One solvable deal', 'Beat the clock', 'Undo & hints'],
+      cta: 'CLIMB ▶',
+      boards: [
+        { id: 'tripeaks', title: 'Infinite TriPeaks', group: 'Infinite', type: 'score', href: '/tripeaks/' },
+        { id: 'tripeaks-classic', title: 'TriPeaks', group: 'Solitaire', type: 'time', href: '/tripeaks/?mode=classic', minTime: 20 },
+      ],
+      classicWin: null,
+      achievements: [
+        { id: 'tripeaks-win', icon: '⛰️', name: 'Peak Climber', desc: 'Win a game of TriPeaks', points: 20, kind: 'win', boards: '*' },
+        { id: 'tripeaks-streak', icon: '🔗', name: 'Chain Gang', desc: 'Win TriPeaks in under 60 seconds', points: 40, kind: 'fastest', boards: '*', under: 60 },
+        { id: 'tripeaks-8k', icon: '🏔️', name: 'Summit', desc: 'Score 8,000 in Infinite TriPeaks', points: 50, kind: 'score', goal: 8000 },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

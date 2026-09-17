@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Infinite TriPeaks</title>
+  <meta name="description" content="Endless TriPeaks solitaire: clear three peaks one card at a time, chain cards into huge streaks, and keep dealing fresh peaks with a shrinking stock.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#093823">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/tripeaks/">
+  <meta property="og:title" content="Infinite TriPeaks">
+  <meta property="og:description" content="Three peaks, one card at a time. Chain cards one rank apart into huge streaks — then do it again on a fresh board.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Infinite TriPeaks">
+  <meta name="twitter:description" content="Three peaks, one card at a time. Chain cards one rank apart into huge streaks.">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/solitaire/style.css">
+  <style>
+    :root { --accent: #7ec8e3; --accent-dark: #2f6c84; }
+    html, body { height: 100%; overflow: hidden; }
+    body { background: radial-gradient(ellipse at 50% 0%, #1b6f7a 0%, #0f5132 45%, #082c22 100%) fixed; }
+    .bar { background: #04241bd9; }
+    .stats b.hot { color: #ffe600; text-shadow: 0 0 12px #ffe60099; }
+    #board { touch-action: manipulation; }
+
+    /* the peaks overlap from the top left, so every card carries a bottom-left index too */
+    .corner.bl { bottom: calc(var(--cw) * 0.05); left: calc(var(--cw) * 0.06); }
+    .card { cursor: default; }
+    .card.playable { cursor: pointer; }
+    .card.playable .inner { box-shadow: 0 0 0 2px var(--accent), 0 0 16px #7ec8e3aa; }
+    /* a shade, not a filter: a filter on a backface-hidden face breaks the flip in Safari */
+    .card.buried .face::after { content: ""; position: absolute; inset: 0; background: #06231a33; }
+    .slot.stock { cursor: pointer; }
+    .slot.waste::after { content: ""; }
+
+    /* the streak pop over the waste — the whole point of the game */
+    #combo {
+      position: absolute; z-index: 5000; pointer-events: none; opacity: 0;
+      font: 800 26px Inter, system-ui, sans-serif; color: #ffe600; text-shadow: 0 2px 14px #000b, 0 0 20px #ffe60066;
+      white-space: nowrap; transform: translate(-50%, 0);
+    }
+    #combo b { display: block; font-size: .62em; color: #fff; }
+    #combo.pop { animation: combo-pop .75s ease-out forwards; }
+    @keyframes combo-pop {
+      0% { opacity: 0; transform: translate(-50%, 4px) scale(.55); }
+      16% { opacity: 1; transform: translate(-50%, -10px) scale(1.18); }
+      65% { opacity: 1; transform: translate(-50%, -30px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -56px) scale(.92); }
+    }
+
+    /* title / game-over / pause screens, in the arcade's shape but on the card table */
+    .overlay {
+      position: fixed; inset: 0; z-index: 6000; display: grid; place-items: center; padding: 20px; overflow-y: auto;
+      background: radial-gradient(ellipse at center, #0a3a2ae0 0%, #041c14fa 70%);
+    }
+    .panel { text-align: center; max-width: 560px; width: 100%; }
+    .panel h1, .panel h2 { font-family: "Press Start 2P", ui-monospace, monospace; }
+    .panel h1 {
+      margin: 0 0 8px; font-size: clamp(20px, 6vw, 40px); color: var(--accent); line-height: 1.3;
+      text-shadow: 0 0 22px #7ec8e38c, 4px 4px 0 var(--accent-dark);
+    }
+    .panel h2 { margin: 0 0 8px; font-size: clamp(18px, 5vw, 28px); color: var(--accent); }
+    .panel h1 small { display: block; font-size: .42em; color: #fff; opacity: .85; margin-bottom: 10px; letter-spacing: 4px; text-shadow: none; }
+    .panel p { font-size: 13px; line-height: 1.8; color: #cfe8d8; margin: 14px 0; }
+    .panel .k { color: #ffe600; font-weight: 700; }
+    .btn {
+      font: 700 14px "Press Start 2P", ui-monospace, monospace; background: var(--accent); color: #062018; border: 0; border-radius: 8px;
+      padding: 16px 26px; cursor: pointer; box-shadow: 0 6px 0 var(--accent-dark); margin: 8px; text-decoration: none; display: inline-block;
+    }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--accent-dark); }
+    .btn.alt { background: #0c3a2a; color: #fff; box-shadow: 0 6px 0 #041c14; }
+    .overlay .win-stats { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); margin: 18px 0 6px; }
+    .end-message { color: #ffe600 !important; font-weight: 600; }
+    #over.won h1 { color: #7dff6a; text-shadow: 0 0 22px #7dff6a8c, 4px 4px 0 #1f6b16; }
+    .legend { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; font-size: 12px; color: #9fd8b8; margin: 12px 0; }
+    .legend b { color: #fff; font-size: 15px; }
+    body.paused #board { filter: blur(7px); }
+
+    /* Infinite / Classic content switching (see /shared/arcade.css) */
+    .only-classic { display: none !important; }
+    [data-mode="classic"] .only-classic { display: revert !important; }
+    [data-mode="classic"] .only-infinite { display: none !important; }
+
+    @media (max-width: 560px) {
+      .panel p { font-size: 12px; line-height: 1.7; }
+      .panel p br { display: none; }
+      .btn { padding: 14px 18px; font-size: 12px; margin: 6px 4px; }
+      .overlay { padding: 16px 14px calc(16px + env(safe-area-inset-bottom)); }
+    }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/" title="Back to the arcade">⌂ <span>ARCADE</span></a>
+    <div class="stats">
+      <div><span>SCORE</span><b id="score">0</b></div>
+      <div><span>STREAK</span><b id="streak">×0</b></div>
+      <div class="only-infinite not-daily"><span>BOARDS</span><b id="boards">0</b></div>
+      <div><span>TIME</span><b id="time">0:00</b></div>
+      <div><span>STOCK</span><b id="stock">0</b></div>
+      <div class="hide-sm"><span>CARDS</span><b id="left">28</b></div>
+    </div>
+    <div class="actions">
+      <button id="sound-btn" title="Sound (M)">🔊</button>
+      <button id="hint-btn" title="Hint (H)">💡<span> Hint</span></button>
+      <button id="undo-btn" title="Undo (Ctrl+Z)">↶<span> Undo</span></button>
+      <button id="new-btn" class="primary" title="New deal (N)">＋<span> Deal</span></button>
+    </div>
+  </header>
+
+  <main id="board" aria-label="TriPeaks table"></main>
+  <div id="toast" class="sol-toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>TRIPEAKS</h1>
+      <p class="only-infinite not-daily">Three peaks, then three more, forever. Clear all 28 cards and a fresh board is dealt on the spot —
+        with a smaller stock and a bigger streak bonus every time. <br>The run ends when the stock runs dry and nothing else will go.</p>
+      <p class="only-classic">One solvable deal of 28 cards over three peaks. Clear every last one to win — <br>the board ranks the fastest climb.</p>
+      <p class="only-daily">One deal, the same for everyone today. Clear all three peaks to win — <br>the board ranks the fastest climb.</p>
+      <p>Take any uncovered card that is <span class="k">one rank above or below</span> the card on the waste. <br>
+        Aces wrap: an ace takes a king or a two. Stuck? Flip a new card from the stock. <br>
+        Every card you take without flipping raises your <span class="k">streak</span> — and a streak is worth <span class="k">10 × streak</span> a card.</p>
+      <div class="legend">
+        <span><b>👆</b> tap a card</span>
+        <span><b>💡</b> hint</span>
+        <span><b>↶</b> undo</span>
+      </div>
+      <button class="btn" id="play-btn">CLIMB</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>OUT OF MOVES</h1>
+      <div class="win-stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div class="only-infinite not-daily"><span>BOARDS</span><b id="o-boards">0</b></div>
+        <div><span>BEST STREAK</span><b id="o-streak">×0</b></div>
+        <div><span>TIME</span><b id="o-time">0:00</b></div>
+        <div><span>CARDS LEFT</span><b id="o-left">0</b></div>
+      </div>
+      <button class="btn" id="again-btn">CLIMB AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="pause" hidden>
+    <div class="panel">
+      <h2>PAUSED</h2>
+      <p>The clock is stopped.</p>
+      <button class="btn" id="resume-btn">RESUME</button>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="tripeaks.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>
