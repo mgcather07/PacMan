@@ -71,9 +71,9 @@ a { color: inherit; }
 }
 .pad-btn.on { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 
-/* Infinite / Classic content switching */
-.only-classic { display: none !important; }
-[data-mode="classic"] .only-classic { display: revert !important; }
+/* Infinite / Classic content switching. Only ever hide: a shown element keeps its own
+   display, so flex rows (tag chips, legends) stay flex instead of reverting to block. */
+:root:not([data-mode="classic"]) .only-classic { display: none !important; }
 [data-mode="classic"] .only-infinite { display: none !important; }
 .end-message { color: #fff !important; font-size: 11px !important; }
 #over.won h1, #over.won h2 { color: #7dff6a; }

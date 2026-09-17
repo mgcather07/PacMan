@@ -61,8 +61,7 @@
       const st = document.createElement('style');
       st.id = 'daily-css';
       st.textContent = `
-        .only-daily { display: none !important; }
-        [data-daily] .only-daily { display: revert !important; }
+        :root:not([data-daily]) .only-daily { display: none !important; }
         [data-daily] .not-daily { display: none !important; }
         .daily-banner { display: inline-flex; align-items: center; gap: 8px; margin: 6px auto 4px; padding: 8px 14px; border-radius: 999px;
           background: #dc143c24; border: 1px solid #dc143c88; color: #ff8fa3; font: 600 13px Inter, system-ui, sans-serif; line-height: 1.3; }

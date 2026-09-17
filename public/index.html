@@ -105,8 +105,8 @@
 
     /* the catalog: the category filter hides cards with [hidden], the mode tab hides games with no Classic board */
     body[data-tab="classic"] .game[data-classic="0"] { display: none; }
-    .only-classic { display: none !important; }
-    body[data-tab="classic"] .only-classic { display: revert !important; }
+    /* only ever hide, so a shown .tags row keeps display:flex and its chips never split across lines */
+    body:not([data-tab="classic"]) .only-classic { display: none !important; }
     body[data-tab="classic"] .only-infinite { display: none !important; }
 
     .combo { margin-top: 28px; padding: 18px 22px; border-radius: 16px; border: 1px dashed #ffffff26; display: flex; gap: 16px; align-items: center; color: #b9b9d2; background: #0b0b1dcc; }
