@@ -1,7 +1,7 @@
 {
   "name": "Infinite Arcade",
   "short_name": "Arcade",
-  "description": "Endless Pac-Man, Snake, Minesweeper, Frogger, Breakout, Asteroids, Tetris and a space shooter, plus Klondike, Spider and FreeCell solitaire.",
+  "description": "Endless arcade classics — Pac-Man, Snake, Space Invaders, Minesweeper, Frogger, Breakout, Asteroids, Tetris and a space shooter — plus Klondike, Spider and FreeCell solitaire. Daily challenges and leaderboards.",
   "id": "/",
   "start_url": "/?source=app",
   "scope": "/",

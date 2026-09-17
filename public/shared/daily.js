@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  const GAMES = ['pacman', 'snake', 'minesweeper', 'frogger', 'breakout', 'asteroids', 'tetris', 'shooter', 'klondike', 'spider', 'freecell'];
+  const GAMES = window.ArcadeGames.list.map((g) => g.id); // see games.js
 
   const keyOf = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
   const dateOf = (key) => new Date(Math.floor(key / 10000), Math.floor(key / 100) % 100 - 1, key % 100);

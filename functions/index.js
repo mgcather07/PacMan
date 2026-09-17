@@ -12,6 +12,7 @@
  *   mergeAccount({ fromToken })        → folds a guest (anonymous) player into the signed-in account
  *   adminStats()                       → dashboard data, for accounts listed in config/admins
  */
+import { readFileSync } from 'node:fs';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
@@ -27,27 +28,17 @@ const callable = (handler) => onCall({ enforceAppCheck: true }, handler);
 // ---------------------------------------------------------------------------
 // Boards
 // ---------------------------------------------------------------------------
-const GAMES = ['pacman', 'snake', 'minesweeper', 'frogger', 'breakout', 'asteroids', 'tetris', 'shooter', 'klondike', 'spider', 'freecell'];
-
+// Games, boards and limits come from the registry (public/shared/games.js) via scripts/sync-games.mjs.
+const REGISTRY = JSON.parse(readFileSync(new URL('./games.json', import.meta.url), 'utf8'));
+const GAMES = REGISTRY.games;
 // board → [game, mode, type]; type 'time' boards rank the fastest win
-const BOARDS = {
-  'pacman': ['pacman', 'infinite', 'score'], 'snake': ['snake', 'infinite', 'score'], 'minesweeper': ['minesweeper', 'infinite', 'score'],
-  'frogger': ['frogger', 'infinite', 'score'], 'breakout': ['breakout', 'infinite', 'score'], 'asteroids': ['asteroids', 'infinite', 'score'],
-  'tetris-tower': ['tetris', 'infinite', 'score'], 'tetris-marathon': ['tetris', 'infinite', 'score'], 'shooter': ['shooter', 'infinite', 'score'],
-  'pacman-classic': ['pacman', 'classic', 'score'], 'snake-classic': ['snake', 'classic', 'score'], 'frogger-classic': ['frogger', 'classic', 'score'],
-  'breakout-classic': ['breakout', 'classic', 'score'], 'asteroids-classic': ['asteroids', 'classic', 'score'], 'shooter-classic': ['shooter', 'classic', 'score'],
-  'tetris-sprint': ['tetris', 'classic', 'time'], 'tetris-marathon150': ['tetris', 'classic', 'score'],
-  'mines-beginner': ['minesweeper', 'classic', 'time'], 'mines-intermediate': ['minesweeper', 'classic', 'time'], 'mines-expert': ['minesweeper', 'classic', 'time'],
-  'klondike-1': ['klondike', 'solitaire', 'time'], 'klondike-3': ['klondike', 'solitaire', 'time'],
-  'spider-1': ['spider', 'solitaire', 'time'], 'spider-2': ['spider', 'solitaire', 'time'], 'spider-4': ['spider', 'solitaire', 'time'],
-  'freecell': ['freecell', 'solitaire', 'time'],
-};
-const TIME_GAMES = ['klondike', 'spider', 'freecell'];
+const BOARDS = REGISTRY.boards;
+const TIME_GAMES = REGISTRY.timeGames;
 
 function boardInfo(board) {
   if (typeof board !== 'string') return null;
-  if (BOARDS[board]) { const [game, mode, type] = BOARDS[board]; return { board, game, mode, type }; }
-  const m = /^daily-([a-z]+)-(\d{8})$/.exec(board);
+  if (Object.hasOwn(BOARDS, board)) { const [game, mode, type] = BOARDS[board]; return { board, game, mode, type }; }
+  const m = /^daily-([a-z0-9]+)-(\d{8})$/.exec(board);
   if (!m || !GAMES.includes(m[1])) return null;
   return { board, game: m[1], mode: 'daily', type: TIME_GAMES.includes(m[1]) ? 'time' : 'score', day: +m[2] };
 }
@@ -57,18 +48,11 @@ function boardInfo(board) {
 // t seconds on the server clock (several times what a very strong player manages), and a winning time
 // may not beat the fastest humanly possible clear or exceed how long the run actually lasted.
 // ---------------------------------------------------------------------------
-const SCORE_CAP = {
-  pacman: [5000, 800, 0.5], snake: [5000, 600, 0.5], minesweeper: [5000, 500, 0], frogger: [5000, 500, 0.2],
-  breakout: [10000, 1500, 2], asteroids: [10000, 1000, 2], tetris: [10000, 2000, 5], shooter: [50000, 5000, 10],
-  klondike: [50000, 100, 0], spider: [50000, 100, 0], freecell: [50000, 100, 0],
-};
-const MIN_TIME = {
-  'mines-beginner': 1, 'mines-intermediate': 5, 'mines-expert': 20, 'tetris-sprint': 12,
-  'klondike-1': 30, 'klondike-3': 30, 'spider-1': 45, 'spider-2': 60, 'spider-4': 90, 'freecell': 20,
-  klondike: 30, spider: 45, freecell: 20, // daily solitaire (Draw 1, Spider 1 suit)
-};
+const SCORE_CAP = REGISTRY.scoreCap; // game → [base, perSec, perSec²]
+const MIN_TIME = REGISTRY.minTime; // board (or game, for daily boards) → seconds
 const TIME_SLACK = 5; // seconds of clock drift / network latency allowed
-const RUN_TTL_MS = 3 * 24 * 3600 * 1000; // an infinite Minesweeper field can be resumed indefinitely
+const RUN_TTL_MS = 3 * 24 * 3600 * 1000; // except resumable boards (an infinite Minesweeper field is saved and resumed)
+const RESUMABLE = new Set(REGISTRY.resumable);
 
 const scoreCap = (game, t) => { const [a, b, c] = SCORE_CAP[game]; return a + b * t + c * t * t; };
 
@@ -182,7 +166,7 @@ export const startRun = callable(async (req) => {
   const info = requireBoard(req.data && req.data.board);
   const ref = db.collection('runs').doc();
   // runs are deleted automatically by a TTL policy on expireAt
-  const keepDays = info.board === 'minesweeper' ? 365 : 30;
+  const keepDays = RESUMABLE.has(info.board) ? 365 : 30;
   await ref.set({ uid, board: info.board, game: info.game, startedAt: Timestamp.now(), used: false, expireAt: Timestamp.fromMillis(Date.now() + keepDays * 86400000) });
   if (req.data.play) {
     try { await recordPlay(uid, info); } catch (e) { logger.error('recordPlay failed', e); }
@@ -220,7 +204,7 @@ export const submitScore = callable(async (req) => {
     // the first submission fixes the run's result; later calls (e.g. after choosing a name) reuse it
     let result = run.result;
     if (!result) {
-      if (info.game !== 'minesweeper' && now - run.startedAt.toMillis() > RUN_TTL_MS) throw new HttpsError('deadline-exceeded', 'This run has expired.');
+      if (!RESUMABLE.has(run.board) && now - run.startedAt.toMillis() > RUN_TTL_MS) throw new HttpsError('deadline-exceeded', 'This run has expired.');
       const d = req.data;
       const score = Math.round(Number(d.score) || 0);
       const time = Math.round((Number(d.time) || 0) * 100) / 100;

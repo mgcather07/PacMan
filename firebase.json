@@ -55,6 +55,9 @@
         ".git",
         "*.local",
         "firebase-debug.log"
+      ],
+      "predeploy": [
+        "node \"$PROJECT_DIR/scripts/sync-games.mjs\""
       ]
     }
   ],

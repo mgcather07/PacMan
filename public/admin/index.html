@@ -116,6 +116,7 @@
     </div>
   </main>
 
+  <script src="/shared/games.js"></script>
   <script type="module">
     const V = '10.12.2';
     const base = `https://www.gstatic.com/firebasejs/${V}`;
@@ -136,10 +137,7 @@
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const num = (n) => (n || 0).toLocaleString();
-    const GAMES = {
-      pacman: ['🟡', 'Pac-Man'], snake: ['🐍', 'Snake'], minesweeper: ['💣', 'Minesweeper'], frogger: ['🐸', 'Frogger'], breakout: ['🧱', 'Breakout'],
-      asteroids: ['☄️', 'Asteroids'], tetris: ['🟪', 'Tetris'], shooter: ['🚀', 'Space Shooter'], klondike: ['🂡', 'Klondike'], spider: ['🕷️', 'Spider'], freecell: ['🃏', 'FreeCell'],
-    };
+    const GAMES = Object.fromEntries(ArcadeGames.list.map((g) => [g.id, [g.icon, g.name]]));
     const MODES = { infinite: '♾️ Infinite', classic: '🏆 Classic', daily: '📅 Daily', solitaire: '🃏 Solitaire' };
     const gameLabel = (g) => (GAMES[g] ? `${GAMES[g][0]} ${GAMES[g][1]}` : esc(g || '—'));
     const dayLabel = (k) => new Date(Date.UTC(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });

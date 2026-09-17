@@ -35,6 +35,17 @@ The home page has two tabs. **Infinite** runs every arcade game endlessly. **Cla
 
 Mode detection and the shared win screen live in `public/shared/arcade.js` (`Arcade.classic`, `Arcade.endScreen`); elements with `only-classic` / `only-infinite` classes switch automatically. Classic high scores are stored separately from infinite ones.
 
+## The game registry
+
+`public/shared/games.js` is the single list of every game: id, name, icon, accent color, category, the
+daily twist, the home-page card copy, its leaderboards, its achievements, the files to cache offline and
+the server's score limits. The home page, Daily page, Leaderboards page, profile, achievements, admin
+dashboard and service worker all read it, and `node scripts/sync-games.mjs` (run automatically before a
+functions deploy) writes the server's copy to `functions/games.json`.
+
+**Adding a game** is a folder under `public/` plus one registry entry — see
+[docs/ADDING_A_GAME.md](docs/ADDING_A_GAME.md), with `public/invaders/` as the reference game.
+
 ## Leaderboards
 
 Online top-10 boards for every game live in Cloud Firestore, with a page at `/leaderboards/`. All writes go through Cloud Functions (`functions/index.js`); clients can only read.

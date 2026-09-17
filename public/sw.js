@@ -4,16 +4,17 @@
  * cached copy when offline or when the network is too slow. Fonts are served from cache and refreshed
  * in the background. Leaderboards, analytics and Firebase always go straight to the network.
  */
-const CACHE = 'arcade-v2';
+const CACHE = 'arcade-v3';
 const FONT_CACHE = 'arcade-fonts-v1';
 const NETWORK_TIMEOUT_MS = 3500;
 
-const PAGES = ['/', '/daily/', '/leaderboards/', '/pacman/', '/snake/', '/minesweeper/', '/frogger/', '/breakout/', '/asteroids/', '/tetris/', '/shooter/', '/solitaire/', '/spider/', '/freecell/', '/profile/'];
+importScripts('/shared/games.js'); // the game registry: every game's page and scripts
+const GAMES = self.ArcadeGames.list;
+const PAGES = ['/', '/daily/', '/leaderboards/', '/profile/', ...new Set(GAMES.flatMap((g) => [g.path, ...g.boards.map((b) => b.href.split('?')[0])]))];
 const ASSETS = [
-  '/shared/arcade.css', '/shared/arcade.js', '/shared/daily.js', '/shared/leaderboard.js', '/shared/music.js', '/shared/analytics.js', '/shared/pwa.js', '/shared/nav.js', '/shared/achievements.js',
-  '/pacman/game.js', '/snake/snake.js', '/minesweeper/mines.js', '/frogger/frogger.js', '/breakout/breakout.js', '/asteroids/asteroids.js',
-  '/tetris/tetris.js', '/shooter/shooter.js', '/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js', '/solitaire/spider.js',
-  '/solitaire/freecell.js', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest',
+  '/shared/arcade.css', '/shared/arcade.js', '/shared/games.js', '/shared/daily.js', '/shared/leaderboard.js', '/shared/music.js', '/shared/analytics.js',
+  '/shared/pwa.js', '/shared/nav.js', '/shared/achievements.js', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest',
+  ...GAMES.flatMap((g) => g.assets || []),
 ];
 
 self.addEventListener('install', (event) => {

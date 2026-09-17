@@ -29,37 +29,12 @@
     appId: '1:725739379550:web:406602b02db3de61188dcf',
   };
 
-  // type: 'score' = higher is better, 'time' = faster is better (must be a win)
-  const BOARDS = {
-    'pacman': { title: 'Infinite Pac-Man', group: 'Infinite', type: 'score', href: '/pacman/' },
-    'snake': { title: 'Infinite Snake', group: 'Infinite', type: 'score', href: '/snake/' },
-    'minesweeper': { title: 'Infinite Minesweeper', group: 'Infinite', type: 'score', href: '/minesweeper/', unit: 'tiles' },
-    'frogger': { title: 'Infinite Frogger', group: 'Infinite', type: 'score', href: '/frogger/' },
-    'breakout': { title: 'Infinite Breakout', group: 'Infinite', type: 'score', href: '/breakout/' },
-    'asteroids': { title: 'Infinite Asteroids', group: 'Infinite', type: 'score', href: '/asteroids/' },
-    'tetris-tower': { title: 'Infinite Tetris · Tower', group: 'Infinite', type: 'score', href: '/tetris/' },
-    'tetris-marathon': { title: 'Infinite Tetris · Marathon', group: 'Infinite', type: 'score', href: '/tetris/' },
-    'shooter': { title: 'Infinite Space Shooter', group: 'Infinite', type: 'score', href: '/shooter/' },
-
-    'pacman-classic': { title: 'Classic Pac-Man', group: 'Classic', type: 'score', href: '/pacman/?mode=classic' },
-    'snake-classic': { title: 'Classic Snake', group: 'Classic', type: 'score', href: '/snake/?mode=classic' },
-    'mines-beginner': { title: 'Minesweeper · Beginner', group: 'Classic', type: 'time', href: '/minesweeper/?mode=classic' },
-    'mines-intermediate': { title: 'Minesweeper · Intermediate', group: 'Classic', type: 'time', href: '/minesweeper/?mode=classic' },
-    'mines-expert': { title: 'Minesweeper · Expert', group: 'Classic', type: 'time', href: '/minesweeper/?mode=classic' },
-    'frogger-classic': { title: 'Classic Frogger', group: 'Classic', type: 'score', href: '/frogger/?mode=classic' },
-    'breakout-classic': { title: 'Classic Breakout', group: 'Classic', type: 'score', href: '/breakout/?mode=classic' },
-    'asteroids-classic': { title: 'Classic Asteroids', group: 'Classic', type: 'score', href: '/asteroids/?mode=classic' },
-    'tetris-sprint': { title: 'Tetris · Sprint 40', group: 'Classic', type: 'time', href: '/tetris/?mode=classic' },
-    'tetris-marathon150': { title: 'Tetris · Marathon 150', group: 'Classic', type: 'score', href: '/tetris/?mode=classic' },
-    'shooter-classic': { title: 'Classic Space Shooter', group: 'Classic', type: 'score', href: '/shooter/?mode=classic' },
-
-    'klondike-1': { title: 'Klondike · Draw 1', group: 'Solitaire', type: 'time', href: '/solitaire/' },
-    'klondike-3': { title: 'Klondike · Draw 3', group: 'Solitaire', type: 'time', href: '/solitaire/' },
-    'spider-1': { title: 'Spider · 1 suit', group: 'Solitaire', type: 'time', href: '/spider/' },
-    'spider-2': { title: 'Spider · 2 suits', group: 'Solitaire', type: 'time', href: '/spider/' },
-    'spider-4': { title: 'Spider · 4 suits', group: 'Solitaire', type: 'time', href: '/spider/' },
-    'freecell': { title: 'FreeCell', group: 'Solitaire', type: 'time', href: '/freecell/' },
-  };
+  // type: 'score' = higher is better, 'time' = faster is better (must be a win). Built from the registry in games.js.
+  const REGISTRY = window.ArcadeGames;
+  const BOARDS = {};
+  REGISTRY.list.forEach((g) => g.boards.forEach((b) => {
+    BOARDS[b.id] = { title: b.title, group: b.group, type: b.type, href: b.href, ...(b.unit ? { unit: b.unit } : {}) };
+  }));
 
   // ---------------------------------------------------------------------------
   // Firebase (lazy): App Check + anonymous Auth + Firestore Lite
@@ -144,31 +119,22 @@
     return withTimeout(fb.call(name, data), 35000, name);
   }
 
-  // per-game accent colors, shared by the site pages
-  const COLORS = { pacman: '#ffe600', snake: '#3cff8a', minesweeper: '#c5ec7a', frogger: '#7dff6a', breakout: '#3fd8ff', asteroids: '#ffb347', tetris: '#c77dff', shooter: '#ff6b8a', klondike: '#7ee2a8', spider: '#5fd4e0', freecell: '#b8e986' };
-  const ICONS = { pacman: '🟡', snake: '🐍', minesweeper: '💣', frogger: '🐸', breakout: '🧱', asteroids: '☄️', tetris: '🟪', shooter: '🚀', klondike: '🂡', spider: '🕷️', freecell: '🃏' };
-  const gameOf = (board) => {
-    const m = /^daily-([a-z]+)-\d{8}$/.exec(board || '');
-    if (m) return m[1];
-    const id = String(board || '').replace(/-(classic|tower|marathon|marathon150|sprint|beginner|intermediate|expert|1|2|3|4)$/, '');
-    return id === 'mines' ? 'minesweeper' : id;
-  };
+  // per-game accent colors and icons, shared by the site pages
+  const COLORS = Object.fromEntries(REGISTRY.list.map((g) => [g.id, g.color]));
+  const ICONS = Object.fromEntries(REGISTRY.list.map((g) => [g.id, g.icon]));
+  const gameOf = (board) => REGISTRY.gameOf(board);
   const modeOf = (board) => (info(board) ? info(board).group.toLowerCase() : 'unknown');
 
   // Daily challenge boards: daily-<game>-<YYYYMMDD>
-  const DAILY_GAMES = {
-    pacman: ['Pac-Man', 'score', '/pacman/'], snake: ['Snake', 'score', '/snake/'], minesweeper: ['Minesweeper', 'score', '/minesweeper/'],
-    frogger: ['Frogger', 'score', '/frogger/'], breakout: ['Breakout', 'score', '/breakout/'], asteroids: ['Asteroids', 'score', '/asteroids/'],
-    tetris: ['Tetris', 'score', '/tetris/'], shooter: ['Space Shooter', 'score', '/shooter/'],
-    klondike: ['Klondike', 'time', '/solitaire/'], spider: ['Spider', 'time', '/spider/'], freecell: ['FreeCell', 'time', '/freecell/'],
-  };
+  // game → [name, daily board type, page]
+  const DAILY_GAMES = Object.fromEntries(REGISTRY.list.map((g) => [g.id, [g.name, g.type, g.path]]));
   function dayLabel(key) {
     const d = new Date(Math.floor(key / 10000), Math.floor(key / 100) % 100 - 1, key % 100);
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
   function info(board) {
-    if (BOARDS[board]) return BOARDS[board];
-    const m = /^daily-([a-z]+)-(\d{8})$/.exec(board || '');
+    if (Object.hasOwn(BOARDS, board)) return BOARDS[board];
+    const m = /^daily-([a-z0-9]+)-(\d{8})$/.exec(board || '');
     if (!m || !DAILY_GAMES[m[1]]) return null;
     const [name, type, path] = DAILY_GAMES[m[1]];
     return { title: `Daily ${name} · ${dayLabel(+m[2])}`, group: 'Daily', type, href: `${path}?daily=${m[2]}`, game: m[1], day: +m[2] };
@@ -1125,7 +1091,7 @@
   }
 
   window.Leaderboard = {
-    BOARDS, info, dailyBoards, DAILY_GAMES, ICONS, gameOf, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime,
+    BOARDS, GAMES: REGISTRY, info, dailyBoards, DAILY_GAMES, ICONS, gameOf, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime,
     startRun, played, resumeRun, runId, profile, streak, share, shareText, shareButton, count, dailyDone, nextDaily, playedDays,
     account, accountPanel, signInWithGoogle, signOut, injectCss, COLORS, avatarHtml, cachedAvatar, setAvatar, summary, myEntries, cachedLevel, markAchievementsSeen,
     cachedName: () => cachedName(), onSummary: (fn) => summaryListeners.add(fn),

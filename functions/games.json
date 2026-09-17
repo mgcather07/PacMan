@@ -1,0 +1,242 @@
+{
+  "games": [
+    "pacman",
+    "snake",
+    "minesweeper",
+    "frogger",
+    "breakout",
+    "asteroids",
+    "tetris",
+    "shooter",
+    "invaders",
+    "klondike",
+    "spider",
+    "freecell"
+  ],
+  "timeGames": [
+    "klondike",
+    "spider",
+    "freecell"
+  ],
+  "boards": {
+    "pacman": [
+      "pacman",
+      "infinite",
+      "score"
+    ],
+    "pacman-classic": [
+      "pacman",
+      "classic",
+      "score"
+    ],
+    "snake": [
+      "snake",
+      "infinite",
+      "score"
+    ],
+    "snake-classic": [
+      "snake",
+      "classic",
+      "score"
+    ],
+    "minesweeper": [
+      "minesweeper",
+      "infinite",
+      "score"
+    ],
+    "mines-beginner": [
+      "minesweeper",
+      "classic",
+      "time"
+    ],
+    "mines-intermediate": [
+      "minesweeper",
+      "classic",
+      "time"
+    ],
+    "mines-expert": [
+      "minesweeper",
+      "classic",
+      "time"
+    ],
+    "frogger": [
+      "frogger",
+      "infinite",
+      "score"
+    ],
+    "frogger-classic": [
+      "frogger",
+      "classic",
+      "score"
+    ],
+    "breakout": [
+      "breakout",
+      "infinite",
+      "score"
+    ],
+    "breakout-classic": [
+      "breakout",
+      "classic",
+      "score"
+    ],
+    "asteroids": [
+      "asteroids",
+      "infinite",
+      "score"
+    ],
+    "asteroids-classic": [
+      "asteroids",
+      "classic",
+      "score"
+    ],
+    "tetris-tower": [
+      "tetris",
+      "infinite",
+      "score"
+    ],
+    "tetris-marathon": [
+      "tetris",
+      "infinite",
+      "score"
+    ],
+    "tetris-sprint": [
+      "tetris",
+      "classic",
+      "time"
+    ],
+    "tetris-marathon150": [
+      "tetris",
+      "classic",
+      "score"
+    ],
+    "shooter": [
+      "shooter",
+      "infinite",
+      "score"
+    ],
+    "shooter-classic": [
+      "shooter",
+      "classic",
+      "score"
+    ],
+    "invaders": [
+      "invaders",
+      "infinite",
+      "score"
+    ],
+    "invaders-classic": [
+      "invaders",
+      "classic",
+      "score"
+    ],
+    "klondike-1": [
+      "klondike",
+      "solitaire",
+      "time"
+    ],
+    "klondike-3": [
+      "klondike",
+      "solitaire",
+      "time"
+    ],
+    "spider-1": [
+      "spider",
+      "solitaire",
+      "time"
+    ],
+    "spider-2": [
+      "spider",
+      "solitaire",
+      "time"
+    ],
+    "spider-4": [
+      "spider",
+      "solitaire",
+      "time"
+    ],
+    "freecell": [
+      "freecell",
+      "solitaire",
+      "time"
+    ]
+  },
+  "scoreCap": {
+    "pacman": [
+      5000,
+      800,
+      0.5
+    ],
+    "snake": [
+      5000,
+      600,
+      0.5
+    ],
+    "minesweeper": [
+      5000,
+      500,
+      0
+    ],
+    "frogger": [
+      5000,
+      500,
+      0.2
+    ],
+    "breakout": [
+      10000,
+      1500,
+      2
+    ],
+    "asteroids": [
+      10000,
+      1000,
+      2
+    ],
+    "tetris": [
+      10000,
+      2000,
+      5
+    ],
+    "shooter": [
+      50000,
+      5000,
+      10
+    ],
+    "invaders": [
+      10000,
+      600,
+      1
+    ],
+    "klondike": [
+      50000,
+      100,
+      0
+    ],
+    "spider": [
+      50000,
+      100,
+      0
+    ],
+    "freecell": [
+      50000,
+      100,
+      0
+    ]
+  },
+  "minTime": {
+    "mines-beginner": 1,
+    "mines-intermediate": 5,
+    "mines-expert": 20,
+    "tetris-sprint": 12,
+    "klondike": 30,
+    "klondike-1": 30,
+    "klondike-3": 30,
+    "spider": 45,
+    "spider-1": 45,
+    "spider-2": 60,
+    "spider-4": 90,
+    "freecell": 20
+  },
+  "resumable": [
+    "minesweeper"
+  ]
+}

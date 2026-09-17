@@ -67,7 +67,7 @@
     .prog-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .prog-num { font: 22px/1.2 "Press Start 2P", monospace; color: #fff; text-shadow: 3px 3px 0 #3a0510; }
     .prog-num small { font-size: 10px; color: #b8939b; text-shadow: none; }
-    .segments { display: grid; grid-template-columns: repeat(11, 1fr); gap: 5px; margin: 14px 0; }
+    .segments { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 5px; margin: 14px 0; }
     .segments a { display: grid; place-items: center; height: 34px; border-radius: 3px; text-decoration: none; font-size: 15px; background: #ffffff08; border: 1px solid #ffffff1a; filter: grayscale(1); opacity: .55; transition: transform .12s; }
     .segments a.done { filter: none; opacity: 1; background: color-mix(in srgb, var(--acc) 22%, transparent); border-color: var(--acc); box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 40%, transparent); }
     .segments a:hover { transform: translateY(-2px); opacity: 1; filter: none; }
@@ -173,9 +173,9 @@
         <div class="week" id="week"></div>
       </div>
       <div class="panel">
-        <div class="prog-top"><h3>Today’s progress</h3><div class="prog-num" id="prog-num">0<small>/11</small></div></div>
+        <div class="prog-top"><h3>Today’s progress</h3><div class="prog-num" id="prog-num">0<small></small></div></div>
         <div class="segments" id="segments"></div>
-        <div class="all-done" id="all-done" hidden>🏆 ALL 11 CLEARED! 🏆</div>
+        <div class="all-done" id="all-done" hidden>🏆 ALL CLEARED! 🏆</div>
         <div class="actions">
           <a class="abtn" id="play-next" href="#">▶ PLAY NEXT</a>
           <button type="button" class="abtn ghost" id="share-today" disabled>📤 SHARE TODAY</button>
@@ -198,6 +198,7 @@
     <p class="note">Challenges reset at midnight in your time zone. Scores are public.</p>
   </main>
 
+  <script src="/shared/games.js"></script>
   <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
   <script src="/shared/nav.js"></script>
@@ -205,19 +206,7 @@
     (() => {
       const LB = window.Leaderboard;
       const { info, top, myEntry, user, nameBar, onName, onStreak, fmtTime, streak, profile, share, ICONS } = LB;
-      const GAMES = [
-        { id: 'pacman', acc: '#ffe600', twist: 'Same maze' },
-        { id: 'snake', acc: '#3cff8a', twist: 'Same world' },
-        { id: 'minesweeper', acc: '#c5ec7a', twist: 'Same minefield' },
-        { id: 'frogger', acc: '#7dff6a', twist: 'Same roads' },
-        { id: 'breakout', acc: '#3fd8ff', twist: 'Same bricks' },
-        { id: 'asteroids', acc: '#ffb347', twist: 'Same rocks' },
-        { id: 'tetris', acc: '#c77dff', twist: 'Same pieces' },
-        { id: 'shooter', acc: '#ff6b8a', twist: 'Same waves' },
-        { id: 'klondike', acc: '#7ee2a8', twist: 'Draw 1 deal' },
-        { id: 'spider', acc: '#5fd4e0', twist: '1-suit deal' },
-        { id: 'freecell', acc: '#b8e986', twist: 'Same deal' },
-      ];
+      const GAMES = ArcadeGames.list.map((g) => ({ id: g.id, acc: g.color, twist: g.daily }));
       const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const $ = (id) => document.getElementById(id);
       const grid = $('grid');

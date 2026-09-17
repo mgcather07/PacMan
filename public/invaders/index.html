@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Space Invaders</title>
+  <meta name="description" content="Endless Space Invaders: formations that change every wave, armored and diving invaders, motherships, bunkers and power-ups. Or beat ten classic waves.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/invaders/">
+  <meta property="og:title" content="Infinite Space Invaders">
+  <meta property="og:description" content="Endless waves of invaders with new formations, motherships and power-ups. Defend the bunkers as long as you can.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #39ff14; --accent-dark: #137a00; --bg: #02030a; }
+    canvas.game { cursor: none; }
+    #suits { display: flex; gap: 4px; }
+    .suit { display: inline-grid; place-items: center; width: 18px; height: 24px; border-radius: 3px; background: #1a1a3a; color: #444; font-family: serif; font-size: 14px; }
+    .suit.got { background: #fbfbff; color: #111; }
+    .suit.got.red { color: #e0153a; }
+    #lives { color: #39ff14; letter-spacing: 2px; }
+    #power { color: #ffd23f; font-size: 8px; min-height: 8px; }
+    #wave { font-size: 9px; }
+    .legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend canvas { width: 26px; height: 20px; image-rendering: pixelated; }
+    .legend b { display: inline-block; width: 22px; height: 22px; line-height: 20px; border: 2px solid; border-radius: 6px; text-align: center; font-weight: normal; }
+    .fire-wrap { position: fixed; right: 14px; bottom: 70px; z-index: 6; }
+    .fire-wrap .pad-btn { width: 84px; height: 84px; font-size: 11px; border-color: #39ff14; color: #39ff14; }
+    @media (pointer: coarse) { .hud-buttons { bottom: 164px; } }
+    /* the touch fire button belongs to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) .fire-wrap, body:has(#over:not([hidden])) .fire-wrap { display: none; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col center">
+      <span id="wave"></span>
+      <div id="suits"></div>
+      <span id="power"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch fire-wrap"><button class="pad-btn" id="fire-btn" aria-label="Fire">FIRE</button></div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>SPACE INVADERS</h1>
+      <p class="only-infinite">They never stop coming. Every wave brings a new formation, <br>armored and diving invaders join the fight, and a mothership guards every fifth wave.</p>
+      <p class="only-classic">Ten waves, each starting a little lower. <br>Stop every invader before they land to save the Earth.</p>
+      <div class="legend">
+        <span><canvas id="lg-squid" width="13" height="10"></canvas>30</span>
+        <span><canvas id="lg-crab" width="13" height="10"></canvas>20</span>
+        <span><canvas id="lg-octo" width="13" height="10"></canvas>10</span>
+        <span><canvas id="lg-ufo" width="17" height="9"></canvas>???</span>
+      </div>
+      <div class="legend only-infinite">
+        <span><b style="color:#ffd23f">R</b>rapid fire</span>
+        <span><b style="color:#ff4d6d">2</b>double shot</span>
+        <span><b style="color:#3fd8ff">S</b>shield</span>
+        <span><b style="color:#fff">♠</b>card suit</span>
+      </div>
+      <p><span class="k">ARROWS / A D</span> or <span class="k">MOUSE</span> to move · <span class="k">SPACE</span> or click to fire · <span class="k">P</span> pause <br>
+        Touch: drag to move · hold FIRE (or keep a finger down) to shoot</p>
+      <button class="btn" id="play-btn">DEFEND</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>WAVE</span><b id="o-wave">0</b></div>
+        <div><span>INVADERS</span><b id="o-kills">0</b></div>
+        <div><span>ACCURACY</span><b id="o-acc">0%</b></div>
+      </div>
+      <p class="only-infinite">A new formation is waiting.</p>
+      <button class="btn" id="again-btn">DEFEND AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="sprites.js"></script>
+  <script src="invaders.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>
