@@ -324,6 +324,25 @@
       ],
     },
     {
+      id: 'tempest', name: 'Tempest', icon: '🌀', color: '#ff2e88', path: '/tempest/', category: 'arcade', type: 'score', daily: 'Same tubes', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [15000, 1200, 3], assets: ['/tempest/tempest.js', '/tempest/preview.js'], preview: ['/tempest/preview.js'],
+      blurb: 'Ride the rim of a glowing tube and shoot down its lanes. Flippers, tankers, spikers and fuseballs climb towards you, and every level warps you into a new shape and a new colour.',
+      blurbClassic: 'Sixteen tubes, one after another: circles, squares, crosses, stars and figure-eights. Clear the sixteenth to win.',
+      tags: ['Endless tubes', 'Super zapper', 'Mouse + drag'],
+      tagsClassic: ['16 levels', 'Super zapper', 'Mouse + drag'],
+      cta: 'DIVE ▶',
+      boards: [
+        { id: 'tempest', title: 'Infinite Tempest', group: 'Infinite', type: 'score', href: '/tempest/' },
+        { id: 'tempest-classic', title: 'Classic Tempest', group: 'Classic', type: 'score', href: '/tempest/?mode=classic' },
+      ],
+      classicWin: ['tempest-classic'],
+      achievements: [
+        { id: 'tempest-25k', icon: '🌀', name: 'Tube Rider', desc: 'Score 25,000 in Tempest', points: 20, kind: 'score', goal: 25000 },
+        { id: 'tempest-100k', icon: '💫', name: 'Grid Runner', desc: 'Score 100,000 in Tempest', points: 50, kind: 'score', goal: 100000 },
+        { id: 'tempest-classic', icon: '🎆', name: 'Sixteen Levels', desc: 'Beat Classic Tempest', points: 40, kind: 'win', boards: ['tempest-classic'] },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

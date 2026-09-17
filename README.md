@@ -5,7 +5,7 @@ Classic mode with an ending you can beat, a shared daily challenge, online leade
 and offline play.
 
 <!-- games:start -->
-**18 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
+**19 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
 
 | | Game | Kind | Infinite | Classic | Daily challenge |
 |---|---|---|---|---|---|
@@ -24,6 +24,7 @@ and offline play.
 | 🐤 | [Sky Flyer](public/flyer/) | Arcade | Endless | 50 gates | Same course |
 | 🫧 | [Bubble Shooter](public/bubble/) | Puzzle | Endless wall | 20 levels | Same wall |
 | 🚁 | [Defender](public/defender/) | Arcade | Wrapping world | 10 waves | Same raid |
+| 🌀 | [Tempest](public/tempest/) | Arcade | Endless tubes | 16 levels | Same tubes |
 | 🂡 | [Klondike](public/solitaire/) | Cards | Draw 1 or 3 | — | Draw 1 deal |
 | 🕷️ | [Spider](public/spider/) | Cards | 1, 2 or 4 suits | — | 1-suit deal |
 | 🃏 | [FreeCell](public/freecell/) | Cards | Numbered deals | — | Same deal |

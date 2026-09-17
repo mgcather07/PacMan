@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Tempest</title>
+  <meta name="description" content="Endless Tempest: ride the rim of a glowing vector tube, blast flippers, tankers, spikers and fuseballs down the lanes, and warp into a new shape every level.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#04010c">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/tempest/">
+  <meta property="og:title" content="Infinite Tempest">
+  <meta property="og:description" content="Ride the rim of a neon tube and shoot down its lanes. Flippers, tankers, spikers and fuseballs climb towards you — and every level is a new shape.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #ff2e88; --accent-dark: #8c0a44; --bg: #04010c; }
+    canvas.game { cursor: none; }
+    #lives { color: #ffe600; letter-spacing: 2px; }
+    #level { font-size: 9px; }
+    #shape { font-size: 7px; color: #888; }
+    #zap { font-size: 8px; color: #3fd8ff; min-height: 8px; }
+    .legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend canvas { width: 30px; height: 22px; }
+    .zap-wrap { position: fixed; right: 14px; bottom: 70px; z-index: 6; }
+    .zap-wrap .pad-btn { width: 84px; height: 84px; font-size: 11px; border-color: #3fd8ff; color: #3fd8ff; }
+    .zap-wrap .pad-btn.spent { border-color: #333; color: #555; }
+    @media (pointer: coarse) { .hud-buttons { bottom: 164px; } }
+    /* the touch zap button belongs to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) .zap-wrap, body:has(#over:not([hidden])) .zap-wrap { display: none; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col center">
+      <span id="level"></span>
+      <span id="shape"></span>
+      <span id="zap"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch zap-wrap"><button class="pad-btn" id="zap-btn" aria-label="Super zapper">ZAP</button></div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>TEMPEST</h1>
+      <p class="only-infinite">Ride the rim of a tube that never ends. Circles, squares, crosses, stars and figure-eights, <br>a new colour every level, and waves that climb faster and thicker the deeper you warp.</p>
+      <p class="only-classic">Sixteen tubes, one after another. Survive the sixteenth and the web is yours.</p>
+      <div class="legend">
+        <span><canvas id="lg-flipper" width="60" height="44"></canvas>flipper 150</span>
+        <span><canvas id="lg-tanker" width="60" height="44"></canvas>tanker 100</span>
+        <span><canvas id="lg-spiker" width="60" height="44"></canvas>spiker 50</span>
+        <span><canvas id="lg-fuse" width="60" height="44"></canvas>fuseball 250</span>
+      </div>
+      <p>Flippers flip lane to lane, tankers split in two when shot, spikers build spikes up a lane <br>and fuseballs crackle along the rim. Anything that reaches the rim grabs you. One super-zapper per level.</p>
+      <p><span class="k">MOUSE</span> slide around the rim · <span class="k">CLICK</span> or <span class="k">SPACE</span> fire · <span class="k">SHIFT</span>/<span class="k">Z</span> zapper · <span class="k">P</span> pause <br>
+        Touch: drag anywhere to slide · tap to fire · <span class="k">ZAP</span> for the zapper</p>
+      <button class="btn" id="play-btn">DIVE IN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>LEVEL</span><b id="o-level">0</b></div>
+        <div><span>DESTROYED</span><b id="o-kills">0</b></div>
+        <div><span>ACCURACY</span><b id="o-acc">0%</b></div>
+      </div>
+      <p class="only-infinite">A new tube is already spinning up.</p>
+      <button class="btn" id="again-btn">DIVE AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="tempest.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

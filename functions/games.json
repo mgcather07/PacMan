@@ -15,6 +15,7 @@
     "flyer",
     "bubble",
     "defender",
+    "tempest",
     "klondike",
     "spider",
     "freecell"
@@ -195,6 +196,16 @@
       "classic",
       "score"
     ],
+    "tempest": [
+      "tempest",
+      "infinite",
+      "score"
+    ],
+    "tempest-classic": [
+      "tempest",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -300,6 +311,11 @@
     "defender": [
       20000,
       1500,
+      3
+    ],
+    "tempest": [
+      15000,
+      1200,
       3
     ],
     "klondike": [
