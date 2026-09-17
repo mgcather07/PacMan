@@ -307,8 +307,35 @@
 
       // ---- cards ----
       function setState(card, state) { card.dataset.state = state; }
+      let cardObserver = null;
 
-      function render() {
+      // this player's result on a card, with its rank once we know it
+      function showMine(card, board, me, rank, total) {
+        const mine = card.querySelector('.mine');
+        const stamp = card.querySelector('.stamp');
+        const count = total != null ? total.toLocaleString() : (card.querySelector('.players').textContent.match(/[\d,]+/) || [])[0];
+        mine.className = 'mine';
+        mine.innerHTML = `<div><div class="lbl">Your best</div><div class="val">${fmt(board, me)}</div></div>`
+          + (rank ? `<div class="rank">#${rank.toLocaleString()}${count ? `<small>of ${count}</small>` : ''}</div>` : '');
+        setState(card, 'done');
+        stamp.hidden = false;
+        if (rank && rank <= 3) { stamp.className = 'stamp medal'; stamp.textContent = ['🥇', '🥈', '🥉'][rank - 1]; }
+        else { stamp.className = 'stamp'; stamp.textContent = '✓ DONE'; }
+        const btn = card.querySelector('.play');
+        if (btn) btn.textContent = '▶ Beat your best';
+      }
+
+      // finished but nothing posted (a solitaire loss, say)
+      function markPlayed(card, board) {
+        const mine = card.querySelector('.mine');
+        const stamp = card.querySelector('.stamp');
+        mine.className = 'mine dim';
+        mine.textContent = LB.info(board).type === 'time' ? 'Played · no win yet' : 'Played · no score posted';
+        stamp.hidden = false; stamp.className = 'stamp'; stamp.textContent = '✓ DONE';
+        setState(card, 'done');
+      }
+
+      async function render() {
         const token = ++renderToken;
         const isToday = day === today;
         $('date').textContent = Daily.label(day) + (isToday ? '' : ' · final results');
@@ -319,6 +346,7 @@
         grid.dataset.filter = isToday ? $('filters').querySelector('[aria-pressed="true"]').dataset.filter : 'all';
         if (isToday) renderProgress();
 
+        if (cardObserver) { cardObserver.disconnect(); cardObserver = null; }
         grid.innerHTML = GAMES.map((g) => {
           const board = Daily.board(g.id, day);
           const meta = info(board);
@@ -337,55 +365,72 @@
         }).join('');
         updateEmpty();
 
-        GAMES.forEach(async (g) => {
+        // One query gets every result this player has, so the page doesn't hit the server once per game.
+        let mineMap = {};
+        try {
+          const entries = await LB.myEntries();
+          if (token !== renderToken) return;
+          mineMap = Object.fromEntries(entries.map((e) => [e.board, e]));
+        } catch (e) { /* the cards fall back to loading their own */ }
+
+        GAMES.forEach((g) => {
           const board = Daily.board(g.id, day);
           const card = grid.querySelector(`[data-board="${board}"]`);
+          const me = mineMap[board];
+          if (me) {
+            showMine(card, board, me, null);
+            if (isToday) { done.add(g.id); results[g.id] = fmt(board, me); }
+          } else if (isToday && done.has(g.id)) {
+            markPlayed(card, board);
+          } else {
+            const mine = card.querySelector('.mine');
+            mine.className = 'mine dim';
+            mine.textContent = isToday ? 'Not played yet' : 'You didn’t play this one';
+          }
+        });
+        if (isToday) renderProgress();
+        updateEmpty();
+
+        // Each card loads its top five and player count only when it scrolls into view.
+        const seen = new WeakSet();
+        const loadCard = async (card) => {
+          const board = card.dataset.board;
           const list = card.querySelector('.board');
-          const mine = card.querySelector('.mine');
-          const stamp = card.querySelector('.stamp');
-          let myId = null;
+          const me = mineMap[board];
           try {
             const [entries, u, total] = await Promise.all([top(board, 5), user().catch(() => null), LB.count(board).catch(() => null)]);
             if (token !== renderToken) return;
-            myId = u && u.uid;
+            const myId = u && u.uid;
             list.innerHTML = entries.length
               ? entries.map((e, i) => `<li class="${e.id === myId ? 'me' : ''} ${!isToday && i === 0 ? 'winner' : ''}"><span class="rk">#${i + 1}</span><span class="nm">${LB.avatarHtml(e.name, e.avatar ? { icon: e.avatar, color: e.color } : null, 'lb-av')}<span class="txt">${esc(e.name)}</span></span><span class="sc">${fmt(board, e)}</span></li>`).join('')
               : `<li class="empty">${isToday ? 'No scores yet.<br>Be the first!' : 'Nobody played this one'}</li>`;
             if (total != null) card.querySelector('.players').textContent = total ? `${total.toLocaleString()} ${total === 1 ? 'player' : 'players'}` : '';
+            if (me) {
+              const at = entries.findIndex((e) => e.id === myId);
+              const rank = at >= 0 ? at + 1 : (await myEntry(board).then((r) => r && r.rank).catch(() => null));
+              if (token !== renderToken) return;
+              showMine(card, board, me, rank, total);
+              if (isToday && rank) results[g0(board)] = `${fmt(board, me)} (#${rank.toLocaleString()})`;
+            }
           } catch (e) {
             if (token !== renderToken) return;
             list.innerHTML = '<li class="empty">Unavailable right now</li>';
           }
-          try {
-            const me = await myEntry(board);
-            if (token !== renderToken) return;
-            if (me) {
-              const total = card.querySelector('.players').textContent.match(/[\d,]+/);
-              mine.className = 'mine';
-              mine.innerHTML = `<div><div class="lbl">Your best</div><div class="val">${fmt(board, me)}</div></div><div class="rank">#${me.rank.toLocaleString()}${total ? `<small>of ${total[0]}</small>` : ''}</div>`;
-              setState(card, 'done');
-              stamp.hidden = false;
-              if (me.rank <= 3) { stamp.className = 'stamp medal'; stamp.textContent = ['🥇', '🥈', '🥉'][me.rank - 1]; }
-              else { stamp.className = 'stamp'; stamp.textContent = '✓ DONE'; }
-              if (isToday) { done.add(g.id); results[g.id] = `${fmt(board, me)} (#${me.rank.toLocaleString()})`; }
-            } else if (isToday && done.has(g.id)) {
-              mine.className = 'mine dim';
-              mine.textContent = LB.info(board).type === 'time' ? 'Played · no win yet' : 'Played · no score posted';
-              stamp.hidden = false; stamp.className = 'stamp'; stamp.textContent = '✓ DONE';
-            } else {
-              mine.className = 'mine dim';
-              mine.textContent = isToday ? 'Not played yet' : 'You didn’t play this one';
-            }
-          } catch (e) {
-            if (token !== renderToken) return;
-            mine.className = 'mine dim';
-            mine.textContent = 'Couldn’t load your result';
-          }
-          const btn = card.querySelector('.play');
-          if (btn && card.dataset.state === 'done') btn.textContent = '▶ Beat your best';
-          if (isToday) renderProgress();
-          updateEmpty();
-        });
+        };
+        const g0 = (board) => LB.gameOf(board);
+        const io = new IntersectionObserver((rows) => {
+          rows.forEach((row) => {
+            if (!row.isIntersecting || seen.has(row.target)) return;
+            seen.add(row.target);
+            io.unobserve(row.target);
+            loadCard(row.target);
+          });
+        }, { rootMargin: '300px 0px' });
+        // the first handful load straight away; the rest wait until they scroll into view
+        const all = [...grid.querySelectorAll('.card')];
+        all.slice(0, 8).forEach((c) => { seen.add(c); loadCard(c); });
+        all.slice(8).forEach((c) => io.observe(c));
+        cardObserver = io;
       }
 
       document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
