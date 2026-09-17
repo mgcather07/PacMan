@@ -32,110 +32,83 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html, body { margin: 0; min-height: 100%; }
     body { background: #05050f; color: #eee; font-family: Inter, system-ui, sans-serif; overflow-x: hidden; }
     #bg { position: fixed; inset: 0; width: 100%; height: 100%; opacity: .35; z-index: 0; }
-    main { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: clamp(28px, 7vh, 80px) 20px 40px; }
-    header { text-align: center; margin-bottom: clamp(28px, 6vh, 56px); }
-    h1 { font-family: "Press Start 2P", monospace; font-size: clamp(24px, 6vw, 54px); margin: 0; color: #ffe600; text-shadow: 0 0 24px #ffe60066, 5px 5px 0 #b37400; line-height: 1.3; }
+    main { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: clamp(24px, 6vh, 64px) 16px 40px; }
+
+    /* ---- hero ---- */
+    header { text-align: center; margin-bottom: clamp(22px, 4vh, 40px); }
+    h1 { font-family: "Press Start 2P", monospace; font-size: clamp(22px, 5.6vw, 50px); margin: 0; color: #ffe600; text-shadow: 0 0 24px #ffe60066, 5px 5px 0 #b37400; line-height: 1.3; }
     h1 span { color: #00e5ff; text-shadow: 0 0 24px #00e5ff66, 5px 5px 0 #005f6b; }
     header p { color: #9a9ab8; font-size: 17px; margin: 18px 0 0; }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
-    .game { position: relative; display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; text-decoration: none; color: inherit; border: 1px solid #ffffff1a; background: #0b0b1d; transition: transform .2s, box-shadow .2s, border-color .2s; }
-    .game:hover, .game:focus-visible { transform: translateY(-6px); box-shadow: 0 20px 50px #0009; outline: none; }
-    .game.pac:hover { border-color: #3b4bff; box-shadow: 0 20px 60px #3b4bff44; }
-    .game.sol:hover { border-color: #2fb872; box-shadow: 0 20px 60px #2fb87244; }
-    .preview { height: 220px; position: relative; overflow: hidden; }
-    .preview canvas { width: 100%; height: 100%; display: block; }
-    .sol .preview { background: radial-gradient(ellipse at 50% 0%, #1f7a4d, #093823); display: grid; place-items: center; }
-    .fan { position: relative; width: 240px; height: 150px; }
-    .pc { position: absolute; left: 50%; bottom: 0; width: 84px; height: 118px; margin-left: -42px; border-radius: 8px; background: linear-gradient(160deg, #fffef9, #efe9d8); border: 1px solid #d8d2bf; box-shadow: 0 6px 16px #0006; font-family: Georgia, serif; font-weight: 700; transform-origin: 50% 120%; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
-    .pc b { position: absolute; top: 6px; left: 8px; font-size: 20px; line-height: 1; text-align: center; }
-    .pc i { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-size: 40px; }
-    .pc.red { color: #c8102e; }
-    .pc:nth-child(1) { transform: rotate(-24deg); }
-    .pc:nth-child(2) { transform: rotate(-8deg); }
-    .pc:nth-child(3) { transform: rotate(8deg); }
-    .pc:nth-child(4) { transform: rotate(24deg); }
-    .game.sol:hover .pc:nth-child(1) { transform: rotate(-36deg) translateY(-6px); }
-    .game.sol:hover .pc:nth-child(2) { transform: rotate(-12deg) translateY(-10px); }
-    .game.sol:hover .pc:nth-child(3) { transform: rotate(12deg) translateY(-10px); }
-    .game.sol:hover .pc:nth-child(4) { transform: rotate(36deg) translateY(-6px); }
-    .body { padding: 22px 24px 26px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-    .body h2 { margin: 0; font-family: "Press Start 2P", monospace; font-size: 17px; line-height: 1.5; }
-    .pac h2 { color: #ffe600; }
-    .sol h2 { color: #7ee2a8; }
-    .body p { margin: 0; color: #a9a9c2; line-height: 1.55; }
-    /* feature tags: little pixel-font arcade labels in each game's color */
-    .game { --acc: #ffe600; }
-    .snk { --acc: #3cff8a; } .mns { --acc: #c5ec7a; } .frg { --acc: #7dff6a; } .brk { --acc: #3fd8ff; }
-    .ast { --acc: #ffe600; } .tet { --acc: #c77dff; } .sht { --acc: #ff6b8a; } .sol { --acc: #7ee2a8; }
-    .tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-    .tags span { font: 9px/1 "Press Start 2P", monospace; text-transform: uppercase; letter-spacing: .5px; padding: 7px 9px 6px; border-radius: 4px;
-      color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent);
-      box-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 22%, #000); }
-    .tags span::before { content: '▸ '; opacity: .6; }
-    .cta { margin-top: auto; padding-top: 12px; font-family: "Press Start 2P", monospace; font-size: 12px; }
-    .pac .cta { color: #ffe600; }
-    .sol .cta { color: #7ee2a8; }
-    .combo { margin-top: 28px; padding: 18px 22px; border-radius: 16px; border: 1px dashed #ffffff26; display: flex; gap: 16px; align-items: center; color: #b9b9d2; background: #0b0b1dcc; }
-    .combo .suits { font-family: Georgia, serif; font-size: 28px; white-space: nowrap; }
-    .combo .suits .r { color: #ff4d6d; }
-    footer { text-align: center; color: #55557a; font-size: 13px; margin-top: 40px; }
-    .game.snk:hover { border-color: #3cff8a; box-shadow: 0 20px 60px #3cff8a44; }
-    .game.mns:hover { border-color: #aad751; box-shadow: 0 20px 60px #aad75144; }
-    .snk h2 { color: #3cff8a; } .snk .cta { color: #3cff8a; }
-    .mns h2 { color: #c5ec7a; } .mns .cta { color: #c5ec7a; }
-    .mns .preview { background: #1c2b12; display: grid; place-items: center; }
-    .field { display: grid; grid-template-columns: repeat(12, 26px); grid-auto-rows: 26px; transform: rotate(-8deg) scale(1.15); box-shadow: 0 10px 30px #0008; }
-    .field i { display: grid; place-items: center; font: 800 15px Inter, system-ui, sans-serif; font-style: normal; background: #aad751; }
-    .field i.o { background: #a2d149; }
-    .field i.r { background: #e5c29f; } .field i.r.o { background: #d7b899; }
-    .field i.n1 { color: #1976d2; } .field i.n2 { color: #388e3c; } .field i.n3 { color: #d32f2f; } .field i.n4 { color: #7b1fa2; }
-    .field i.f::after { content: "🚩"; font-size: 14px; }
-    .game.mns:hover .field i.pulse { animation: dig .6s ease; }
-    @keyframes dig { 50% { transform: scale(.7); } }
-    /* solitaire variants: bigger versions of the arcade feature tags */
-    .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: auto; padding-top: 10px; }
-    .modes a { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 12px 8px 11px; border-radius: 4px; text-decoration: none; text-align: center;
-      background: color-mix(in srgb, var(--acc) 9%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent);
-      box-shadow: 3px 3px 0 color-mix(in srgb, var(--acc) 22%, #000); transition: transform .12s, box-shadow .12s, background .12s; }
-    .modes a:hover, .modes a:focus-visible { background: color-mix(in srgb, var(--acc) 18%, transparent); transform: translate(-2px, -2px); box-shadow: 5px 5px 0 color-mix(in srgb, var(--acc) 30%, #000); outline: none; }
-    .modes a:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 color-mix(in srgb, var(--acc) 22%, #000); }
-    .modes b { font: 10px/1 "Press Start 2P", monospace; text-transform: uppercase; letter-spacing: .5px; color: var(--acc); font-weight: normal; }
-    .modes b::before { content: '▸ '; opacity: .6; }
-    .modes span { font: 7px/1.5 "Press Start 2P", monospace; text-transform: uppercase; letter-spacing: .3px; color: #b9b9d2; }
-    @media (max-width: 420px) { .modes { gap: 8px; } .modes b { font-size: 9px; } .modes b::before { content: none; } }
-    .sol .preview { text-decoration: none; }
-    .game.frg:hover { border-color: #7dff6a; box-shadow: 0 20px 60px #7dff6a44; }
-    .frg h2, .frg .cta { color: #7dff6a; }
-    .game.brk:hover { border-color: #3fd8ff; box-shadow: 0 20px 60px #3fd8ff44; }
-    .brk h2, .brk .cta { color: #3fd8ff; }
-    .game.ast:hover { border-color: #ffe600; box-shadow: 0 20px 60px #ffe60033; }
-    .ast h2, .ast .cta { color: #ffe600; }
-    .game.tet:hover { border-color: #c77dff; box-shadow: 0 20px 60px #c77dff44; }
-    .tet h2, .tet .cta { color: #c77dff; }
-    .game.sht:hover { border-color: #ff4d6d; box-shadow: 0 20px 60px #ff4d6d44; }
-    .sht h2, .sht .cta { color: #ff6b8a; }
-    .only-classic { display: none !important; }
-    body[data-tab="classic"] .only-classic { display: revert !important; }
-    body[data-tab="classic"] .only-infinite { display: none !important; }
-    .tabs { display: inline-flex; gap: 6px; margin-top: 26px; padding: 6px; border-radius: 16px; background: #ffffff0d; border: 1px solid #ffffff1a; }
+    header p b { color: #fff; font-weight: 600; }
+    .tabs { display: inline-flex; gap: 6px; margin-top: 22px; padding: 6px; border-radius: 16px; background: #ffffff0d; border: 1px solid #ffffff1a; }
     .tabs button { font: 12px "Press Start 2P", monospace; color: #9a9ab8; background: transparent; border: 0; border-radius: 11px; padding: 14px 20px; cursor: pointer; transition: background .15s, color .15s; }
     .tabs button:hover { color: #fff; }
     .tabs button[aria-selected="true"] { background: #ffe600; color: #1b1400; box-shadow: 0 4px 18px #ffe60044; }
     body[data-tab="classic"] .tabs button[aria-selected="true"] { background: #7dff6a; box-shadow: 0 4px 18px #7dff6a44; }
     body[data-tab="classic"] h1 span { color: #7dff6a; text-shadow: 0 0 24px #7dff6a66, 5px 5px 0 #2e7d32; }
-    .lb-link { display: inline-block; margin-top: 16px; font: 11px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding: 10px 14px; border-radius: 10px; border: 1px solid #ffe60055; }
-    .lb-link:hover { background: #ffe60018; }
     .home-links { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-    .home-links .lb-link { margin-top: 0; }
+    .lb-link { display: inline-block; font: 11px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding: 10px 14px; border-radius: 10px; border: 1px solid #ffe60055; }
+    .lb-link:hover { background: #ffe60018; }
     .daily-link { display: inline-block; font: 11px "Press Start 2P", monospace; color: #fff; background: #dc143c; text-decoration: none; padding: 11px 14px; border-radius: 10px; box-shadow: 0 4px 0 #6e0a1c; }
     .daily-link:hover { background: #f0264f; }
     .install-link { background: none; cursor: pointer; color: #3fd8ff; border-color: #3fd8ff55; }
     .install-link:hover { background: #3fd8ff18; }
-    .install-link[hidden] { display: none; }
+
+    /* ---- category filter ---- */
+    .filters { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; width: max-content; max-width: 100%; margin: 0 auto 20px; padding: 5px; border-radius: 6px; background: #ffffff0a; border: 1px solid #ffffff1a; }
+    .filters button { display: inline-flex; align-items: center; gap: 7px; font: 9px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: #ffffff08; border: 1px solid #ffffff1c; border-radius: 4px; padding: 10px 11px 9px; cursor: pointer; }
+    .filters button:hover { color: #fff; }
+    .filters button[aria-pressed="true"] { color: #1b1400; background: #ffe600; border-color: #ffe600; box-shadow: 2px 2px 0 #7a5a00; }
+    body[data-tab="classic"] .filters button[aria-pressed="true"] { background: #7dff6a; border-color: #7dff6a; box-shadow: 2px 2px 0 #2e7d32; }
+    .filters .ic { font-size: 14px; line-height: 1; }
+    .filters b { font-weight: normal; color: #6f6f88; }
+    .filters button[aria-pressed="true"] b { color: #00000077; }
+
+    /* ---- game cards ---- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .game { --acc: #ffe600; position: relative; display: flex; flex-direction: column; border-radius: 6px; overflow: hidden; text-decoration: none; color: inherit;
+      background: #0c0a14; border: 1px solid color-mix(in srgb, var(--acc) 30%, transparent); box-shadow: 4px 4px 0 color-mix(in srgb, var(--acc) 14%, #000);
+      transition: transform .15s, box-shadow .15s, border-color .15s; }
+    .game:hover, .game:focus-visible { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 color-mix(in srgb, var(--acc) 26%, #000); border-color: var(--acc); outline: none; }
+    .preview { height: 190px; background: #05050f; border-bottom: 1px solid color-mix(in srgb, var(--acc) 22%, transparent); }
+    .new-badge { position: absolute; top: 10px; right: 10px; font: 8px/1 "Press Start 2P", monospace; color: #0b0b12; background: var(--acc); padding: 6px 7px 5px; border-radius: 3px; box-shadow: 2px 2px 0 #000; letter-spacing: .5px; }
+    .preview canvas { width: 100%; height: 100%; display: block; }
+    .body { display: flex; flex-direction: column; gap: 10px; flex: 1; padding: 14px 16px 16px; }
+    .body .head { display: flex; align-items: center; gap: 11px; }
+    .body .icon { flex: none; font-size: 22px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 4px;
+      background: color-mix(in srgb, var(--acc) 12%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 50%, transparent); box-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 22%, #000); }
+    .body h2 { margin: 0; font: 11px/1.5 "Press Start 2P", monospace; color: var(--acc); text-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 25%, #000); }
+    .body p { margin: 0; color: #a9a9c2; line-height: 1.55; font-size: 14px; }
+    /* feature tags: little pixel-font arcade labels in each game's color */
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tags span { font: 8px/1 "Press Start 2P", monospace; text-transform: uppercase; letter-spacing: .5px; padding: 6px 7px 5px; border-radius: 4px;
+      color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent);
+      box-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 22%, #000); }
+    .tags span::before { content: '▸ '; opacity: .6; }
+    .cta { margin-top: auto; padding-top: 10px; font: 11px "Press Start 2P", monospace; color: var(--acc); }
+    .empty-filter { grid-column: 1 / -1; text-align: center; font: 10px/1.8 "Press Start 2P", monospace; color: #9a9ab8; padding: 30px 0; }
+
+    /* the catalog: the category filter hides cards with [hidden], the mode tab hides games with no Classic board */
+    body[data-tab="classic"] .game[data-classic="0"] { display: none; }
+    .only-classic { display: none !important; }
+    body[data-tab="classic"] .only-classic { display: revert !important; }
+    body[data-tab="classic"] .only-infinite { display: none !important; }
+
+    .combo { margin-top: 28px; padding: 18px 22px; border-radius: 16px; border: 1px dashed #ffffff26; display: flex; gap: 16px; align-items: center; color: #b9b9d2; background: #0b0b1dcc; }
+    .combo .suits { font-family: Georgia, serif; font-size: 28px; white-space: nowrap; }
+    .combo .suits .r { color: #ff4d6d; }
+    footer { text-align: center; color: #55557a; font-size: 13px; margin-top: 40px; line-height: 1.6; }
+
+    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } .preview { height: 180px; } }
+    @media (max-width: 420px) {
+      .tabs button { padding: 13px 14px; font-size: 11px; }
+      .filters button { padding: 9px 8px 8px; font-size: 8px; }
+      .combo { flex-direction: column; text-align: center; }
+    }
   </style>
   <script src="/shared/analytics.js"></script>
   <script src="/shared/pwa.js"></script>
@@ -146,8 +119,8 @@
   <main>
     <header>
       <h1><span class="only-infinite" style="color:inherit;text-shadow:inherit">INFINITE</span><span class="only-classic" style="color:inherit;text-shadow:inherit">CLASSIC</span> <span>ARCADE</span></h1>
-      <p class="only-infinite">Eight arcade games that never end — plus solitaire.</p>
-      <p class="only-classic">Eight arcade games you can actually beat — plus solitaire.</p>
+      <p class="only-infinite"><b class="n-infinite">…</b> arcade games that never end — plus <b class="n-cards">…</b> kinds of solitaire.</p>
+      <p class="only-classic"><b class="n-classic">…</b> arcade games you can actually beat — plus <b class="n-cards">…</b> kinds of solitaire.</p>
       <nav class="tabs" role="tablist">
         <button role="tab" data-tab="infinite">∞ Infinite</button>
         <button role="tab" data-tab="classic">🏆 Classic</button>
@@ -155,122 +128,8 @@
       <div class="home-links"><a class="daily-link" href="/daily/">📅 Daily Challenge</a><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a><button type="button" class="lb-link install-link" data-install hidden>📲 Install app</button></div>
     </header>
 
-    <section class="grid">
-      <a class="game pac" data-base="/pacman/" href="/pacman/">
-        <div class="preview"><canvas id="pac-preview"></canvas></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Pac-Man</h2>
-          <p class="only-infinite">A maze that generates forever in every direction. No walls at the edge of the world — just more dots, more ghosts, and more speed the farther you go.</p>
-          <p class="only-classic">Four randomly built mazes with walls all around. Clear every dot to advance, and beat level four to win.</p>
-          <div class="tags only-infinite"><span>Endless</span><span>Procedural</span><span>Keyboard + swipe</span></div>
-          <div class="tags only-classic"><span>4 levels</span><span>Clear the maze</span><span>Card suits</span></div>
-          <div class="cta">PLAY ▶</div>
-        </div>
-      </a>
-
-      <a class="game snk" data-base="/snake/" href="/snake/">
-        <div class="preview"><canvas id="snake-preview"></canvas></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Snake</h2>
-          <p class="only-infinite">Slither through a world with no edges. Eat, grow, dodge rocks, and trick rival snakes into crashing into you so they burst into food.</p>
-          <p class="only-classic">Three walled arenas with rival snakes. Eat enough food to clear each stage, then conquer the final arena to win.</p>
-          <div class="tags only-infinite"><span>Endless</span><span>Rival snakes</span><span>Shields</span></div>
-          <div class="tags only-classic"><span>3 stages</span><span>Rival snakes</span><span>Shields</span></div>
-          <div class="cta">SLITHER ▶</div>
-        </div>
-      </a>
-
-      <a class="game mns" data-base="/minesweeper/" href="/minesweeper/">
-        <div class="preview"><div class="field"><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="o"></i><i></i><i class="o"></i><i class="r n1">1</i><i class="r o"></i><i class="r n1">1</i><i class="o"></i><i></i><i class="f o"></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i class="r n1">1</i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r n1">1</i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="o"></i><i class="f"></i><i class="r n2 o">2</i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r n2">2</i><i class="r n1 o">1</i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i><i class="r n2 o">2</i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r o"></i><i class="r"></i><i class="r n1 o">1</i><i></i><i class="o"></i><i class="o"></i><i></i><i class="o"></i><i></i><i class="o"></i><i class="r n3">3</i><i class="r n1 o">1</i><i class="r"></i><i class="r n2 o">2</i><i></i><i class="o"></i><i></i></div></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Minesweeper</h2>
-          <p class="only-infinite">A minefield that never ends. Three lives, mines that get denser the farther you roam, and your field is saved so you can keep exploring later.</p>
-          <p class="only-classic">The classic boards: Beginner, Intermediate and Expert. One life, a timer, and your best times are saved.</p>
-          <div class="tags only-infinite"><span>Endless</span><span>Saves progress</span><span>Touch friendly</span></div>
-          <div class="tags only-classic"><span>3 difficulties</span><span>Best times</span><span>Touch friendly</span></div>
-          <div class="cta">DIG ▶</div>
-        </div>
-      </a>
-      <a class="game frg" data-base="/frogger/" href="/frogger/">
-        <div class="preview"><canvas id="frog-preview"></canvas></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Frogger</h2>
-          <p class="only-infinite">Hop forever across endless roads, rivers and railways. Ride logs and diving turtles, dodge trains, and keep ahead of the eagle.</p>
-          <p class="only-classic">Three courses with a finish line at the end of each. Cross roads, rivers and railways and reach the final finish to win.</p>
-          <div class="tags only-infinite"><span>Endless</span><span>Tap + swipe</span><span>Card suits</span></div>
-          <div class="tags only-classic"><span>3 courses</span><span>Finish lines</span><span>Card suits</span></div>
-          <div class="cta">HOP ▶</div>
-        </div>
-      </a>
-
-      <a class="game brk" data-base="/breakout/" href="/breakout/">
-        <div class="preview"><canvas id="breakout-preview"></canvas></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Breakout</h2>
-          <p class="only-infinite">The wall never ends: it keeps sliding down, tougher and faster. Grab multiball, lasers and fireballs and smash it before it reaches your paddle.</p>
-          <p class="only-classic">Five hand-built levels that stay put. Clear every breakable brick to advance, and finish level five to win.</p>
-          <div class="tags only-infinite"><span>Endless</span><span>Power-ups</span><span>Mouse + touch</span></div>
-          <div class="tags only-classic"><span>5 levels</span><span>Power-ups</span><span>Mouse + touch</span></div>
-          <div class="cta">SMASH ▶</div>
-        </div>
-      </a>
-
-      <a class="game ast" data-base="/asteroids/" href="/asteroids/">
-        <div class="preview"><canvas id="asteroids-preview"></canvas></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Asteroids</h2>
-          <p class="only-infinite">Fly forever through an endless asteroid field. Blast rocks apart, outgun flying saucers, grab shields and triple shot, and see how far from home you get.</p>
-          <p class="only-classic">The classic wrap-around screen. Clear eight waves of rocks and saucers to win.</p>
-          <div class="tags only-infinite"><span>Endless space</span><span>Saucers</span><span>Radar</span></div>
-          <div class="tags only-classic"><span>8 waves</span><span>Wrap-around</span><span>Saucers</span></div>
-          <div class="cta">LAUNCH ▶</div>
-        </div>
-      </a>
-
-      <a class="game tet" data-base="/tetris/" href="/tetris/">
-        <div class="preview"><canvas id="tetris-preview"></canvas></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Tetris</h2>
-          <p class="only-infinite">Tower mode has no ceiling: climb forever while a tide rises beneath you, sealing rows before they leak. Or play Marathon, the classic that never ends.</p>
-          <p class="only-classic">Sprint: clear 40 lines as fast as you can. Marathon: survive to 150 lines. Hit the goal and you win.</p>
-          <div class="tags only-infinite"><span>Tower + Marathon</span><span>Hold &amp; ghost</span><span>SRS rotation</span></div>
-          <div class="tags only-classic"><span>Sprint 40</span><span>Marathon 150</span><span>Best times</span></div>
-          <div class="cta">STACK ▶</div>
-        </div>
-      </a>
-
-      <a class="game sht" data-base="/shooter/" href="/shooter/">
-        <div class="preview"><canvas id="shooter-preview"></canvas></div>
-        <div class="body">
-          <h2><span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>Space Shooter</h2>
-          <p class="only-infinite">Wave after wave forever, with a boss every fifth wave. Power your guns up to a five-way spread with homing missiles, and save bombs for the bullet storms.</p>
-          <p class="only-classic">Fifteen waves and three bosses. Destroy the final boss on wave fifteen to win.</p>
-          <div class="tags only-infinite"><span>Endless waves</span><span>Bosses</span><span>Auto-fire</span></div>
-          <div class="tags only-classic"><span>15 waves</span><span>3 bosses</span><span>Auto-fire</span></div>
-          <div class="cta">LAUNCH ▶</div>
-        </div>
-      </a>
-
-      <div class="game sol">
-        <a class="preview" href="/solitaire/" aria-label="Play Klondike">
-          <div class="fan">
-            <div class="pc"><b>A<br>♠</b><i>♠</i></div>
-            <div class="pc red"><b>K<br>♥</b><i>♥</i></div>
-            <div class="pc red"><b>Q<br>♦</b><i>♦</i></div>
-            <div class="pc"><b>J<br>♣</b><i>♣</i></div>
-          </div>
-        </a>
-        <div class="body">
-          <h2>Solitaire</h2>
-          <p>Three classic patience games with drag and drop, tap-to-move, unlimited undo and hints.</p>
-          <div class="modes">
-            <a href="/solitaire/"><b>Klondike</b><span>Draw 1 or 3</span></a>
-            <a href="/spider/"><b>Spider</b><span>1, 2 or 4 suits</span></a>
-            <a href="/freecell/"><b>FreeCell</b><span>Numbered deals</span></a>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div class="filters" id="filters" role="group" aria-label="Filter games by category"></div>
+    <section class="grid" id="grid" data-cat="all"></section>
 
     <div class="combo">
       <div class="suits">♠<span class="r">♥♦</span>♣</div>
@@ -280,23 +139,155 @@
     <footer>Arrow keys or WASD for Pac-Man &amp; Snake · right-click or long-press to flag in Minesweeper · Ctrl+Z to undo in Klondike, Spider &amp; FreeCell</footer>
   </main>
 
+  <script src="/shared/games.js"></script>
   <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
   <script src="/shared/nav.js"></script>
   <script>
-    // Infinite / Classic tabs
+    // The catalog: every card is built from the registry in /shared/games.js.
     (() => {
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const GAMES = ArcadeGames.list;
+      const CATS = [['all', '', 'All'], ['arcade', '🕹️', 'Arcade'], ['puzzle', '🧩', 'Puzzle'], ['cards', '🃏', 'Cards']];
+      const grid = document.getElementById('grid');
+      const filters = document.getElementById('filters');
+      const group = (g, name) => g.boards.some((b) => b.group === name);
+      const inClassic = (g) => group(g, 'Classic') || g.category === 'cards';   // solitaire is always on show
+      const bothModes = (g) => group(g, 'Infinite') && group(g, 'Classic');
+
+      // ---- cards ----
+      // games added in the last three weeks get a NEW flash
+      const isNew = (g) => g.added && Date.now() - Date.parse(g.added) < 21 * 86400000;
+      const tagList = (tags, cls) => `<div class="tags${cls}">${tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>`;
+      grid.innerHTML = GAMES.map((g) => {
+        const name = bothModes(g)
+          ? `<span class="only-infinite">Infinite </span><span class="only-classic">Classic </span>${esc(g.name)}`
+          : esc(g.name);
+        const blurb = g.blurbClassic
+          ? `<p class="only-infinite">${esc(g.blurb)}</p><p class="only-classic">${esc(g.blurbClassic)}</p>`
+          : `<p>${esc(g.blurb)}</p>`;
+        const tags = g.tagsClassic
+          ? tagList(g.tags, ' only-infinite') + tagList(g.tagsClassic, ' only-classic')
+          : tagList(g.tags, '');
+        return `<a class="game" href="${esc(g.path)}" style="--acc:${esc(g.color)}" data-id="${esc(g.id)}" data-cat="${esc(g.category)}" data-classic="${inClassic(g) ? 1 : 0}">
+          <div class="preview"><canvas aria-hidden="true"></canvas>${isNew(g) ? '<span class="new-badge">NEW</span>' : ''}</div>
+          <div class="body">
+            <div class="head"><span class="icon" aria-hidden="true">${g.icon}</span><h2>${name}</h2></div>
+            ${blurb}
+            ${tags}
+            <div class="cta">${esc(g.cta)}</div>
+          </div>
+        </a>`;
+      }).join('');
+      const cards = [...grid.querySelectorAll('.game')];
+
+      // ---- previews: loaded and run only while their card is on screen ----
+      const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const scripts = new Map();
+      const state = new Map(cards.map((el) => [el, { stop: null, loading: false, visible: false }]));
+
+      function load(src) {
+        if (!scripts.has(src)) {
+          scripts.set(src, new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src; s.onload = resolve; s.onerror = reject;
+            document.head.appendChild(s);
+          }));
+        }
+        return scripts.get(src);
+      }
+      function stop(el) {
+        const st = state.get(el);
+        if (st.stop) { st.stop(); st.stop = null; }
+      }
+      async function start(el) {
+        const st = state.get(el);
+        const g = ArcadeGames.get(el.dataset.id);
+        if (st.stop || st.loading || document.hidden || !g || !g.preview) return;
+        st.loading = true;
+        try { for (const src of g.preview) await load(src); } catch (e) { st.loading = false; return; }
+        st.loading = false;
+        const make = (window.ArcadePreviews || {})[g.id];
+        if (!make || st.stop || !st.visible || document.hidden) return;
+        st.stop = make(el.querySelector('canvas'));
+        if (REDUCE) setTimeout(() => stop(el), 200);          // one still frame instead of an animation
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          state.get(en.target).visible = en.isIntersecting;
+          if (en.isIntersecting) start(en.target); else stop(en.target);
+        });
+      }, { rootMargin: '250px' });
+      cards.forEach((el) => io.observe(el));
+      document.addEventListener('visibilitychange', () => {
+        state.forEach((st, el) => { if (document.hidden) stop(el); else if (st.visible) start(el); });
+      });
+
+      // ---- category filter ----
+      let cat = 'all';
+      try { cat = localStorage.getItem('arcade.cat') || 'all'; } catch (e) { /* ignore */ }
+      if (!CATS.some(([id]) => id === cat)) cat = 'all';
+      filters.innerHTML = CATS.map(([id, icon, label]) =>
+        `<button type="button" data-cat="${id}" aria-pressed="false">${icon ? `<span class="ic" aria-hidden="true">${icon}</span>` : ''}${label} <b></b></button>`).join('');
+
+      function setCat(next) {
+        cat = next;
+        grid.dataset.cat = cat;
+        cards.forEach((el) => { el.hidden = cat !== 'all' && el.dataset.cat !== cat; });
+        filters.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
+        try { localStorage.setItem('arcade.cat', cat); } catch (e) { /* ignore */ }
+        showEmpty();
+      }
+      filters.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (b) setCat(b.dataset.cat);
+      });
+
+      // counts follow the mode: Classic hides the games that have no Classic board
+      function counts() {
+        const classic = document.body.dataset.tab === 'classic';
+        const shown = GAMES.filter((g) => !classic || inClassic(g));
+        filters.querySelectorAll('button').forEach((b) => {
+          const n = b.dataset.cat === 'all' ? shown.length : shown.filter((g) => g.category === b.dataset.cat).length;
+          b.querySelector('b').textContent = n;
+          b.hidden = !n;
+        });
+        if (cat !== 'all' && !shown.some((g) => g.category === cat)) setCat('all');
+        showEmpty();
+      }
+      function showEmpty() {
+        const old = grid.querySelector('.empty-filter');
+        if (old) old.remove();
+        if (!cards.some((el) => el.offsetParent !== null)) {
+          grid.insertAdjacentHTML('beforeend', '<p class="empty-filter">Nothing here yet — try another category.</p>');
+        }
+      }
+
+      // ---- Infinite / Classic tabs ----
       const buttons = document.querySelectorAll('.tabs button');
       function setTab(tab, push) {
         document.body.dataset.tab = tab;
         buttons.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
-        document.querySelectorAll('a.game[data-base]').forEach((a) => { a.href = a.dataset.base + (tab === 'classic' ? '?mode=classic' : ''); });
+        cards.forEach((el) => {
+          const g = ArcadeGames.get(el.dataset.id);
+          const classic = tab === 'classic' && group(g, 'Classic');
+          el.href = g.path + (classic ? '?mode=classic' : '');
+          el.setAttribute('aria-label', `Play ${bothModes(g) ? (classic ? 'Classic ' : 'Infinite ') : ''}${g.name}`);
+        });
         try { localStorage.setItem('arcade.tab', tab); } catch (e) { /* ignore */ }
         if (push) history.replaceState(null, '', tab === 'classic' ? '#classic' : location.pathname);
         const lbLink = document.querySelector('.lb-link');
         if (lbLink) lbLink.href = '/leaderboards/#' + tab;
+        counts();
       }
       buttons.forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab, true)));
+
+      const n = (sel, v) => document.querySelectorAll(sel).forEach((el) => { el.textContent = v; });
+      n('.n-infinite', GAMES.filter((g) => group(g, 'Infinite')).length);
+      n('.n-classic', GAMES.filter((g) => group(g, 'Classic')).length);
+      n('.n-cards', GAMES.filter((g) => g.category === 'cards').length);
+
+      setCat(cat);
       let initial = location.hash === '#classic' ? 'classic' : location.hash === '#infinite' ? 'infinite' : null;
       if (!initial) { try { initial = localStorage.getItem('arcade.tab'); } catch (e) { /* ignore */ } }
       setTab(initial === 'classic' ? 'classic' : 'infinite', false);
@@ -304,287 +295,33 @@
     })();
   </script>
   <script>
-    // Animated Pac-Man preview + drifting dot background
+    // Drifting dot background for the page itself (the cards draw their own previews)
     (() => {
-      const cv = document.getElementById('pac-preview');
-      const c = cv.getContext('2d');
       const bg = document.getElementById('bg');
-      const b = bg.getContext('2d');
+      const ctx = bg.getContext('2d');
       const dpr = Math.min(2, devicePixelRatio || 1);
-      let w, h, bw, bh;
-      function size() {
-        w = cv.clientWidth; h = cv.clientHeight;
-        cv.width = w * dpr; cv.height = h * dpr;
-        bw = innerWidth; bh = innerHeight;
-        bg.width = bw * dpr; bg.height = bh * dpr;
-      }
+      let w, h, raf = 0;
+      function size() { w = innerWidth; h = innerHeight; bg.width = w * dpr; bg.height = h * dpr; }
       addEventListener('resize', size);
       size();
-      const colors = ['#ff2a2a', '#ffb8ff', '#00e5ff', '#ffb852'];
-      function ghost(x, y, r, col, t) {
-        c.fillStyle = col;
-        c.beginPath();
-        c.arc(x, y - r * 0.1, r, Math.PI, 0);
-        c.lineTo(x + r, y + r * 0.95);
-        const ph = Math.floor(t * 8) % 2;
-        for (let k = 1; k <= 6; k++) c.lineTo(x + r - (2 * r * k) / 6, y + r * 0.95 - ((k + ph) % 2 ? r * 0.28 : 0));
-        c.closePath(); c.fill();
-        for (const s of [-1, 1]) {
-          c.fillStyle = '#fff'; c.beginPath(); c.ellipse(x + s * r * 0.36 - r * 0.08, y - r * 0.2, r * 0.26, r * 0.32, 0, 0, 7); c.fill();
-          c.fillStyle = '#1b2bff'; c.beginPath(); c.arc(x + s * r * 0.36 - r * 0.2, y - r * 0.2, r * 0.13, 0, 7); c.fill();
-        }
-      }
       function frame(ms) {
         const t = ms / 1000;
-        c.setTransform(dpr, 0, 0, dpr, 0, 0);
-        c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
-        const cy = h / 2, r = 22, spacing = 36;
-        c.strokeStyle = '#3b4bff'; c.lineWidth = 3;
-        c.beginPath(); c.moveTo(0, cy - 42); c.lineTo(w, cy - 42); c.moveTo(0, cy + 42); c.lineTo(w, cy + 42); c.stroke();
-        const cycle = w + 320;
-        const px = ((t * 110) % cycle) - 60;
-        c.fillStyle = '#ffb8ae';
-        for (let x = spacing / 2; x < w; x += spacing) if (x > px) { c.beginPath(); c.arc(x, cy, 3.5, 0, 7); c.fill(); }
-        const m = Math.abs(Math.sin(t * 12)) * 1.1 + 0.05;
-        c.fillStyle = '#ffe600';
-        c.beginPath(); c.moveTo(px, cy); c.arc(px, cy, r, m / 2, Math.PI * 2 - m / 2); c.closePath(); c.fill();
-        colors.forEach((col, i) => ghost(px - 70 - i * 52, cy, r, col, t));
-
-        b.setTransform(dpr, 0, 0, dpr, 0, 0);
-        b.clearRect(0, 0, bw, bh);
-        b.fillStyle = '#3b4bff';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#3b4bff';
         const g = 44, off = (t * 12) % g;
-        for (let y = -g; y < bh + g; y += g) for (let x = -g; x < bw + g; x += g) {
-          b.globalAlpha = 0.25 + 0.25 * Math.sin((x + y) * 0.02 + t);
-          b.beginPath(); b.arc(x + off, y + off, 2, 0, 7); b.fill();
+        for (let y = -g; y < h + g; y += g) for (let x = -g; x < w + g; x += g) {
+          ctx.globalAlpha = 0.25 + 0.25 * Math.sin((x + y) * 0.02 + t);
+          ctx.beginPath(); ctx.arc(x + off, y + off, 2, 0, 7); ctx.fill();
         }
-        b.globalAlpha = 1;
-        requestAnimationFrame(frame);
+        ctx.globalAlpha = 1;
+        raf = requestAnimationFrame(frame);
       }
-      requestAnimationFrame(frame);
-    })();
-    // Snake preview
-    (() => {
-      const cv = document.getElementById('snake-preview');
-      const c = cv.getContext('2d');
-      const dpr = Math.min(2, devicePixelRatio || 1);
-      let w, h;
-      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
-      addEventListener('resize', size);
-      size();
-      const G = 22;
-      function frame(ms) {
-        const t = ms / 1000;
-        c.setTransform(dpr, 0, 0, dpr, 0, 0);
-        c.fillStyle = '#07071a'; c.fillRect(0, 0, w, h);
-        c.fillStyle = '#1b1b44';
-        for (let y = G / 2; y < h; y += G) for (let x = G / 2; x < w; x += G) { c.beginPath(); c.arc(x, y, 1.5, 0, 7); c.fill(); }
-        c.fillStyle = '#26114a'; c.strokeStyle = '#8b5cff'; c.lineWidth = 2;
-        [[3, 2], [3, 3], [4, 2], [13, 7], [14, 7], [15, 7]].forEach(([x, y]) => { c.fillRect(x * G + 1, y * G + 1, G - 2, G - 2); c.strokeRect(x * G + 1, y * G + 1, G - 2, G - 2); });
-        const cycle = w + 400;
-        const head = ((t * 90) % cycle) - 40;
-        const pts = [];
-        for (let i = 0; i < 26; i++) { const x = head - i * 12; pts.push([x, h / 2 + Math.sin((x) * 0.025) * 38]); }
-        c.shadowColor = '#ff5ea8'; c.shadowBlur = 10; c.fillStyle = '#ff5ea8';
-        for (let x = 30; x < w; x += 70) if (x > head) { c.beginPath(); c.arc(x, h / 2 + Math.sin(x * 0.025) * 38, 5, 0, 7); c.fill(); }
-        c.shadowColor = '#3cff8a'; c.shadowBlur = 16; c.strokeStyle = '#3cff8a'; c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = 16;
-        c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
-        c.shadowBlur = 0; c.strokeStyle = '#ffffff40'; c.lineWidth = 5; c.stroke();
-        const [hx, hy] = pts[0];
-        c.fillStyle = '#fff'; c.beginPath(); c.arc(hx + 2, hy - 4, 3.2, 0, 7); c.arc(hx + 2, hy + 4, 3.2, 0, 7); c.fill();
-        c.fillStyle = '#111'; c.beginPath(); c.arc(hx + 3, hy - 4, 1.6, 0, 7); c.arc(hx + 3, hy + 4, 1.6, 0, 7); c.fill();
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    })();
-    // Frogger preview
-    (() => {
-      const cv = document.getElementById('frog-preview');
-      const c = cv.getContext('2d');
-      const dpr = Math.min(2, devicePixelRatio || 1);
-      let w, h;
-      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
-      addEventListener('resize', size);
-      size();
-      const L = 7, lanes = ['grass', 'road', 'road', 'grass', 'river', 'river', 'grass'];
-      const speeds = [0, 70, -110, 0, 45, -60, 0];
-      const colors = ['#ff4d6d', '#ffd23f', '#3fa7ff', '#b37bff'];
-      function frame(ms) {
-        const t = ms / 1000, lh = h / L;
-        c.setTransform(dpr, 0, 0, dpr, 0, 0);
-        lanes.forEach((type, i) => {
-          const y = h - (i + 1) * lh;
-          c.fillStyle = type === 'grass' ? (i % 2 ? '#5fbf3f' : '#56b33a') : type === 'road' ? '#3b3b4a' : '#2f7fd8';
-          c.fillRect(0, y, w, lh);
-          if (type === 'grass') return;
-          const gap = type === 'road' ? 150 : 170;
-          for (let k = -1; k < w / gap + 1; k++) {
-            const x = ((k * gap + t * speeds[i]) % (w + gap) + w + gap) % (w + gap) - gap;
-            if (type === 'road') { c.fillStyle = colors[(i + k + 8) % 4]; c.beginPath(); c.roundRect(x, y + lh * 0.18, lh * 1.3, lh * 0.64, 7); c.fill(); c.fillStyle = '#bfe6ff'; c.fillRect(x + lh * (speeds[i] > 0 ? 0.8 : 0.2), y + lh * 0.28, lh * 0.3, lh * 0.44); }
-            else { c.fillStyle = '#8b5a2b'; c.beginPath(); c.roundRect(x, y + lh * 0.18, lh * 3, lh * 0.64, lh * 0.3); c.fill(); }
-          }
-        });
-        // frog hops up one lane per beat, drawn exactly like the in-game frog
-        const cycle = 3.2, p = (t % cycle) / cycle, n = Math.floor(p * 8), k = Math.min(1, ((p * 8) % 1) * 4);
-        const row = n >= 6 ? 6 : n + k, lift = n >= 6 ? 0 : Math.sin(k * Math.PI);
-        const T = lh, cx = w / 2, cy = h - (row + 0.5) * lh, s = 1 + lift * 0.25;
-        c.fillStyle = '#0004';
-        c.beginPath(); c.ellipse(cx, cy + T * 0.18, T * 0.28, T * 0.12, 0, 0, 7); c.fill();
-        c.save();
-        c.translate(cx, cy - lift * T * 0.18);
-        c.scale(s, s);
-        c.fillStyle = '#2e7d32';
-        for (const sx of [-1, 1]) {
-          c.beginPath(); c.ellipse(sx * T * 0.26, T * 0.2, T * 0.1, T * 0.18, sx * 0.5, 0, 7); c.fill();
-          c.beginPath(); c.ellipse(sx * T * 0.24, -T * 0.12, T * 0.07, T * 0.12, -sx * 0.4, 0, 7); c.fill();
-        }
-        c.fillStyle = '#4caf50'; c.beginPath(); c.ellipse(0, 0, T * 0.24, T * 0.3, 0, 0, 7); c.fill();
-        c.fillStyle = '#81c784'; c.beginPath(); c.ellipse(0, T * 0.05, T * 0.12, T * 0.16, 0, 0, 7); c.fill();
-        for (const sx of [-1, 1]) {
-          c.fillStyle = '#fff'; c.beginPath(); c.arc(sx * T * 0.12, -T * 0.22, T * 0.08, 0, 7); c.fill();
-          c.fillStyle = '#111'; c.beginPath(); c.arc(sx * T * 0.12, -T * 0.25, T * 0.04, 0, 7); c.fill();
-        }
-        c.restore();
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    })();
-    // Breakout preview
-    (() => {
-      const cv = document.getElementById('breakout-preview');
-      const c = cv.getContext('2d');
-      const dpr = Math.min(2, devicePixelRatio || 1);
-      let w, h;
-      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
-      addEventListener('resize', size);
-      size();
-      const cols = ['#ff4d6d', '#ff8a3d', '#ffd23f', '#7dff6a', '#3fd8ff', '#6a8bff'];
-      let bx = 120, by = 150, vx = 170, vy = -190, last = 0;
-      const gone = new Set();
-      function frame(ms) {
-        const t = ms / 1000, dt = Math.min(0.05, t - last); last = t;
-        c.setTransform(dpr, 0, 0, dpr, 0, 0);
-        c.fillStyle = '#0d0b2a'; c.fillRect(0, 0, w, h);
-        const n = 12, bw = w / n, bh = 14, off = (t * 6) % bh;
-        for (let r = -1; r < 6; r++) for (let k = 0; k < n; k++) {
-          const key = r + ',' + k + ',' + Math.floor(t * 6 / bh);
-          if (gone.has(r + ',' + k)) continue;
-          c.fillStyle = cols[(r + 6) % 6];
-          c.fillRect(k * bw + 1.5, 10 + r * bh + off + 1.5, bw - 3, bh - 3);
-        }
-        bx += vx * dt; by += vy * dt;
-        if (bx < 6 || bx > w - 6) vx = -vx;
-        if (by < 100) vy = Math.abs(vy);
-        const px = Math.max(40, Math.min(w - 40, bx));
-        if (by > h - 26 && vy > 0) vy = -Math.abs(vy);
-        if (Math.random() < 0.02) gone.add(Math.floor(Math.random() * 6) + ',' + Math.floor(Math.random() * 12));
-        if (gone.size > 30) gone.clear();
-        c.fillStyle = '#3fd8ff'; c.shadowColor = '#3fd8ff'; c.shadowBlur = 14;
-        c.beginPath(); c.roundRect(px - 36, h - 20, 72, 9, 5); c.fill();
-        c.fillStyle = '#fff'; c.beginPath(); c.arc(bx, by, 6, 0, 7); c.fill();
-        c.shadowBlur = 0;
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    })();
-    // Asteroids preview
-    (() => {
-      const cv = document.getElementById('asteroids-preview');
-      const c = cv.getContext('2d');
-      const dpr = Math.min(2, devicePixelRatio || 1);
-      let w, h;
-      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
-      addEventListener('resize', size);
-      size();
-      const rocks = Array.from({ length: 9 }, (_, i) => ({ x: Math.random() * 600, y: Math.random() * 220, r: 12 + Math.random() * 26, a: Math.random() * 6, s: (Math.random() - 0.5), v: Array.from({ length: 10 }, () => 0.75 + Math.random() * 0.3) }));
-      const stars = Array.from({ length: 70 }, () => [Math.random(), Math.random(), Math.random()]);
-      function frame(ms) {
-        const t = ms / 1000;
-        c.setTransform(dpr, 0, 0, dpr, 0, 0);
-        c.fillStyle = '#02020a'; c.fillRect(0, 0, w, h);
-        for (const [x, y, z] of stars) { c.fillStyle = `rgba(210,220,255,${0.3 + z * 0.6})`; c.fillRect(((x * w - t * 20 * z) % w + w) % w, y * h, 1 + z, 1 + z); }
-        c.strokeStyle = '#c9d3ff'; c.lineWidth = 1.6;
-        for (const r of rocks) {
-          const x = ((r.x - t * 30) % (w + 80) + w + 80) % (w + 80) - 40, y = r.y + Math.sin(t * 0.5 + r.a) * 10;
-          c.beginPath();
-          r.v.forEach((k, i) => { const a = r.a + t * r.s + (i / 10) * 6.283; const px = x + Math.cos(a) * r.r * k, py = y + Math.sin(a) * r.r * k; i ? c.lineTo(px, py) : c.moveTo(px, py); });
-          c.closePath(); c.stroke();
-        }
-        const sx = w * 0.45, sy = h * 0.55, a = -0.3 + Math.sin(t) * 0.6;
-        c.save(); c.translate(sx, sy); c.rotate(a);
-        c.strokeStyle = '#ffe600'; c.shadowColor = '#ffe600'; c.shadowBlur = 12; c.lineWidth = 2;
-        c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -9); c.lineTo(-6, 0); c.lineTo(-10, 9); c.closePath(); c.stroke();
-        c.restore(); c.shadowBlur = 0;
-        c.fillStyle = '#fffbe0';
-        for (let k = 0; k < 4; k++) { const d = ((t * 260 + k * 60) % 240) + 20; c.fillRect(sx + Math.cos(a) * d - 1.5, sy + Math.sin(a) * d - 1.5, 3, 3); }
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    })();
-    // Tetris preview
-    (() => {
-      const cv = document.getElementById('tetris-preview');
-      const c = cv.getContext('2d');
-      const dpr = Math.min(2, devicePixelRatio || 1);
-      let w, h;
-      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
-      addEventListener('resize', size);
-      size();
-      const colors = ['#3fd8ff', '#ffd23f', '#c77dff', '#7dff6a', '#ff4d6d', '#4d7dff', '#ff9f3d'];
-      const pieces = [[[0,0],[1,0],[2,0],[3,0]], [[0,0],[1,0],[0,1],[1,1]], [[0,0],[1,0],[2,0],[1,1]], [[0,0],[1,0],[1,1],[2,1]], [[1,0],[2,0],[0,1],[1,1]], [[0,0],[0,1],[1,0],[2,0]], [[0,0],[1,0],[2,0],[2,1]]];
-      const stack = [];
-      let cur = null;
-      function frame(ms) {
-        const t = ms / 1000, s = 16, cols = 10, bx = w / 2 - (cols * s) / 2;
-        c.setTransform(dpr, 0, 0, dpr, 0, 0);
-        c.fillStyle = '#07061a'; c.fillRect(0, 0, w, h);
-        c.fillStyle = '#0e0c2a'; c.fillRect(bx, 0, cols * s, h);
-        const cam = Math.max(0, stack.length ? Math.max(...stack.map(b => b[1])) - 8 : 0);
-        if (!cur) { const k = Math.floor(Math.random() * 7); cur = { k, x: Math.floor(Math.random() * 7), y: cam + 16, t: 0 }; }
-        cur.t += 1 / 60; if (cur.t > 0.06) { cur.t = 0; const blocked = pieces[cur.k].some(([dx, dy]) => cur.y + dy - 1 < 0 || stack.some(b => b[0] === cur.x + dx && b[1] === cur.y + dy - 1)); if (blocked) { pieces[cur.k].forEach(([dx, dy]) => stack.push([cur.x + dx, cur.y + dy, cur.k])); cur = null; if (stack.length > 300) stack.length = 0; } else cur.y--; }
-        const draw = (x, y, k) => { const py = h - (y - cam + 1) * s; c.fillStyle = colors[k]; c.fillRect(bx + x * s + 1, py + 1, s - 2, s - 2); c.fillStyle = '#ffffff44'; c.fillRect(bx + x * s + 1, py + 1, s - 2, 3); };
-        stack.forEach(([x, y, k]) => draw(x, y, k));
-        if (cur) pieces[cur.k].forEach(([dx, dy]) => draw(cur.x + dx, cur.y + dy, cur.k));
-        const tideY = h - 18 + Math.sin(t) * 4;
-        c.fillStyle = 'rgba(40,140,255,0.5)'; c.beginPath(); c.moveTo(bx, h);
-        for (let x = 0; x <= cols * s; x += 6) c.lineTo(bx + x, tideY + Math.sin(t * 3 + x * 0.08) * 3);
-        c.lineTo(bx + cols * s, h); c.closePath(); c.fill();
-        c.strokeStyle = '#c77dff88'; c.strokeRect(bx - 1, -1, cols * s + 2, h + 2);
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    })();
-    // Space shooter preview
-    (() => {
-      const cv = document.getElementById('shooter-preview');
-      const c = cv.getContext('2d');
-      const dpr = Math.min(2, devicePixelRatio || 1);
-      let w, h;
-      function size() { w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; }
-      addEventListener('resize', size);
-      size();
-      const stars = Array.from({ length: 60 }, () => [Math.random(), Math.random(), Math.random()]);
-      function frame(ms) {
-        const t = ms / 1000;
-        c.setTransform(dpr, 0, 0, dpr, 0, 0);
-        const g = c.createRadialGradient(w * 0.6, h * 0.3, 10, w / 2, h / 2, w * 0.7); g.addColorStop(0, '#1a0b3a'); g.addColorStop(1, '#050314');
-        c.fillStyle = g; c.fillRect(0, 0, w, h);
-        for (const [x, y, z] of stars) { c.fillStyle = `rgba(220,230,255,${0.3 + z * 0.6})`; c.fillRect(x * w, ((y * h + t * 90 * z) % h), 1.5 * z + 0.5, 3 * z + 1); }
-        const px = w / 2 + Math.sin(t * 1.3) * w * 0.25, py = h - 36;
-        c.fillStyle = '#9ffcff';
-        for (let k = 0; k < 6; k++) { const yy = py - 20 - ((t * 400 + k * 40) % 240); for (const a of [-0.15, 0, 0.15]) c.fillRect(px + a * (py - yy) - 1.5, yy, 3, 10); }
-        for (let i = 0; i < 5; i++) {
-          const ex = w * (0.2 + i * 0.15) + Math.sin(t * 2 + i) * 20, ey = 40 + Math.sin(t * 1.5 + i * 0.7) * 16;
-          c.fillStyle = i % 2 ? '#ffd23f' : '#ff4d6d'; c.shadowColor = c.fillStyle; c.shadowBlur = 10;
-          c.beginPath(); c.moveTo(ex, ey + 12); c.lineTo(ex + 12, ey - 5); c.lineTo(ex + 6, ey - 10); c.lineTo(ex, ey - 4); c.lineTo(ex - 6, ey - 10); c.lineTo(ex - 12, ey - 5); c.closePath(); c.fill();
-          c.fillStyle = '#ff5ea8'; c.beginPath(); c.arc(ex, ey + 20 + ((t * 120 + i * 30) % 160), 4, 0, 7); c.fill();
-        }
-        c.shadowColor = '#3fd8ff'; c.shadowBlur = 16; c.fillStyle = '#dff7ff';
-        c.beginPath(); c.moveTo(px, py - 20); c.lineTo(px + 7, py - 4); c.lineTo(px + 18, py + 8); c.lineTo(px + 6, py + 10); c.lineTo(px, py + 14); c.lineTo(px - 6, py + 10); c.lineTo(px - 18, py + 8); c.lineTo(px - 7, py - 4); c.closePath(); c.fill();
-        c.shadowBlur = 0;
-        requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
+      raf = requestAnimationFrame(frame);
+      document.addEventListener('visibilitychange', () => {
+        cancelAnimationFrame(raf);
+        if (!document.hidden) raf = requestAnimationFrame(frame);
+      });
     })();
   </script>
   <script src="/shared/music.js"></script>

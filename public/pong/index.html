@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Pong</title>
+  <meta name="description" content="Neon Pong with one endless rally: the ball speeds up with every hit, takes spin off your paddle, and the AI keeps getting better. Or win a classic match to 11.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#03040e">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/pong/">
+  <meta property="og:title" content="Infinite Pong">
+  <meta property="og:description" content="One endless rally against an AI that keeps learning. Spin the ball, grab power-ups and keep it alive.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #e6eeff; --accent-dark: #3d5480; --bg: #03040e; }
+    canvas.game { cursor: none; }
+    #lives { color: #e6eeff; letter-spacing: 3px; }
+    #rally { font-size: 9px; }
+    #match { font-size: 10px; color: #fff; }
+    #ai { font-size: 8px; color: #ff7ac8; }
+    #power { color: #ffd23f; font-size: 8px; min-height: 8px; }
+    .legend { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend b { display: inline-block; width: 22px; height: 22px; line-height: 19px; border: 2px solid; border-radius: 6px; text-align: center; font-weight: normal; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives" class="only-infinite"></span>
+    </div>
+    <div class="col center">
+      <span id="match" class="only-classic"></span>
+      <span id="rally"></span>
+      <span id="ai"></span>
+      <span id="power"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>PONG</h1>
+      <p class="only-infinite">One rally that never ends. The ball speeds up with every hit and takes spin off your paddle, <br>while the AI gets faster, sharper and better at reading you. Three lives, and power-ups drop into play.</p>
+      <p class="only-classic">First to eleven. No power-ups, no lives, no tricks — <br>just you, the AI and the ball. Win the match to beat the game.</p>
+      <div class="legend only-infinite">
+        <span><b style="color:#7dff6a">G</b>grow paddle</span>
+        <span><b style="color:#ff4d6d">X</b>shrink AI</span>
+        <span><b style="color:#3fd8ff">M</b>multi-ball</span>
+        <span><b style="color:#c77dff">?</b>ghost ball</span>
+        <span><b style="color:#ffd23f">T</b>slow-mo</span>
+      </div>
+      <p>Hit with the edge of the paddle to angle the shot, and move as you hit to put spin on it. <br>
+        <span class="k">MOUSE / TOUCH</span> drag · <span class="k">W S</span> or <span class="k">ARROWS</span> to move · <span class="k">P</span> pause</p>
+      <button class="btn" id="play-btn">RALLY</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>LONGEST RALLY</span><b id="o-rally">0</b></div>
+        <div><span>ACES</span><b id="o-aces">0</b></div>
+        <div><span><span class="only-infinite">AI LEVEL</span><span class="only-classic">MATCH</span></span><b id="o-ai">0</b></div>
+      </div>
+      <p class="only-infinite">The AI is already warming up again.</p>
+      <button class="btn" id="again-btn">RALLY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="pong.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

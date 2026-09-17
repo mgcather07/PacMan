@@ -11,6 +11,7 @@
  *   name, icon, color   display name, emoji icon and accent color
  *   path         the game's page
  *   category     'arcade' | 'puzzle' | 'cards'
+ *   added        ISO date the game shipped; the home page flashes NEW for three weeks
  *   type         'score' (higher wins) or 'time' (fastest win) for the daily board
  *   daily        short description of what's shared in the daily challenge ("Same maze")
  *   scoreCap     [base, perSecond, perSecond²]: the most points a run may have after t seconds (server check)
@@ -33,7 +34,7 @@
   const GAMES = [
     {
       id: 'pacman', name: 'Pac-Man', icon: '🟡', color: '#ffe600', path: '/pacman/', category: 'arcade', type: 'score', daily: 'Same maze',
-      scoreCap: [5000, 800, 0.5], assets: ['/pacman/game.js'],
+      scoreCap: [5000, 800, 0.5], assets: ['/pacman/game.js'], preview: ['/pacman/preview.js'],
       blurb: 'A maze that generates forever in every direction. No walls at the edge of the world — just more dots, more ghosts, and more speed the farther you go.',
       blurbClassic: 'Four randomly built mazes with walls all around. Clear every dot to advance, and beat level four to win.',
       tags: ['Endless', 'Procedural', 'Keyboard + swipe'],
@@ -52,7 +53,7 @@
     },
     {
       id: 'snake', name: 'Snake', icon: '🐍', color: '#3cff8a', path: '/snake/', category: 'arcade', type: 'score', daily: 'Same world',
-      scoreCap: [5000, 600, 0.5], assets: ['/snake/snake.js'],
+      scoreCap: [5000, 600, 0.5], assets: ['/snake/snake.js'], preview: ['/snake/preview.js'],
       blurb: 'Slither through a world with no edges. Eat, grow, dodge rocks, and trick rival snakes into crashing into you so they burst into food.',
       blurbClassic: 'Three walled arenas with rival snakes. Eat enough food to clear each stage, then conquer the final arena to win.',
       tags: ['Endless', 'Rival snakes', 'Shields'],
@@ -71,7 +72,7 @@
     },
     {
       id: 'minesweeper', name: 'Minesweeper', icon: '💣', color: '#c5ec7a', path: '/minesweeper/', category: 'puzzle', type: 'score', daily: 'Same minefield',
-      scoreCap: [5000, 500, 0], assets: ['/minesweeper/mines.js'],
+      scoreCap: [5000, 500, 0], assets: ['/minesweeper/mines.js'], preview: ['/minesweeper/preview.js'],
       blurb: 'A minefield that never ends. Three lives, mines that get denser the farther you roam, and your field is saved so you can keep exploring later.',
       blurbClassic: 'The classic boards: Beginner, Intermediate and Expert. One life, a timer, and your best times are saved.',
       tags: ['Endless', 'Saves progress', 'Touch friendly'],
@@ -93,7 +94,7 @@
     },
     {
       id: 'frogger', name: 'Frogger', icon: '🐸', color: '#7dff6a', path: '/frogger/', category: 'arcade', type: 'score', daily: 'Same roads',
-      scoreCap: [5000, 500, 0.2], assets: ['/frogger/frogger.js'],
+      scoreCap: [5000, 500, 0.2], assets: ['/frogger/frogger.js'], preview: ['/frogger/preview.js'],
       blurb: 'Hop forever across endless roads, rivers and railways. Ride logs and diving turtles, dodge trains, and keep ahead of the eagle.',
       blurbClassic: 'Three courses with a finish line at the end of each. Cross roads, rivers and railways and reach the final finish to win.',
       tags: ['Endless', 'Tap + swipe', 'Card suits'],
@@ -112,7 +113,7 @@
     },
     {
       id: 'breakout', name: 'Breakout', icon: '🧱', color: '#3fd8ff', path: '/breakout/', category: 'arcade', type: 'score', daily: 'Same bricks',
-      scoreCap: [10000, 1500, 2], assets: ['/breakout/breakout.js'],
+      scoreCap: [10000, 1500, 2], assets: ['/breakout/breakout.js'], preview: ['/breakout/preview.js'],
       blurb: 'The wall never ends: it keeps sliding down, tougher and faster. Grab multiball, lasers and fireballs and smash it before it reaches your paddle.',
       blurbClassic: 'Five hand-built levels that stay put. Clear every breakable brick to advance, and finish level five to win.',
       tags: ['Endless', 'Power-ups', 'Mouse + touch'],
@@ -131,7 +132,7 @@
     },
     {
       id: 'asteroids', name: 'Asteroids', icon: '☄️', color: '#ffb347', path: '/asteroids/', category: 'arcade', type: 'score', daily: 'Same rocks',
-      scoreCap: [10000, 1000, 2], assets: ['/asteroids/asteroids.js'],
+      scoreCap: [10000, 1000, 2], assets: ['/asteroids/asteroids.js'], preview: ['/asteroids/preview.js'],
       blurb: 'Fly forever through an endless asteroid field. Blast rocks apart, outgun flying saucers, grab shields and triple shot, and see how far from home you get.',
       blurbClassic: 'The classic wrap-around screen. Clear eight waves of rocks and saucers to win.',
       tags: ['Endless space', 'Saucers', 'Radar'],
@@ -150,7 +151,7 @@
     },
     {
       id: 'tetris', name: 'Tetris', icon: '🟪', color: '#c77dff', path: '/tetris/', category: 'puzzle', type: 'score', daily: 'Same pieces',
-      scoreCap: [10000, 2000, 5], assets: ['/tetris/tetris.js'],
+      scoreCap: [10000, 2000, 5], assets: ['/tetris/tetris.js'], preview: ['/tetris/preview.js'],
       blurb: 'Tower mode has no ceiling: climb forever while a tide rises beneath you, sealing rows before they leak. Or play Marathon, the classic that never ends.',
       blurbClassic: 'Sprint: clear 40 lines as fast as you can. Marathon: survive to 150 lines. Hit the goal and you win.',
       tags: ['Tower + Marathon', 'Hold & ghost', 'SRS rotation'],
@@ -172,7 +173,7 @@
     },
     {
       id: 'shooter', name: 'Space Shooter', icon: '🚀', color: '#ff6b8a', path: '/shooter/', category: 'arcade', type: 'score', daily: 'Same waves',
-      scoreCap: [50000, 5000, 10], assets: ['/shooter/shooter.js'],
+      scoreCap: [50000, 5000, 10], assets: ['/shooter/shooter.js'], preview: ['/shooter/preview.js'],
       blurb: 'Wave after wave forever, with a boss every fifth wave. Power your guns up to a five-way spread with homing missiles, and save bombs for the bullet storms.',
       blurbClassic: 'Fifteen waves and three bosses. Destroy the final boss on wave fifteen to win.',
       tags: ['Endless waves', 'Bosses', 'Auto-fire'],
@@ -190,7 +191,7 @@
       ],
     },
     {
-      id: 'invaders', name: 'Space Invaders', icon: '👾', color: '#39ff14', path: '/invaders/', category: 'arcade', type: 'score', daily: 'Same formations',
+      id: 'invaders', name: 'Space Invaders', icon: '👾', color: '#39ff14', path: '/invaders/', category: 'arcade', type: 'score', daily: 'Same formations', added: '2026-09-17',
       scoreCap: [10000, 600, 1], assets: ['/invaders/sprites.js', '/invaders/invaders.js', '/invaders/preview.js'], preview: ['/invaders/sprites.js', '/invaders/preview.js'],
       blurb: 'They never stop coming. Every wave brings a new formation, armored and diving invaders join the fight, and a mothership guards every fifth wave.',
       blurbClassic: 'Ten waves, each starting a little lower. Stop every invader before they land to save the Earth.',
@@ -209,8 +210,27 @@
       ],
     },
     {
+      id: 'pong', name: 'Pong', icon: '🏓', color: '#e6eeff', path: '/pong/', category: 'arcade', type: 'score', daily: 'Same rally', added: '2026-09-17',
+      scoreCap: [3000, 500, 0.5], assets: ['/pong/pong.js', '/pong/preview.js'], preview: ['/pong/preview.js'],
+      blurb: 'One rally that never ends. The ball speeds up with every hit and takes spin off your paddle, while the AI gets faster, sharper and better at reading you.',
+      blurbClassic: 'First to eleven. No power-ups, no lives, no tricks — just you, the AI and the ball.',
+      tags: ['Endless rally', 'Spin & angles', 'Power-ups'],
+      tagsClassic: ['First to 11', 'Pure Pong', 'Mouse + touch'],
+      cta: 'RALLY ▶',
+      boards: [
+        { id: 'pong', title: 'Infinite Pong', group: 'Infinite', type: 'score', href: '/pong/' },
+        { id: 'pong-classic', title: 'Classic Pong', group: 'Classic', type: 'score', href: '/pong/?mode=classic' },
+      ],
+      classicWin: ['pong-classic'],
+      achievements: [
+        { id: 'pong-2k', icon: '🏓', name: 'Rally Master', desc: 'Score 2,000 in Pong', points: 20, kind: 'score', goal: 2000 },
+        { id: 'pong-10k', icon: '⚡', name: 'Untouchable', desc: 'Score 10,000 in Pong', points: 50, kind: 'score', goal: 10000 },
+        { id: 'pong-classic', icon: '🏆', name: 'Match Point', desc: 'Beat Classic Pong 11–x', points: 40, kind: 'win', boards: ['pong-classic'] },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
-      scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'],
+      scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',
       tags: ['Draw 1 or 3', 'Undo & hints', 'Drag or tap'],
       cta: 'DEAL ▶',
@@ -227,7 +247,7 @@
     },
     {
       id: 'spider', name: 'Spider', icon: '🕷️', color: '#5fd4e0', path: '/spider/', category: 'cards', type: 'time', daily: '1-suit deal',
-      scoreCap: [50000, 100, 0], dailyMinTime: 45, assets: ['/solitaire/spider.js'],
+      scoreCap: [50000, 100, 0], dailyMinTime: 45, assets: ['/solitaire/spider.js'], preview: ['/spider/preview.js'],
       blurb: 'Build runs from king to ace and clear all eight suits. Choose 1, 2 or 4 suits — from a gentle warm-up to a proper challenge.',
       tags: ['1, 2 or 4 suits', 'Undo & hints', 'Drag or tap'],
       cta: 'DEAL ▶',
@@ -245,7 +265,7 @@
     },
     {
       id: 'freecell', name: 'FreeCell', icon: '🃏', color: '#b8e986', path: '/freecell/', category: 'cards', type: 'time', daily: 'Same deal',
-      scoreCap: [50000, 100, 0], dailyMinTime: 20, assets: ['/solitaire/freecell.js'],
+      scoreCap: [50000, 100, 0], dailyMinTime: 20, assets: ['/solitaire/freecell.js'], preview: ['/freecell/preview.js'],
       blurb: 'Every deal can be won with the right plan. Four free cells, numbered deals and unlimited undo.',
       tags: ['Numbered deals', 'Nearly all winnable', 'Undo & hints'],
       cta: 'DEAL ▶',

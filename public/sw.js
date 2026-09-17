@@ -4,7 +4,7 @@
  * cached copy when offline or when the network is too slow. Fonts are served from cache and refreshed
  * in the background. Leaderboards, analytics and Firebase always go straight to the network.
  */
-const CACHE = 'arcade-v3';
+const CACHE = 'arcade-v4';
 const FONT_CACHE = 'arcade-fonts-v1';
 const NETWORK_TIMEOUT_MS = 3500;
 
@@ -14,7 +14,7 @@ const PAGES = ['/', '/daily/', '/leaderboards/', '/profile/', ...new Set(GAMES.f
 const ASSETS = [
   '/shared/arcade.css', '/shared/arcade.js', '/shared/games.js', '/shared/daily.js', '/shared/leaderboard.js', '/shared/music.js', '/shared/analytics.js',
   '/shared/pwa.js', '/shared/nav.js', '/shared/achievements.js', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest',
-  ...GAMES.flatMap((g) => g.assets || []),
+  ...GAMES.flatMap((g) => [...(g.assets || []), ...(g.preview || [])]),
 ];
 
 self.addEventListener('install', (event) => {

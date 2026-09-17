@@ -9,6 +9,7 @@
     "tetris",
     "shooter",
     "invaders",
+    "pong",
     "klondike",
     "spider",
     "freecell"
@@ -129,6 +130,16 @@
       "classic",
       "score"
     ],
+    "pong": [
+      "pong",
+      "infinite",
+      "score"
+    ],
+    "pong-classic": [
+      "pong",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -205,6 +216,11 @@
       10000,
       600,
       1
+    ],
+    "pong": [
+      3000,
+      500,
+      0.5
     ],
     "klondike": [
       50000,
