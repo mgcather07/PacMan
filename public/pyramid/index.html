@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Infinite Pyramid</title>
+  <meta name="description" content="Endless Pyramid solitaire: pair cards that add to 13 to clear the pyramid, then do it again — deal after deal, with the stock passes tightening as you go.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/pyramid/">
+  <meta property="og:title" content="Infinite Pyramid">
+  <meta property="og:description" content="Pair cards that add to 13 to clear the pyramid — then clear another, and another, with fewer stock passes each time.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Infinite Pyramid">
+  <meta name="twitter:description" content="Pair cards that add to 13 to clear the pyramid — deal after deal, for as long as you can keep going.">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/solitaire/style.css">
+  <style>
+    /* Pyramid keeps the card table of the other patience games and adds the arcade's
+       title / game-over overlays on top of it. Accent matches the registry colour. */
+    :root { --accent: #e8c07d; --accent-dark: #8a6a32; }
+
+    .card.sel .inner { box-shadow: 0 0 0 3px var(--accent), 0 0 22px #e8c07daa; }
+    .slot.discard::after { content: "13"; font-family: Inter, sans-serif; font-weight: 800; font-size: calc(var(--cw) * 0.34); }
+    .slot.waste { border-style: solid; }
+    #board { touch-action: none; }
+    .bar .stats b#passes.low { color: #ffb3b3; }
+
+    /* Overlays: the arcade's title / end screens, dressed for the felt table */
+    .overlay {
+      position: fixed; inset: 0; z-index: 4000; display: grid; place-items: center; padding: 20px; overflow-y: auto;
+      background: radial-gradient(ellipse at center, #062a1acc 0%, #031711f2 70%);
+    }
+    .overlay .panel {
+      text-align: center; max-width: 560px; width: 100%;
+      background: #062a1a; border: 1px solid #ffffff2b; border-radius: 18px; padding: 26px 24px;
+      box-shadow: 0 20px 60px #000a;
+    }
+    .panel h1 {
+      margin: 0 0 8px; font-family: "Press Start 2P", monospace; color: var(--accent); line-height: 1.35;
+      font-size: clamp(18px, 5.4vw, 34px); text-shadow: 3px 3px 0 var(--accent-dark);
+    }
+    .panel h1 small { display: block; font-size: .42em; color: #fff; opacity: .85; margin-bottom: 10px; letter-spacing: 4px; text-shadow: none; }
+    .panel p { font-size: 13px; line-height: 1.8; color: #bcd9c8; margin: 14px 0; }
+    .panel .k { color: #fff; font-weight: 700; }
+    .rules { background: #ffffff10; border-radius: 12px; padding: 12px 14px; text-align: left; }
+    .rules b { color: var(--accent); }
+    .btn {
+      font: 700 15px "Press Start 2P", monospace; background: var(--accent); color: #241a05; border: 0; border-radius: 8px;
+      padding: 15px 24px; margin: 8px 6px 0; cursor: pointer; box-shadow: 0 6px 0 var(--accent-dark); text-decoration: none; display: inline-block;
+    }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--accent-dark); }
+    .btn.alt { background: #10412b; color: #fff; box-shadow: 0 6px 0 #052316; }
+    .overlay .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin: 18px 0 6px; }
+    .overlay .stats div { background: #ffffff10; border: 1px solid #ffffff1f; border-radius: 10px; padding: 10px 4px; flex-direction: column; }
+    .overlay .stats span { display: block; font-size: 10px; color: var(--accent); letter-spacing: .1em; margin-bottom: 6px; }
+    .overlay .stats b { font-size: 19px; }
+
+    /* Infinite / Classic content switching (mirrors /shared/arcade.css) */
+    .only-classic { display: none !important; }
+    [data-mode="classic"] .only-classic { display: revert !important; }
+    [data-mode="classic"] .only-infinite { display: none !important; }
+    .end-message { color: #fff !important; }
+    #over.won h1 { color: #7dff6a; text-shadow: 3px 3px 0 #1c6b21; }
+
+    @media (max-width: 480px) {
+      .overlay { padding: 14px 12px calc(14px + env(safe-area-inset-bottom)); }
+      .overlay .panel { padding: 20px 16px; }
+      .panel p { font-size: 12px; line-height: 1.7; margin: 10px 0; }
+      .panel p br { display: none; }
+      .btn { font-size: 12px; padding: 13px 16px; }
+    }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/" title="Back to the arcade">⌂ <span>ARCADE</span></a>
+    <div class="stats">
+      <div><span>SCORE</span><b id="score">0</b></div>
+      <div><span>DEALS</span><b id="deals">0</b></div>
+      <div><span>TIME</span><b id="time">0:00</b></div>
+      <div><span>PASSES</span><b id="passes">3</b></div>
+    </div>
+    <div class="actions">
+      <button id="sound-btn" title="Sound (M)">🔊</button>
+      <button id="hint-btn" title="Hint (H)">💡<span> Hint</span></button>
+      <button id="undo-btn" title="Undo (Ctrl+Z)">↶<span> Undo</span></button>
+      <button id="new-btn" class="primary" title="New deal (N)">＋<span> New deal</span></button>
+    </div>
+  </header>
+
+  <main id="board" aria-label="Pyramid table"></main>
+  <div id="toast" class="sol-toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>PYRAMID</h1>
+      <p class="only-infinite not-daily">Clear the pyramid and another one is dealt straight away. The score keeps running, <br>but the stock tightens as you go — three passes, then two, then one.</p>
+      <p class="only-classic">One solvable deal, three passes through the stock. <br>Clear all twenty-eight cards to win, and the board ranks the fastest clears.</p>
+      <p class="only-daily">One deal, the same for everyone today, with three passes through the stock. <br>Clear all twenty-eight cards — the fastest clear tops the board.</p>
+      <p class="rules">
+        <b>Pair any two exposed cards that add to 13.</b><br>
+        A=1 · J=11 · Q=12 · <b>K=13 goes alone</b> · 6+7, 5+8, 4+9 …<br>
+        A card is exposed once nothing covers it. Turn the stock for more cards, <br>and use the waste's top card in a pair.
+      </p>
+      <p><span class="k">TAP</span> a card then its partner, or <span class="k">DRAG</span> one onto the other · <span class="k">H</span> hint · <span class="k">N</span> new deal · <span class="k">P</span> pause</p>
+      <button class="btn" id="play-btn">DEAL</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>RUN OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>CLEARED</span><b id="o-deals">0</b></div>
+        <div><span>PAIRS</span><b id="o-pairs">0</b></div>
+        <div><span>TIME</span><b id="o-time">0:00</b></div>
+      </div>
+      <p class="only-infinite not-daily">Every pyramid you clear is worth 500 — plus a bonus for clearing it quickly.</p>
+      <button class="btn" id="again-btn">DEAL AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="paused" hidden>
+    <div class="panel">
+      <h1>PAUSED</h1>
+      <p>The clock is stopped.</p>
+      <button class="btn" id="resume-btn">RESUME</button>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="pyramid.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

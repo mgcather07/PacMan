@@ -381,6 +381,25 @@
       ],
     },
     {
+      id: 'pyramid', name: 'Pyramid', icon: '🔺', color: '#e8c07d', path: '/pyramid/', category: 'cards', type: 'time', daily: 'Same deal', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [20000, 200, 0], dailyMinTime: 25, assets: ['/solitaire/style.css', '/pyramid/pyramid.js', '/pyramid/preview.js'], preview: ['/pyramid/preview.js'],
+      blurb: 'Pair exposed cards that add to 13 until the pyramid is gone — then another is dealt, and another, with the stock passes tightening as you go.',
+      blurbClassic: 'One solvable deal and three passes through the stock. Clear all twenty-eight cards as fast as you can.',
+      tags: ['Endless deals', 'Undo & hints', 'Drag or tap'],
+      tagsClassic: ['One solvable deal', 'Fastest clear wins', 'Undo & hints'],
+      cta: 'DEAL ▶',
+      boards: [
+        { id: 'pyramid', title: 'Infinite Pyramid', group: 'Infinite', type: 'score', href: '/pyramid/' },
+        { id: 'pyramid-classic', title: 'Pyramid', group: 'Solitaire', type: 'time', href: '/pyramid/?mode=classic', minTime: 25 },
+      ],
+      classicWin: null,
+      achievements: [
+        { id: 'pyramid-win', icon: '🔺', name: 'Pharaoh', desc: 'Win a game of Pyramid', points: 20, kind: 'win', boards: '*' },
+        { id: 'pyramid-fast', icon: '⏳', name: 'Sand Timer', desc: 'Win Pyramid in under 90 seconds', points: 40, kind: 'fastest', boards: '*', under: 90 },
+        { id: 'pyramid-5k', icon: '🏜️', name: 'Tomb Raider', desc: 'Score 5,000 in Infinite Pyramid', points: 50, kind: 'score', goal: 5000 },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

@@ -18,11 +18,13 @@
     "tempest",
     "centipede",
     "tanks",
+    "pyramid",
     "klondike",
     "spider",
     "freecell"
   ],
   "timeGames": [
+    "pyramid",
     "klondike",
     "spider",
     "freecell"
@@ -228,6 +230,16 @@
       "classic",
       "score"
     ],
+    "pyramid": [
+      "pyramid",
+      "infinite",
+      "score"
+    ],
+    "pyramid-classic": [
+      "pyramid",
+      "solitaire",
+      "time"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -350,6 +362,11 @@
       1000,
       2
     ],
+    "pyramid": [
+      20000,
+      200,
+      0
+    ],
     "klondike": [
       50000,
       100,
@@ -371,6 +388,8 @@
     "mines-intermediate": 5,
     "mines-expert": 20,
     "tetris-sprint": 12,
+    "pyramid": 25,
+    "pyramid-classic": 25,
     "klondike": 30,
     "klondike-1": 30,
     "klondike-3": 30,
