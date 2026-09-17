@@ -26,6 +26,8 @@
     "sokoban",
     "racer",
     "blackjack",
+    "poker",
+    "skeeball",
     "klondike",
     "spider",
     "freecell"
@@ -320,6 +322,26 @@
       "classic",
       "score"
     ],
+    "poker": [
+      "poker",
+      "infinite",
+      "score"
+    ],
+    "poker-classic": [
+      "poker",
+      "classic",
+      "score"
+    ],
+    "skeeball": [
+      "skeeball",
+      "infinite",
+      "score"
+    ],
+    "skeeball-classic": [
+      "skeeball",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -479,6 +501,16 @@
     ],
     "blackjack": [
       20000,
+      400,
+      0.5
+    ],
+    "poker": [
+      20000,
+      400,
+      0.5
+    ],
+    "skeeball": [
+      5000,
       400,
       0.5
     ],

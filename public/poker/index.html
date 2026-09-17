@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Infinite Video Poker</title>
+  <meta name="description" content="Endless Jacks or Better video poker with arcade chips: hold, draw, and keep the machine running. Every twenty hands one pay line heats up and pays double.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/poker/">
+  <meta property="og:title" content="Infinite Video Poker">
+  <meta property="og:description" content="Jacks or Better on a 9/6 pay table, played for arcade chips. Hold, draw, and see how high you can stack them.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Infinite Video Poker">
+  <meta name="twitter:description" content="Hold, draw and chase the royal flush. Arcade chips only — nothing to buy, nothing to cash out.">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- card faces from the solitaire table, then the arcade chrome on top of them -->
+  <link rel="stylesheet" href="/solitaire/style.css">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #4ea8de; --accent-dark: #1b4e73; --bg: #05070f; --felt: #0b1524; }
+    body {
+      background:
+        radial-gradient(ellipse at 50% -10%, #12335a 0%, #070d18 55%, #03050b 100%) fixed;
+      font-family: "Press Start 2P", ui-monospace, monospace;
+    }
+
+    /* The cabinet ------------------------------------------------------- */
+    .stage {
+      position: fixed; inset: 0; overflow-y: auto; display: flex; align-items: center; justify-content: center;
+      padding: calc(72px + env(safe-area-inset-top)) 10px calc(16px + env(safe-area-inset-bottom));
+    }
+    .cabinet {
+      width: min(600px, 100%); border-radius: 18px; padding: 12px clamp(8px, 2.4vw, 18px) 14px;
+      background: linear-gradient(#141c2e, #0a1020 60%, #070c17);
+      border: 2px solid #2a3550;
+      box-shadow: 0 0 0 4px #05070f, 0 18px 50px #000b, inset 0 1px 0 #ffffff14;
+      transition: box-shadow .4s;
+    }
+    .cabinet.hot { box-shadow: 0 0 0 4px #05070f, 0 0 46px #4ea8de66, 0 18px 50px #000b, inset 0 1px 0 #ffffff14; }
+
+    .marquee {
+      text-align: center; font-size: clamp(11px, 3.1vw, 17px); color: var(--accent);
+      text-shadow: 0 0 14px #4ea8de88, 2px 2px 0 var(--accent-dark); margin: 4px 0 10px;
+    }
+    .marquee small { display: block; font-size: .46em; color: #9fc6e8; margin-top: 7px; letter-spacing: 2px; text-shadow: none; }
+
+    /* Pay table --------------------------------------------------------- */
+    .paytable {
+      width: 100%; border-collapse: collapse; font-size: clamp(6px, 1.95vw, 10px);
+      background: #060b16; border: 2px solid #23324d; border-radius: 8px; overflow: hidden;
+    }
+    .paytable td { padding: 4px 3px; color: #ffd23f; white-space: nowrap; }
+    .paytable td.name { text-align: left; padding-left: 7px; color: #eaf3ff; }
+    .paytable td.pay { text-align: right; width: 15%; color: #ffd23f; }
+    .paytable td.pay.on { color: #061018; background: var(--accent); }
+    .paytable tr + tr td { border-top: 1px solid #16203a; }
+    .paytable tr.hot td.name::after { content: " x2"; color: #ff8a3d; }
+    .paytable tr.hot td { background: #ff8a3d1f; }
+    .paytable tr.hot td.pay.on { background: #ffb36b; }
+    .paytable tr.paid td { animation: paidflash .42s steps(1) 6; }
+    @keyframes paidflash { 50% { background: #ffffff; color: #061018; } }
+    .paytable tr.paid td.name { color: #fff; }
+
+    /* Banner ------------------------------------------------------------ */
+    .banner {
+      margin: 9px 0 6px; min-height: 2.4em; display: grid; place-items: center; text-align: center;
+      font-size: clamp(8px, 2.5vw, 13px); color: #9fc6e8; line-height: 1.7;
+    }
+    .banner.paid { color: #ffd23f; text-shadow: 0 0 14px #ffd23f66; }
+    .banner.paid b { display: block; color: #7dff6a; font-size: 1.15em; margin-top: 6px; }
+    .banner.pop { animation: pop .35s ease; }
+    @keyframes pop { from { transform: scale(.82); } to { transform: scale(1); } }
+
+    /* Cards ------------------------------------------------------------- */
+    .hand {
+      --cw: clamp(44px, min(16.8vw, 9.4vh), 92px); --ch: calc(var(--cw) * 1.42);
+      display: flex; justify-content: center; gap: clamp(4px, 1.4vw, 10px); margin: 2px 0 10px;
+    }
+    .seat { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    /* the solitaire card is absolutely positioned on its table — here it sits in a row */
+    .seat .card { position: relative; left: auto; top: auto; transition: none; cursor: pointer; }
+    .seat .card .inner { box-shadow: 0 4px 10px #000a; }
+    .seat.held .card .inner { box-shadow: 0 0 0 3px var(--accent), 0 0 18px #4ea8de99; }
+    .hold {
+      font: inherit; font-size: clamp(6px, 1.8vw, 9px); width: var(--cw); padding: 5px 0; border-radius: 6px;
+      background: #111a2c; color: #55688a; border: 2px solid #23324d; cursor: pointer; letter-spacing: 1px;
+    }
+    .seat.held .hold { background: var(--accent); color: #061018; border-color: #bfe3ff; }
+    .hand.locked .card, .hand.locked .hold { cursor: default; }
+
+    /* Controls ---------------------------------------------------------- */
+    .controls { display: flex; align-items: center; justify-content: center; gap: clamp(5px, 1.8vw, 12px); flex-wrap: wrap; }
+    .ctl {
+      font: inherit; font-size: clamp(8px, 2.4vw, 12px); background: #16203a; color: #cfe6ff; border: 2px solid #2a3550; border-radius: 8px; padding: 12px 13px; cursor: pointer; line-height: 1;
+    }
+    .ctl:hover { border-color: var(--accent); }
+    .ctl:disabled { opacity: .35; cursor: default; }
+    .ctl.bet { min-width: 92px; color: #ffd23f; }
+    .ctl.bet b { color: #fff; }
+    .deal-btn {
+      font: inherit; font-size: clamp(10px, 3vw, 15px); background: var(--accent); color: #041018; border: 0; border-radius: 8px;
+      padding: 15px clamp(14px, 5vw, 34px); cursor: pointer; box-shadow: 0 6px 0 var(--accent-dark); line-height: 1;
+    }
+    .deal-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--accent-dark); }
+    .deal-btn:disabled { opacity: .5; box-shadow: 0 6px 0 var(--accent-dark); cursor: default; }
+
+    /* HUD --------------------------------------------------------------- */
+    .hud { font-size: 10px; }
+    #chips { color: #ffd23f; font-size: 15px; }
+    #heat { color: #ff8a3d; font-size: 8px; min-height: 8px; }
+    #besthand { color: #9fc6e8; font-size: 7px; }
+    .fine { font-size: 8px !important; color: #6b7fa3 !important; line-height: 1.9 !important; }
+    .rules { background: #ffffff0d; border: 1px solid #ffffff1a; border-radius: 10px; padding: 12px 14px; text-align: left; }
+    .rules b { color: var(--accent); }
+
+    @media (max-width: 480px) {
+      .stage { padding-top: calc(66px + env(safe-area-inset-top)); }
+      .cabinet { padding: 10px 7px 12px; }
+      .paytable td { padding: 3px 2px; }
+      .ctl { padding: 11px 9px; }
+      .panel p br { display: none; }
+    }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <div class="hud">
+    <div class="col">
+      <span class="label">CHIPS</span>
+      <span id="chips">0</span>
+      <span class="dim" id="bet-hud">BET 5</span>
+    </div>
+    <div class="col center">
+      <span id="hands">HAND 0</span>
+      <span id="besthand">BEST —</span>
+      <span id="heat"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <main class="stage">
+    <section class="cabinet" id="cabinet">
+      <div class="marquee">VIDEO POKER<small>JACKS OR BETTER</small></div>
+      <table class="paytable" id="paytable" aria-label="Pay table"></table>
+      <div class="banner" id="banner">PLACE YOUR BET</div>
+      <div class="hand" id="hand"></div>
+      <div class="controls">
+        <button class="ctl" id="bet-down" title="Lower the bet (-)" aria-label="Lower bet">−</button>
+        <button class="ctl bet" id="bet-max" title="Bet max (5)">BET <b id="bet">5</b></button>
+        <button class="ctl" id="bet-up" title="Raise the bet (+)" aria-label="Raise bet">＋</button>
+        <button class="deal-btn" id="deal-btn">DEAL</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>VIDEO POKER</h1>
+      <p class="only-infinite not-daily">Two hundred chips and a machine that never closes. Bet one to five, hold what you like, <br>draw the rest — your score is the biggest pile of chips you ever stack.</p>
+      <p class="only-classic">Fifty hands, one hundred chips. <br>Finish the session with more chips than you started and you beat the machine.</p>
+      <p class="only-daily">The same shuffled shoe for everyone today, card for card. <br>The only difference is what you choose to hold.</p>
+      <p class="rules">
+        <b>Jacks or Better, 9/6 pay table.</b><br>
+        A pair of jacks or better pays; anything less loses the bet.<br>
+        Every payout is the pay table line <b>times your bet</b>, and five chips <br>turns the royal flush into the 4,000 jackpot.<br>
+        <span class="only-infinite">Every twenty hands the machine <b>heats up</b>: one pay line pays double for five hands.</span>
+      </p>
+      <p><span class="k">CLICK / TAP</span> a card to hold it · <span class="k">1-5</span> hold · <span class="k">SPACE</span> deal &amp; draw · <span class="k">+ −</span> bet · <span class="k">P</span> pause</p>
+      <p class="fine">Chips are arcade points. There is nothing to buy, nothing to deposit and nothing to cash out.</p>
+      <button class="btn" id="play-btn">INSERT CHIP</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>OUT OF CHIPS</h1>
+      <div class="stats">
+        <div><span>CHIPS</span><b id="o-chips">0</b></div>
+        <div><span>BEST HAND</span><b id="o-best">—</b></div>
+        <div><span>HANDS</span><b id="o-hands">0</b></div>
+        <div><span>BIGGEST WIN</span><b id="o-win">0</b></div>
+      </div>
+      <p class="only-infinite not-daily">The machine is ready for another chip.</p>
+      <p class="only-classic">Fifty hands is a session. The pay table never changes — only the way you play it.</p>
+      <button class="btn" id="again-btn">PLAY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="paused" hidden>
+    <div class="panel">
+      <h1>PAUSED</h1>
+      <p>The machine is waiting.</p>
+      <button class="btn" id="resume-btn">RESUME</button>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="poker.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

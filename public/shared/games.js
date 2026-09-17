@@ -11,7 +11,7 @@
  *   name, icon, color   display name, emoji icon and accent color
  *   path         the game's page
  *   category     'arcade' | 'puzzle' | 'cards'
- *   added        ISO date the game shipped; the home page flashes NEW for three weeks
+ *   added        ISO date the game shipped (kept for ordering; not shown on the cards)
  *   type         'score' (higher wins) or 'time' (fastest win) for the daily board
  *   daily        short description of what's shared in the daily challenge ("Same maze")
  *   scoreCap     [base, perSecond, perSecond²]: the most points a run may have after t seconds (server check)
@@ -528,6 +528,44 @@
         { id: 'bj-2k', icon: '♠️', name: 'Card Counter', desc: 'Reach 2,000 chips in Blackjack', points: 20, kind: 'score', goal: 2000 },
         { id: 'bj-10k', icon: '💎', name: 'Table Legend', desc: 'Reach 10,000 chips in Blackjack', points: 50, kind: 'score', goal: 10000 },
         { id: 'bj-classic', icon: '🎩', name: 'Hundred Hands', desc: 'Finish Classic Blackjack with 1,000 chips', points: 40, kind: 'win', boards: ['blackjack-classic'] },
+      ],
+    },
+    {
+      id: 'poker', name: 'Video Poker', icon: '🃏', color: '#4ea8de', path: '/poker/', category: 'cards', type: 'score', daily: 'Same deck', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [20000, 400, 0.5], assets: ['/solitaire/style.css', '/poker/poker.js', '/poker/preview.js'], preview: ['/poker/preview.js'],
+      blurb: 'Jacks or Better on a 9/6 machine that never closes. Bet one to five chips, hold, draw, and every twenty hands a pay line heats up and pays double.',
+      blurbClassic: 'A fifty-hand session with a hundred chips. Play the pay table well and finish the session in profit to beat the machine.',
+      tags: ['Endless hands', 'Heat-up lines', 'Chips are points'],
+      tagsClassic: ['50 hands', 'Finish in profit', 'Chips are points'],
+      cta: 'DEAL ▶',
+      boards: [
+        { id: 'poker', title: 'Infinite Video Poker', group: 'Infinite', type: 'score', href: '/poker/', unit: 'chips' },
+        { id: 'poker-classic', title: 'Classic Video Poker', group: 'Classic', type: 'score', href: '/poker/?mode=classic', unit: 'chips' },
+      ],
+      classicWin: ['poker-classic'],
+      achievements: [
+        { id: 'poker-1k', icon: '🃏', name: 'High Roller', desc: 'Reach 1,000 chips in Video Poker', points: 20, kind: 'score', goal: 1000 },
+        { id: 'poker-5k', icon: '👑', name: 'Royal Flush', desc: 'Reach 5,000 chips in Video Poker', points: 50, kind: 'score', goal: 5000 },
+        { id: 'poker-classic', icon: '💰', name: 'Fifty Hands', desc: 'Finish Classic Video Poker in profit', points: 40, kind: 'win', boards: ['poker-classic'] },
+      ],
+    },
+    {
+      id: 'skeeball', name: 'Skee-Ball', icon: '🎳', color: '#2ec4b6', path: '/skeeball/', category: 'arcade', type: 'score', daily: 'Same lanes', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [5000, 400, 0.5], assets: ['/skeeball/skeeball.js', '/skeeball/preview.js'], preview: ['/skeeball/preview.js'],
+      blurb: 'An alley that never closes. Pull back, let go, and watch the ball climb the lane and drop into the rings. Every nine balls the lane changes — the 100-holes slide, the rings shrink, the ramp tilts, bumpers crowd the run and a jackpot ring opens — and every 100 you sink buys another ball.',
+      blurbClassic: 'Three frames of nine balls on the standard lane. Beat 300, then 350, then 400 and the alley is yours.',
+      tags: ['Endless lanes', 'Flick to roll', 'Tickets'],
+      tagsClassic: ['3 frames', 'Rising targets', 'Flick to roll'],
+      cta: 'ROLL ▶',
+      boards: [
+        { id: 'skeeball', title: 'Infinite Skee-Ball', group: 'Infinite', type: 'score', href: '/skeeball/' },
+        { id: 'skeeball-classic', title: 'Classic Skee-Ball', group: 'Classic', type: 'score', href: '/skeeball/?mode=classic' },
+      ],
+      classicWin: ['skeeball-classic'],
+      achievements: [
+        { id: 'skee-2k', icon: '🎳', name: 'Alley Regular', desc: 'Score 2,000 in Skee-Ball', points: 20, kind: 'score', goal: 2000 },
+        { id: 'skee-8k', icon: '🎟️', name: 'Ticket Tycoon', desc: 'Score 8,000 in Skee-Ball', points: 50, kind: 'score', goal: 8000 },
+        { id: 'skee-classic', icon: '🏆', name: 'Three Perfect Frames', desc: 'Beat Classic Skee-Ball', points: 40, kind: 'win', boards: ['skeeball-classic'] },
       ],
     },
     {

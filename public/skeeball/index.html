@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Skee-Ball</title>
+  <meta name="description" content="Endless Skee-Ball: nine balls a lane, then the lane changes — moving 100-holes, shrinking rings, tilting ramps, bumpers and jackpot rings. Or beat three classic frames.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#0b0a14">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/skeeball/">
+  <meta property="og:title" content="Infinite Skee-Ball">
+  <meta property="og:description" content="Roll up the lane, over the ramp and into the rings. Every nine balls the alley changes and the tickets keep coming.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #2ec4b6; --accent-dark: #16776e; --bg: #0b0a14; }
+    #balls { color: #ffd166; letter-spacing: 2px; }
+    #lane { font-size: 9px; }
+    #last { min-height: 8px; }
+    #tickets { color: #ffd166; font-size: 8px; }
+    .legend { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 14px 0; }
+    .legend b { display: inline-grid; place-items: center; min-width: 40px; height: 26px; padding: 0 6px; border: 2px solid; border-radius: 999px; font-weight: normal; }
+    .hint { color: #8ad; font-size: 9px; }
+    .touch.hint { justify-content: center; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="tickets">🎟 0</span>
+    </div>
+    <div class="col center">
+      <span id="lane"></span>
+      <span id="balls"></span>
+      <span id="last" class="dim"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>SKEE-BALL</h1>
+      <p class="only-infinite">An alley that never closes. Nine balls a lane, then the lane changes: the 100-holes slide, the rings shrink, the ramp tilts, bumpers crowd the run and a jackpot ring opens. <br>Every 100 you sink earns another ball — keep rolling and the run never ends.</p>
+      <p class="only-classic">Three frames of nine balls on the standard lane. <br>Beat 300, then 350, then 400 and you have cleared the alley.</p>
+      <div class="legend">
+        <span><b style="color:#c08b57;border-color:#c08b57">10</b></span>
+        <span><b style="color:#7fd1c4;border-color:#7fd1c4">20</b></span>
+        <span><b style="color:#57c7ff;border-color:#57c7ff">30</b></span>
+        <span><b style="color:#ffd166;border-color:#ffd166">40</b></span>
+        <span><b style="color:#ff5d8f;border-color:#ff5d8f">50</b></span>
+        <span><b style="color:#ffe066;border-color:#ffe066">100</b>corners</span>
+      </div>
+      <p><span class="k">DRAG BACK &amp; RELEASE</span> to roll — the longer the pull, the harder the roll <br>
+        <span class="k">← →</span> aim · hold <span class="k">SPACE</span> to charge, release to roll · <span class="k">P</span> pause</p>
+      <p class="touch hint">One thumb: pull back from the lane and let go, or flick up.</p>
+      <button class="btn" id="play-btn">ROLL</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>BEST ROLL</span><b id="o-best">0</b></div>
+        <div><span>100s HIT</span><b id="o-hundreds">0</b></div>
+        <div><span>TICKETS</span><b id="o-tickets">0</b></div>
+      </div>
+      <p class="only-infinite">The alley is still open.</p>
+      <button class="btn" id="again-btn">ROLL AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="skeeball.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

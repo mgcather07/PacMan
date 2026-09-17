@@ -16,7 +16,7 @@
   const BIRD_X = 150, BIRD_R = 15;
   const GRAV = 1500, FLAP_V = -470, MAX_FALL = 880;
   const GATE_W = 70, BIOME_LEN = 20;
-  const GAP_MAX = 252, GAP_MIN = 158, EDGE = 74;
+  const GAP_MAX = 252, GAP_MIN = 150, EDGE = 74;
   const GATE_PTS = 10, COIN_PTS = 5, POWER_PTS = 25, BIOME_PTS = 200, WIN_PTS = 500;
 
   // Five skies, each with its own palette, gate shape and one gameplay wrinkle.
@@ -73,21 +73,21 @@
   // Course generation — a pure function of the gate index, so a daily always
   // builds the exact same course whatever the frame rate.
   // ---------------------------------------------------------------------------
-  const speedAt = (n) => Math.min(CLASSIC ? 330 : 380, 180 + n * (CLASSIC ? 2.2 : 2.4));
+  const speedAt = (n) => Math.min(CLASSIC ? 360 : 380, 180 + n * (CLASSIC ? 2.8 : 2.4));
   const spacingAt = (n) => 268 + speedAt(n) * 0.36;
-  const biomeFor = (n) => (CLASSIC ? Math.min(BIOMES.length - 1, Math.floor(n / BIOME_LEN)) : Math.floor(n / BIOME_LEN) % BIOMES.length);
+  const biomeFor = (n) => (CLASSIC ? Math.min(BIOMES.length - 1, Math.floor(n / (BIOME_LEN / 2))) : Math.floor(n / BIOME_LEN) % BIOMES.length);
 
   function spawnGate(x) {
     const idx = gateSeq++;
     const bi = BIOMES[biomeFor(idx)];
-    let gap = Math.max(CLASSIC ? 172 : GAP_MIN, GAP_MAX - idx * (CLASSIC ? 1.2 : 1.6));
+    let gap = Math.max(GAP_MIN, (CLASSIC ? 244 : GAP_MAX) - idx * (CLASSIC ? 1.9 : 1.8));
     if (bi.id === 'cave') gap -= 16;
     const half = gap / 2;
     const lo = CEIL_Y + EDGE + half, hi = GROUND_Y - EDGE - half;
     let gapY = wr(lo, hi);
     gapY = clamp(gapY, Math.max(lo, lastGapY - 200), Math.min(hi, lastGapY + 200));
     lastGapY = gapY;
-    const amp = bi.id === 'night' ? wr(24, 58) : bi.id === 'sunset' ? wr(0, 20) : 0;
+    const amp = bi.id === 'night' ? wr(30, 66) : bi.id === 'sunset' ? wr(14, 40) : bi.id === 'storm' ? wr(0, 22) : 0;
     gates.push({ x, idx, gapY, gap, amp, phase: wr(0, TAU), biome: biomeFor(idx), style: bi.style, passed: false });
 
     // coins drift in the open air after the gate
