@@ -59,6 +59,18 @@
     .install-link:hover { background: #3fd8ff18; }
 
     /* ---- category filter ---- */
+    .find { display: flex; justify-content: center; margin: 0 auto 12px; }
+    .find input { width: min(340px, 100%); font: 600 14px Inter, system-ui, sans-serif; color: #fff; background: #ffffff0a; border: 1px solid #ffffff26; border-radius: 6px; padding: 11px 14px; }
+    .find input:focus { outline: 2px solid #ffe600; border-color: transparent; }
+    body[data-tab="classic"] .find input:focus { outline-color: #7dff6a; }
+    .find input::placeholder { color: #7a7a95; }
+    .recent { margin: 0 auto 22px; text-align: center; }
+    .recent h2 { margin: 0 0 10px; font: 9px "Press Start 2P", monospace; color: #7a7a95; text-transform: uppercase; letter-spacing: 1px; }
+    .recent .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+    .recent a { --acc: #ffe600; display: inline-flex; align-items: center; gap: 8px; font: 9px "Press Start 2P", monospace; text-transform: uppercase; text-decoration: none; color: var(--acc);
+      background: color-mix(in srgb, var(--acc) 10%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent); border-radius: 4px; padding: 9px 11px 8px; box-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 25%, #000); }
+    .recent a:hover { background: color-mix(in srgb, var(--acc) 20%, transparent); transform: translate(-1px, -1px); }
+    .recent a .ic { font-size: 15px; }
     .filters { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; width: max-content; max-width: 100%; margin: 0 auto 20px; padding: 5px; border-radius: 6px; background: #ffffff0a; border: 1px solid #ffffff1a; }
     .filters button { display: inline-flex; align-items: center; gap: 7px; font: 9px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: #ffffff08; border: 1px solid #ffffff1c; border-radius: 4px; padding: 10px 11px 9px; cursor: pointer; }
     .filters button:hover { color: #fff; }
@@ -128,7 +140,9 @@
       <div class="home-links"><a class="daily-link" href="/daily/">📅 Daily Challenge</a><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a><button type="button" class="lb-link install-link" data-install hidden>📲 Install app</button></div>
     </header>
 
+    <div class="find"><input id="find" type="search" placeholder="Search games…" aria-label="Search games" autocomplete="off" spellcheck="false"></div>
     <div class="filters" id="filters" role="group" aria-label="Filter games by category"></div>
+    <section class="recent" id="recent" hidden><h2>Jump back in</h2><div class="chips" id="recent-chips"></div></section>
     <section class="grid" id="grid" data-cat="all"></section>
 
     <div class="combo">
@@ -230,10 +244,16 @@
       filters.innerHTML = CATS.map(([id, icon, label]) =>
         `<button type="button" data-cat="${id}" aria-pressed="false">${icon ? `<span class="ic" aria-hidden="true">${icon}</span>` : ''}${label} <b></b></button>`).join('');
 
+      let query = '';
+      const matches = (el) => {
+        const g = ArcadeGames.get(el.dataset.id);
+        if (!query) return true;
+        return [g.name, g.category, g.blurb, ...(g.tags || [])].join(' ').toLowerCase().includes(query);
+      };
       function setCat(next) {
         cat = next;
         grid.dataset.cat = cat;
-        cards.forEach((el) => { el.hidden = cat !== 'all' && el.dataset.cat !== cat; });
+        cards.forEach((el) => { el.hidden = (cat !== 'all' && el.dataset.cat !== cat) || !matches(el); });
         filters.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
         try { localStorage.setItem('arcade.cat', cat); } catch (e) { /* ignore */ }
         showEmpty();
@@ -242,6 +262,20 @@
         const b = e.target.closest('button');
         if (b) setCat(b.dataset.cat);
       });
+      const find = document.getElementById('find');
+      find.addEventListener('input', () => { query = find.value.trim().toLowerCase(); setCat(cat); });
+      find.addEventListener('keydown', (e) => { if (e.key === 'Escape') { find.value = ''; query = ''; setCat(cat); } });
+
+      // ---- the games this player opened most recently (kept by leaderboard.js) ----
+      (() => {
+        let ids = [];
+        try { ids = JSON.parse(localStorage.getItem('arcade.recent') || '[]'); } catch (e) { /* ignore */ }
+        const recent = ids.map((id) => ArcadeGames.get(id)).filter(Boolean).slice(0, 5);
+        if (recent.length < 2) return;
+        document.getElementById('recent-chips').innerHTML = recent.map((g) =>
+          `<a href="${esc(g.path)}" style="--acc:${esc(g.color)}"><span class="ic" aria-hidden="true">${g.icon}</span>${esc(g.name)}</a>`).join('');
+        document.getElementById('recent').hidden = false;
+      })();
 
       // counts follow the mode: Classic hides the games that have no Classic board
       function counts() {

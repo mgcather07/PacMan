@@ -467,9 +467,20 @@
     if (window.Analytics && info(board)) Analytics.event(name, { game: gameOf(board), mode: modeOf(board), board, ...extra });
   }
 
+  // the last few games this player opened, for the home page's "Jump back in" row
+  function remember(board) {
+    const game = gameOf(board);
+    if (!game) return;
+    try {
+      const ids = [game, ...(readJson('arcade.recent') || []).filter((g) => g !== game)].slice(0, 5);
+      writeJson('arcade.recent', ids);
+    } catch (e) { /* ignore */ }
+  }
+
   // Call when a round begins. play: false for games dealt before the player does anything (call played() later).
   function startRun(board, { play = true } = {}) {
     if (!info(board)) return Promise.resolve(null);
+    remember(board);
     const promise = call('startRun', { board, play })
       .then((r) => r.runId)
       .catch((e) => { console.warn('[leaderboard] could not start a verified run:', e); return null; });
