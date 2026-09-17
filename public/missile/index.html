@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Missile Command</title>
+  <meta name="description" content="Endless Missile Command: six cities, three batteries and a sky full of MIRVs, bombers, satellites and smart bombs. Or defend twelve classic waves.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/missile/">
+  <meta property="og:title" content="Infinite Missile Command">
+  <meta property="og:description" content="Six cities, three batteries, and a sky that never stops falling. Chain your blasts and defend as long as you can.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #ff5c7a; --accent-dark: #8c1030; --bg: #05030f; }
+    canvas.game { cursor: none; }
+    #wave { font-size: 11px; }
+    #mult { color: #ffd23f; font-size: 9px; }
+    #cities { display: flex; gap: 3px; min-height: 14px; }
+    #cities i { width: 9px; height: 14px; border-radius: 1px; background: #40294a; }
+    #cities i.on { background: #b98cff; box-shadow: 0 0 7px #b98cff; }
+    #ammo { display: flex; gap: 5px; }
+    #ammo b {
+      display: inline-grid; place-items: center; min-width: 28px; padding: 4px 3px; border: 1px solid #3a2a44;
+      border-radius: 5px; background: #150a1f; color: #ffd23f; font-size: 12px; font-weight: normal;
+    }
+    #ammo b.low { color: #ffb347; }
+    #ammo b.out { color: #6a5a70; }
+    #ammo b.dead { color: #ff3b5c; border-color: #ff3b5c66; }
+    .legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 10px currentColor; background: currentColor; }
+    @media (max-width: 480px) { #ammo b { min-width: 24px; font-size: 11px; } }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span class="dim">HIGH <span id="high">0</span></span>
+    </div>
+    <div class="col center">
+      <span id="wave"></span>
+      <span id="mult"></span>
+      <div id="cities"></div>
+    </div>
+    <div class="col right">
+      <span class="label">AMMO</span>
+      <div id="ammo"></div>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>MISSILE COMMAND</h1>
+      <p class="only-infinite">Six cities, three batteries, ten missiles each. <br>The sky never stops falling: MIRVs split, bombers and satellites circle overhead, and smart bombs dodge your blasts. Chain your explosions — ammo runs out long before the missiles do.</p>
+      <p class="only-classic">Twelve waves of attack, faster and thicker every time. <br>Keep one city standing through wave twelve and you win.</p>
+      <div class="legend">
+        <span><i style="color:#ff5c7a"></i>MISSILE 25</span>
+        <span><i style="color:#ffb347"></i>BOMBER 100</span>
+        <span><i style="color:#c9b3ff"></i>SATELLITE 100</span>
+        <span><i style="color:#7dff6a"></i>SMART BOMB 125</span>
+      </div>
+      <p><span class="k">CLICK</span> or <span class="k">TAP</span> the sky — the nearest loaded battery fires there <br>
+        <span class="k">1 2 3</span> pick a battery · <span class="k">ARROWS</span> aim · <span class="k">SPACE</span> fire · <span class="k">P</span> pause</p>
+      <button class="btn" id="play-btn">DEFEND</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>WAVE</span><b id="o-wave">0</b></div>
+        <div><span>SHOT DOWN</span><b id="o-kills">0</b></div>
+        <div><span>CITIES</span><b id="o-cities">0</b></div>
+      </div>
+      <p class="only-infinite">The sky is already filling up again.</p>
+      <button class="btn" id="again-btn">DEFEND AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="missile.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

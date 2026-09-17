@@ -38,7 +38,8 @@
 
   let scale = 1, offX = 0, offY = 0;
   const view = setupCanvas(canvas, (v) => {
-    FH = clamp(Math.round((FW * v.H) / v.W), 720, 1400);
+    // capped so a very tall screen doesn't hand players a longer runway in the daily challenge
+    FH = clamp(Math.round((FW * v.H) / v.W), 720, 1000);
     PLAYER_Y = FH - 80;
     GROUND_Y = FH - 44;
     BUNKER_Y = PLAYER_Y - 120;

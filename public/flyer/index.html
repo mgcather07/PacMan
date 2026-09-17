@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Sky Flyer</title>
+  <meta name="description" content="Endless one-button flying: flap through gates and coins across five changing skies — dawn, storm, night, caves and sunset. Or beat the fifty-gate course.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/flyer/">
+  <meta property="og:title" content="Infinite Sky Flyer">
+  <meta property="og:description" content="One button, one bird, no finish line. Flap through gates and coins as dawn turns to storm, night, caves and sunset.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #ffa62b; --accent-dark: #a35c00; --bg: #0a1024; }
+    #gate { font-size: 11px; }
+    #biome { font-size: 8px; color: #ffd8a0; letter-spacing: 1px; }
+    #power { color: #ffd166; font-size: 8px; min-height: 8px; }
+    .legend { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { font-style: normal; font-size: 15px; }
+    .skies { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; font-size: 7px; color: #9aa; margin: 10px 0 0; }
+    .skies b { display: inline-block; padding: 5px 7px; border-radius: 6px; font-weight: normal; border: 1px solid #333; }
+    /* The tap hint sits above the sound/home buttons so a thumb never fights the browser chrome. */
+    .flap-hint {
+      position: fixed; left: 0; right: 0; bottom: calc(76px + env(safe-area-inset-bottom)); justify-content: center;
+      pointer-events: none; z-index: 5; font-size: 9px; color: #ffd8a0aa; letter-spacing: 2px; transition: opacity .4s;
+    }
+    .flap-hint.gone { opacity: 0; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="power"></span>
+    </div>
+    <div class="col center">
+      <span id="gate"></span>
+      <span id="biome"></span>
+    </div>
+    <div class="col right">
+      <span class="label">BEST</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch flap-hint" id="flap-hint">TAP ANYWHERE TO FLAP</div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>SKY FLYER</h1>
+      <p class="only-infinite">One button, one bird, no finish line. <br>Flap through the gates, sweep up the coins, and keep flying as the sky changes every twenty gates — and never stops getting faster.</p>
+      <p class="only-classic">A fifty-gate course through the dawn, a storm and the night. <br>Pass the fiftieth gate and the course is yours.</p>
+      <div class="legend">
+        <span><i>🪶</i>slow-mo</span>
+        <span><i>🛡️</i>shield</span>
+        <span><i>🧲</i>magnet</span>
+        <span><i>🪙</i>+5</span>
+        <span><i>🚪</i>+10</span>
+      </div>
+      <p><span class="k">SPACE</span> / click / tap to flap · <span class="k">P</span> pause <br>
+        Gravity never lets up: hit a gate, the ground or the ceiling and the run is over.</p>
+      <div class="skies only-infinite">
+        <b style="border-color:#7ad37f">DAWN</b><b style="border-color:#93a0b3">STORM</b><b style="border-color:#4468b0">NIGHT</b><b style="border-color:#8a6470">CAVE</b><b style="border-color:#ffd2ab">SUNSET</b>
+      </div>
+      <button class="btn" id="play-btn">FLY</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>GATES</span><b id="o-gates">0</b></div>
+        <div><span>COINS</span><b id="o-coins">0</b></div>
+        <div><span>BEST</span><b id="o-best">0</b></div>
+      </div>
+      <p class="only-infinite">The sky is still out there.</p>
+      <button class="btn" id="again-btn">FLY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="flyer.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

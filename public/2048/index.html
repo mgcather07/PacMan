@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite 2048</title>
+  <meta name="description" content="Endless 2048 on a 5×5 board: when it jams, the four smallest tiles are vaporised so a great run keeps going. Or play the classic 4×4 and build the 2048 tile.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/2048/">
+  <meta property="og:title" content="Infinite 2048">
+  <meta property="og:description" content="Slide, merge, and never stop: a 5×5 board that melts its smallest tiles down instead of ending. Or beat the classic 4×4 and make the 2048 tile.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #f2b179; --accent-dark: #9c5b2a; --bg: #0a0810; }
+    #biggest { color: #f2b179; font-size: 13px; }
+    #melts { color: #ff8f5e; font-size: 9px; letter-spacing: 3px; min-height: 9px; }
+    #melts .spent { color: #4a3a30; }
+    #gain { color: #ffd88a; font-size: 9px; min-height: 9px; }
+    #undo-btn { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+    #undo-btn[disabled] { opacity: .35; cursor: default; }
+    #undo-btn b { font-size: 9px; font-weight: normal; color: var(--accent); }
+    /* the undo button belongs to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) #undo-btn, body:has(#over:not([hidden])) #undo-btn { display: none; }
+    .tiles { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
+    .tiles i {
+      display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 6px;
+      font: 600 13px Inter, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; font-style: normal; color: #2a1c10;
+    }
+    .tiles i.sm { font-size: 11px; }
+    @media (max-width: 480px) { .tiles i { width: 34px; height: 34px; font-size: 11px; } .tiles i.sm { font-size: 9px; } }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="gain"></span>
+    </div>
+    <div class="col center">
+      <span class="label">BIGGEST</span>
+      <span id="biggest">—</span>
+      <span id="melts"></span>
+    </div>
+    <div class="col right">
+      <span class="label">BEST</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="undo-btn" title="Undo (U)">↩<b id="undo-n">1</b></button>
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>2048</h1>
+      <p class="only-infinite">A 5×5 board that never truly ends. <br>Jam it solid and the four smallest tiles go up in smoke — three meltdowns a run, 10% of your score each. Every new biggest tile pays a bonus.</p>
+      <p class="only-classic">The original 4×4. Slide the tiles, merge the pairs, <br>and build the 2048 tile to win — then keep going as far as you dare.</p>
+      <div class="tiles">
+        <i style="background:#eee4da;color:#6b6257">2</i>
+        <i style="background:#f2b179">8</i>
+        <i style="background:#f65e3b;color:#fff6ef">64</i>
+        <i class="sm" style="background:#edcc61">256</i>
+        <i class="sm" style="background:#edc22e">2048</i>
+        <i class="sm only-infinite" style="background:#b388ff;color:#0b0810">4096</i>
+      </div>
+      <p><span class="k">ARROWS / WASD</span> to slide · <span class="k">U</span> undo (one a game) · <span class="k">M</span> sound <br>
+        Touch: swipe anywhere on the board</p>
+      <button class="btn" id="play-btn">MERGE</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>BIGGEST</span><b id="o-biggest">0</b></div>
+        <div><span>MOVES</span><b id="o-moves">0</b></div>
+        <div><span>TIME</span><b id="o-time">0:00</b></div>
+      </div>
+      <p class="only-infinite">The next board is already warming up.</p>
+      <button class="btn" id="keep-btn" hidden>KEEP GOING</button>
+      <button class="btn" id="again-btn">SLIDE AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="2048.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

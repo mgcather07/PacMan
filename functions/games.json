@@ -10,6 +10,9 @@
     "shooter",
     "invaders",
     "pong",
+    "missile",
+    "2048",
+    "flyer",
     "klondike",
     "spider",
     "freecell"
@@ -20,6 +23,11 @@
     "freecell"
   ],
   "boards": {
+    "2048": [
+      "2048",
+      "infinite",
+      "score"
+    ],
     "pacman": [
       "pacman",
       "infinite",
@@ -140,6 +148,31 @@
       "classic",
       "score"
     ],
+    "missile": [
+      "missile",
+      "infinite",
+      "score"
+    ],
+    "missile-classic": [
+      "missile",
+      "classic",
+      "score"
+    ],
+    "2048-classic": [
+      "2048",
+      "classic",
+      "score"
+    ],
+    "flyer": [
+      "flyer",
+      "infinite",
+      "score"
+    ],
+    "flyer-classic": [
+      "flyer",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -172,6 +205,11 @@
     ]
   },
   "scoreCap": {
+    "2048": [
+      5000,
+      300,
+      0.3
+    ],
     "pacman": [
       5000,
       800,
@@ -221,6 +259,16 @@
       3000,
       500,
       0.5
+    ],
+    "missile": [
+      10000,
+      800,
+      1.5
+    ],
+    "flyer": [
+      3000,
+      400,
+      0.2
     ],
     "klondike": [
       50000,
