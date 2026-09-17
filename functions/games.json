@@ -16,6 +16,8 @@
     "bubble",
     "defender",
     "tempest",
+    "centipede",
+    "tanks",
     "klondike",
     "spider",
     "freecell"
@@ -206,6 +208,26 @@
       "classic",
       "score"
     ],
+    "centipede": [
+      "centipede",
+      "infinite",
+      "score"
+    ],
+    "centipede-classic": [
+      "centipede",
+      "classic",
+      "score"
+    ],
+    "tanks": [
+      "tanks",
+      "infinite",
+      "score"
+    ],
+    "tanks-classic": [
+      "tanks",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -317,6 +339,16 @@
       15000,
       1200,
       3
+    ],
+    "centipede": [
+      10000,
+      900,
+      2
+    ],
+    "tanks": [
+      15000,
+      1000,
+      2
     ],
     "klondike": [
       50000,

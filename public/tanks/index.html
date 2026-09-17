@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Tank Battle</title>
+  <meta name="description" content="Endless Battle City: procedural mazes of brick, steel, water, bushes and ice, four kinds of enemy tank and seven power-ups. Or beat fifteen classic stages.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#0a0a12">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/tanks/">
+  <meta property="og:title" content="Infinite Tank Battle">
+  <meta property="og:description" content="Defend the eagle forever. Procedural mazes, armoured tanks and seven power-ups in an endless Battle City.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #d9a066; --accent-dark: #7a4f22; --bg: #0a0a12; }
+    #lives { color: #e8c060; letter-spacing: 2px; }
+    #power { color: #ffd23f; font-size: 8px; min-height: 8px; }
+    #stage { font-size: 9px; }
+    #foes { font-size: 8px; color: #ff8f6a; }
+    #base { font-size: 8px; color: #9fe8a0; }
+    #base.hurt { color: #ffd23f; }
+    #base.gone { color: #ff5c5c; }
+    .legend { display: flex; justify-content: center; gap: 12px 16px; flex-wrap: wrap; font-size: 8px; color: #bbb; margin: 12px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend canvas { width: 22px; height: 22px; image-rendering: pixelated; border-radius: 2px; }
+    .touch { position: fixed; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom)); padding: 0 14px;
+      justify-content: space-between; align-items: flex-end; z-index: 6; pointer-events: none; }
+    .dpad { display: grid; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(3, 52px); gap: 4px;
+      grid-template-areas: ". u ." "l . r" ". d ."; pointer-events: auto; }
+    .dpad .pad-btn { width: 58px; height: 52px; font-size: 18px; }
+    .dpad [data-key="up"] { grid-area: u; }
+    .dpad [data-key="left"] { grid-area: l; }
+    .dpad [data-key="right"] { grid-area: r; }
+    .dpad [data-key="down"] { grid-area: d; }
+    .fire-btn { pointer-events: auto; width: 88px; height: 88px; font-size: 11px; border-radius: 50%; border-width: 3px; }
+    @media (pointer: coarse) { .hud-buttons { bottom: calc(180px + env(safe-area-inset-bottom)); } }
+    @media (max-width: 380px) {
+      .touch { padding: 0 8px; }
+      .dpad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 48px); }
+      .dpad .pad-btn { width: 52px; height: 48px; }
+      .fire-btn { width: 78px; height: 78px; }
+    }
+    /* the pad belongs to the battlefield, not to the title or game-over screens */
+    body:has(#title:not([hidden])) .touch, body:has(#over:not([hidden])) .touch { display: none; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col center">
+      <span id="stage"></span>
+      <span id="foes"></span>
+      <span id="base"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+      <span id="power"></span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch" aria-hidden="true">
+    <div class="dpad">
+      <button class="pad-btn" data-key="up">▲</button>
+      <button class="pad-btn" data-key="left">◀</button>
+      <button class="pad-btn" data-key="right">▶</button>
+      <button class="pad-btn" data-key="down">▼</button>
+    </div>
+    <button class="pad-btn fire-btn" data-key="fire">FIRE</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>TANK BATTLE</h1>
+      <p class="only-infinite">The war never ends. Every stage builds a new maze, sends more and tougher tanks, <br>and the eagle behind you never gets a second chance.</p>
+      <p class="only-classic">Fifteen hand-built battlefields. Clear stage fifteen with the eagle still standing and you win.</p>
+      <div class="legend">
+        <span><canvas id="lg-brick" width="20" height="20"></canvas>brick · breaks</span>
+        <span><canvas id="lg-steel" width="20" height="20"></canvas>steel · solid</span>
+        <span><canvas id="lg-water" width="20" height="20"></canvas>water · shots pass</span>
+        <span><canvas id="lg-bush" width="20" height="20"></canvas>bush · hides</span>
+        <span><canvas id="lg-ice" width="20" height="20"></canvas>ice · slides</span>
+      </div>
+      <div class="legend">
+        <span><canvas id="lg-helmet" width="20" height="20"></canvas>shield</span>
+        <span><canvas id="lg-star" width="20" height="20"></canvas>gun up</span>
+        <span><canvas id="lg-grenade" width="20" height="20"></canvas>wipe out</span>
+        <span><canvas id="lg-shovel" width="20" height="20"></canvas>steel base</span>
+        <span><canvas id="lg-tank" width="20" height="20"></canvas>extra life</span>
+        <span><canvas id="lg-clock" width="20" height="20"></canvas>freeze</span>
+      </div>
+      <p><span class="k">ARROWS / WASD</span> drive · <span class="k">SPACE</span> fire · <span class="k">P</span> pause <br>
+        Touch: D-pad to drive, FIRE to shoot</p>
+      <button class="btn" id="play-btn">ROLL OUT</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>STAGE</span><b id="o-stage">0</b></div>
+        <div><span>TANKS</span><b id="o-kills">0</b></div>
+        <div><span>EAGLE</span><b id="o-base">SAFE</b></div>
+      </div>
+      <p class="only-infinite">A fresh battlefield is already being built.</p>
+      <button class="btn" id="again-btn">ROLL OUT AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="tanks.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>
