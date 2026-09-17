@@ -74,7 +74,7 @@
       <button role="tab" data-group="Solitaire">🃏 Solitaire</button>
     </nav>
     <section class="grid" id="grid"></section>
-    <p class="note">Scores are public. Each device plays under one anonymous player ID; names are limited to letters, numbers and simple punctuation.</p>
+    <p class="note">Scores are public. You play as a guest on each device, or tap ☁️ Sync to sign in with Google and use the same player everywhere. Names are limited to letters, numbers and simple punctuation.</p>
   </main>
 
   <script src="/shared/daily.js"></script>
@@ -85,7 +85,8 @@
       nameBar(document.getElementById('namebar'));
       let myId = null;
       user().then((u) => { myId = u.uid; if (current) show(current); return Leaderboard.getName(); }).catch(() => {});
-      onName(() => { if (current) show(current); });
+      // renamed, or signed in as another player
+      onName(() => user().then((u) => { myId = u.uid; if (current) show(current); }).catch(() => {}));
       const grid = document.getElementById('grid');
       const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       let current = null;

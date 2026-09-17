@@ -1,7 +1,8 @@
 /*
  * Online leaderboards, daily streaks and sharing, backed by Cloud Firestore + Cloud Functions.
  *
- * Players sign in anonymously (one hidden ID per device). Games call startRun() when a round begins,
+ * Players start as guests (anonymous sign-in, one hidden ID per device) and can sign in with Google to use
+ * the same player on every device; the guest's progress is merged into the Google account. Games call startRun() when a round begins,
  * which starts a clock on the server; when the round ends, offer() sends the result to the
  * submitScore function, which rejects anything implausible for how long the run lasted and keeps one
  * best entry per player at boards/{board}/scores/{uid}. The display name and daily-challenge days live
@@ -12,6 +13,7 @@
  *   Leaderboard.open(boardId)                                      → modal with the top 10
  *   Leaderboard.button(boardIdOrFn, parentEl)                      → "🏆 Leaderboard" button
  *   Leaderboard.nameBar(parentEl)                                  → "Playing as …" control to set/change your name
+ *   Leaderboard.account() / onAccount(fn)                          → { signedIn, email } for the Google sign-in
  */
 (function () {
   'use strict';
@@ -94,7 +96,8 @@
         const auth = authMod.getAuth(app);
         const functions = fnMod.getFunctions(app, 'us-central1');
         const call = async (name, data) => (await fnMod.httpsCallable(functions, name, { timeout: 30000 })(data)).data;
-        return { fs, db: fs.getFirestore(app), auth, authMod, call };
+        authMod.onAuthStateChanged(auth, authChanged);
+        return (fbLoaded = { fs, db: fs.getFirestore(app), auth, authMod, call });
       })().catch((e) => { fbPromise = null; throw e; });
     }
     return fbPromise;
@@ -106,7 +109,10 @@
       userPromise = (async () => {
         const { auth, authMod } = await firebase();
         await withTimeout(auth.authStateReady(), 15000, 'restoring sign-in');
-        return auth.currentUser || (await withTimeout(authMod.signInAnonymously(auth), 20000, 'anonymous sign-in')).user;
+        const u = auth.currentUser || (await withTimeout(authMod.signInAnonymously(auth), 20000, 'anonymous sign-in')).user;
+        // a merge interrupted by a lost connection finishes on the next visit
+        if (!u.isAnonymous && readJson(MERGE_KEY)) setTimeout(() => finishMerge().then((r) => r && reloadPlayer()).catch(() => {}), 0);
+        return u;
       })().catch((e) => { userPromise = null; throw e; });
     }
     return userPromise;
@@ -209,14 +215,15 @@
   const cachedName = () => { try { return localStorage.getItem('arcade.name') || ''; } catch (e) { return ''; } };
   const cacheName = (n) => { try { localStorage.setItem('arcade.name', n); } catch (e) { /* ignore */ } };
   const nameListeners = new Set();
+  const notifyName = (name) => nameListeners.forEach((fn) => { try { fn(name); } catch (e) { console.error('[leaderboard] name listener', e); } });
 
   // ---------------------------------------------------------------------------
   // Profile: name + daily streak (players/{uid}, readable only by its owner)
   // ---------------------------------------------------------------------------
   const cachedDays = () => { try { return JSON.parse(localStorage.getItem('arcade.days') || '{}'); } catch (e) { return {}; } };
   const streakListeners = new Set();
-  function cacheDays(days, bestStreak) {
-    const prev = cachedDays();
+  function cacheDays(days, bestStreak, replace = false) {
+    const prev = replace ? {} : cachedDays();
     const next = { days: Array.isArray(days) ? days.slice(-60) : (prev.days || []), best: Math.max(bestStreak || 0, prev.best || 0) };
     try { localStorage.setItem('arcade.days', JSON.stringify(next)); } catch (e) { /* ignore */ }
     const s = streak();
@@ -262,9 +269,125 @@
     if (!clean) throw new Error('bad-name');
     const { name } = await call('setName', { name: clean });
     cacheName(name);
-    nameListeners.forEach((fn) => { try { fn(name); } catch (e) { console.error('[leaderboard] name listener', e); } });
+    notifyName(name);
     if (window.Analytics) Analytics.event('name_set');
     return name;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Accounts: everyone starts as a guest; signing in with Google makes the same player (name, scores,
+  // streak) available on every device. On a device whose guest has already played, the Google account
+  // may already belong to a player from another device: the guest's progress is merged into it.
+  // ---------------------------------------------------------------------------
+  const ACCOUNT_KEY = 'arcade.account';
+  const MERGE_KEY = 'arcade.pendingMerge';
+  const readJson = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  const writeJson = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
+  const accountListeners = new Set();
+  let fbLoaded = null; // set once Firebase has loaded, so a tap can open the Google window right away
+  let authUid = null;
+  let switching = false;
+
+  function account() {
+    const a = readJson(ACCOUNT_KEY);
+    return a && a.email ? { signedIn: true, email: a.email } : { signedIn: false, email: '' };
+  }
+  function setAccount(u) {
+    const next = u && !u.isAnonymous ? { email: u.email || ((u.providerData || []).find((p) => p.email) || {}).email || 'your Google account' } : null;
+    if (JSON.stringify(readJson(ACCOUNT_KEY)) === JSON.stringify(next)) return;
+    writeJson(ACCOUNT_KEY, next);
+    const a = account();
+    accountListeners.forEach((fn) => { try { fn(a); } catch (e) { console.error('[leaderboard] account listener', e); } });
+  }
+  // sign-in changes, including ones made in another tab
+  function authChanged(u) {
+    if (switching) return;
+    if (u) {
+      setAccount(u);
+      if (authUid && u.uid !== authUid) { userPromise = Promise.resolve(u); reloadPlayer().catch(() => {}); }
+      authUid = u.uid;
+    } else if (authUid) {
+      userPromise = null;
+      profilePromise = null;
+    }
+  }
+
+  // re-read the player after switching accounts
+  async function reloadPlayer() {
+    const { fs, db } = await firebase();
+    const u = await user();
+    const snap = await withTimeout(fs.getDoc(fs.doc(db, 'players', u.uid)), 12000, 'reading profile');
+    const data = snap.exists() ? snap.data() : {};
+    cacheName(data.name || '');
+    cacheDays(data.days || [], data.bestStreak || 0, true);
+    profilePromise = Promise.resolve({ name: data.name || '', streak: streak() });
+    notifyName(data.name || '');
+    return data;
+  }
+
+  async function finishMerge() {
+    const pending = readJson(MERGE_KEY);
+    if (!pending) return null;
+    if (Date.now() - pending.at > 55 * 60000) { writeJson(MERGE_KEY, null); return null; } // the guest token has expired
+    try {
+      const res = await call('mergeAccount', { fromToken: pending.token });
+      writeJson(MERGE_KEY, null);
+      return res;
+    } catch (e) {
+      if (/permission-denied|invalid-argument/.test((e && e.code) || '')) writeJson(MERGE_KEY, null);
+      throw e;
+    }
+  }
+
+  // Loads Firebase and the guest player so the sign-in button can open Google's window straight from a tap
+  const prepareSignIn = () => user().then(() => fbLoaded);
+
+  // Must be called directly from a click/tap (browsers only allow pop-ups from one).
+  // Resolves to { merged } once this device is playing as the Google account's player.
+  function signInWithGoogle() {
+    const fb = fbLoaded;
+    const guest = fb && fb.auth.currentUser;
+    if (!guest) return Promise.reject(Object.assign(new Error('not-ready'), { code: 'not-ready' }));
+    if (!guest.isAnonymous) return Promise.resolve({ merged: false });
+    const { auth, authMod } = fb;
+    const provider = new authMod.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    return authMod.linkWithPopup(guest, provider).then(
+      (cred) => { setAccount(cred.user); return { merged: false }; },
+      async (e) => {
+        if (!e || e.code !== 'auth/credential-already-in-use') throw e;
+        // this Google account already has a player (from another device): switch to it and bring this guest along
+        const credential = authMod.GoogleAuthProvider.credentialFromError(e);
+        if (!credential) throw e;
+        writeJson(MERGE_KEY, { token: await guest.getIdToken(), at: Date.now() });
+        switching = true;
+        try {
+          const { user: u } = await authMod.signInWithCredential(auth, credential);
+          userPromise = Promise.resolve(u);
+          authUid = u.uid;
+          setAccount(u);
+        } finally { switching = false; }
+        try {
+          await finishMerge();
+        } catch (err) {
+          console.error('[leaderboard] merging the guest player failed:', err);
+          throw Object.assign(new Error('merge-failed'), { code: 'merge-failed' });
+        }
+        return { merged: true };
+      },
+    ).then(async (res) => {
+      await reloadPlayer().catch(() => {});
+      if (window.Analytics) Analytics.event('login', { method: 'Google', merged: res.merged });
+      return res;
+    });
+  }
+
+  async function signOut() {
+    const { auth, authMod } = await firebase();
+    if (window.Analytics) Analytics.event('logout');
+    await authMod.signOut(auth);
+    ['arcade.name', 'arcade.days', DONE_KEY, ACCOUNT_KEY, MERGE_KEY].forEach((k) => { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } });
+    location.reload();
   }
 
   // ---------------------------------------------------------------------------
@@ -453,9 +576,31 @@
       .lb-next { display: inline-flex; align-items: center; gap: 8px; font: 10px/1.4 "Press Start 2P", monospace; text-transform: uppercase; color: #fff; text-decoration: none;
         padding: 11px 14px; border-radius: 4px; background: linear-gradient(#dc143c33, #dc143c33), #12080d; border: 1px solid #dc143c99; box-shadow: 3px 3px 0 #5a0717; }
       .lb-next:hover { background: linear-gradient(#dc143c55, #dc143c55), #12080d; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #5a0717; }
+      .lb-chip .lb-sm { display: none; }
+      .lb-sync { flex: none; position: relative; font: 600 13px Inter, system-ui, sans-serif; color: #9fe9ff; background: #3fd8ff14; border: 1px solid #3fd8ff47; border-radius: 999px; padding: 7px 11px; cursor: pointer; line-height: 1; white-space: nowrap; }
+      .lb-sync:hover { background: #3fd8ff29; }
+      .lb-sync.on { color: #7dff9a; background: #3cff8a12; border-color: #3cff8a47; }
+      .lb-sync.on::after { content: ''; position: absolute; top: 1px; right: 1px; width: 8px; height: 8px; border-radius: 50%; background: #3cff8a; box-shadow: 0 0 6px #3cff8a; }
+      .lb-acct { margin: 0 auto; padding: 16px; border-radius: 14px; background: #0c0c20f2; border: 1px solid #3fd8ff47; box-shadow: 4px 4px 0 #0a3a48; text-align: center; font: 14px/1.5 Inter, system-ui, sans-serif; color: #c8c8dc; box-sizing: border-box; }
+      .lb-acct h4 { margin: 0 0 8px; font: 11px/1.6 "Press Start 2P", monospace; color: #3fd8ff; letter-spacing: .5px; }
+      .lb-acct.on h4 { color: #3cff8a; }
+      .lb-acct p { margin: 0 0 12px; }
+      .lb-acct b { color: #fff; word-break: break-all; }
+      .lb-acct-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+      .lb-acct-row button { font: 600 14px Inter, system-ui, sans-serif; padding: 10px 16px; border-radius: 10px; cursor: pointer; border: 1px solid #ffffff30; background: #ffffff14; color: #fff; }
+      .lb-acct-row button:disabled { opacity: .55; cursor: default; }
+      .lb-acct-row .lb-google { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1f1f1f; border-color: #dadce0; font-family: Roboto, Inter, system-ui, sans-serif; font-weight: 500; }
+      .lb-acct-row .lb-google svg { width: 18px; height: 18px; flex: none; }
+      .lb-acct-row .lb-out.armed { background: #dc143c; border-color: #ff5c7a; }
+      .lb-acct .lb-note { margin: 10px 0 0; }
+      .lb-acct .lb-fine { margin: 10px 0 0; font-size: 12px; color: #8a8aa6; }
+      .lb-acct ul { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; font-size: 13px; }
       .lb-streak-note { text-align: center; font: 700 14px Inter, system-ui, sans-serif; color: #ff8fa3; margin: 0 0 8px; }
       @media (max-width: 480px) {
-        .lb-chip .lb-pre { display: none; }
+        .lb-chip .lb-pre, .lb-chip .lb-lg { display: none; }
+        .lb-chip .lb-sm { display: inline; }
+        .lb-chip { gap: 7px; }
+        .lb-chip .lb-edit, .lb-sync { padding: 7px 9px; }
         .lb-chip.empty .lb-who { white-space: normal; line-height: 1.3; }
       }
       .lb-note { font-size: 13px; color: #bbb; text-align: center; min-height: 18px; margin: 4px 0 8px; }
@@ -552,6 +697,87 @@
     });
   }
 
+  const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+
+  function signInError(e) {
+    const code = (e && e.code) || '';
+    if (/popup-closed-by-user|cancelled-popup-request|user-cancelled/.test(code)) return '';
+    if (code === 'not-ready') return 'Still connecting — tap Sign in again.';
+    if (code === 'merge-failed') return 'You’re signed in, but this device’s scores haven’t moved over yet. They’ll finish syncing next time you visit.';
+    if (/popup-blocked/.test(code)) return 'The Google window was blocked. Allow pop-ups for this site, then try again.';
+    if (/network-request-failed|timeout/.test(code + ((e && e.message) || ''))) return 'Couldn’t reach Google — check your connection and try again.';
+    if (/operation-not-supported|web-storage-unsupported|unauthorized-domain/.test(code)) return 'Google sign-in doesn’t work in this browser. Open the arcade in Safari or Chrome and try there.';
+    if (/operation-not-allowed/.test(code)) return 'Google sign-in isn’t switched on for the arcade yet.';
+    return 'Sign-in didn’t work — please try again.';
+  }
+
+  // Sign in with Google / signed-in details. Resolves when the panel is closed.
+  function accountPanel(parent) {
+    injectCss();
+    return new Promise((resolve) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'lb-acct';
+      parent.appendChild(wrap);
+      shieldKeys(wrap);
+      const close = () => { wrap.remove(); resolve(account()); };
+      const render = (message = '', kind = 'ok') => {
+        const a = account();
+        wrap.classList.toggle('on', a.signedIn);
+        if (a.signedIn) {
+          wrap.innerHTML = `<h4>☁️ SYNCED ACROSS DEVICES</h4>
+            <p>Signed in as <b>${esc(a.email)}</b></p>
+            <p>Sign in with this Google account on your other devices to play as the same player everywhere.</p>
+            <div class="lb-acct-row"><button type="button" class="lb-done">Done</button><button type="button" class="lb-out">Sign out</button></div>
+            <div class="lb-note"></div>`;
+          const note = wrap.querySelector('.lb-note');
+          if (message) setNote(note, message, kind);
+          const out = wrap.querySelector('.lb-out');
+          out.addEventListener('click', () => {
+            if (!out.classList.contains('armed')) {
+              out.classList.add('armed');
+              out.textContent = 'Tap again to sign out';
+              setNote(note, 'This device will start over as a new guest until you sign in again. Your scores stay safe in your Google account.');
+              return;
+            }
+            out.disabled = true;
+            setNote(note, 'Signing out…');
+            signOut().catch(() => { out.disabled = false; setNote(note, 'Couldn’t sign out — check your connection.', 'err'); });
+          });
+        } else {
+          wrap.innerHTML = `<h4>☁️ PLAY ON EVERY DEVICE</h4>
+            <p>Sign in with Google on your computer, phone and tablet to keep one name, one set of scores and one daily streak everywhere.</p>
+            <ul><li>✓ What you’ve played on this device comes with you</li><li>✓ Your email is never shown to other players</li></ul>
+            <div class="lb-acct-row"><button type="button" class="lb-google" disabled>${GOOGLE_G}<span>Sign in with Google</span></button><button type="button" class="lb-done">Not now</button></div>
+            <div class="lb-note"></div>`;
+          const note = wrap.querySelector('.lb-note');
+          const google = wrap.querySelector('.lb-google');
+          const ready = () => { google.disabled = false; };
+          if (fbLoaded && fbLoaded.auth.currentUser) ready();
+          else {
+            setNote(note, 'Connecting…');
+            prepareSignIn().then(() => { setNote(note, message, message ? kind : ''); ready(); })
+              .catch(() => setNote(note, 'Couldn’t connect — check your connection and reopen this.', 'err'));
+          }
+          if (message) setNote(note, message, kind);
+          google.addEventListener('click', () => {
+            google.disabled = true;
+            setNote(note, 'Finish signing in with Google…');
+            signInWithGoogle()
+              .then((res) => render(res.merged ? 'Synced! This device’s scores and streak were added to your account.' : 'Synced! Now sign in with Google on your other devices.'))
+              .catch((e) => {
+                console.warn('[leaderboard] Google sign-in:', e);
+                if (account().signedIn) { render(signInError(e), 'err'); return; }
+                setNote(note, signInError(e), 'err');
+                google.disabled = false;
+              });
+          });
+        }
+        wrap.querySelector('.lb-done').addEventListener('click', close);
+      };
+      render();
+    });
+  }
+
   // "Playing as NAME · Change name" (or a prompt to set one)
   function nameBar(parent) {
     if (!parent) return null;
@@ -566,11 +792,24 @@
       const title = s.playedToday ? `${s.current}-day daily challenge streak` : `${s.current}-day streak — play today's challenge to keep it`;
       return `<span class="lb-streak${s.playedToday ? '' : ' dim'}" title="${esc(title)}">🔥 ${s.current}</span>`;
     };
+    const syncButton = () => {
+      const a = account();
+      return a.signedIn
+        ? `<button type="button" class="lb-sync on" title="${esc(`Synced with Google (${a.email})`)}" aria-label="Account: synced across devices">☁️<span class="lb-lg"> Synced</span></button>`
+        : '<button type="button" class="lb-sync" title="Play as the same player on all your devices" aria-label="Sync across devices">☁️<span> Sync</span></button>';
+    };
     const render = (name) => {
       if (editing) return;
       bar.innerHTML = name
-        ? `<div class="lb-chip"><span class="lb-avatar" aria-hidden="true">${esc(name.charAt(0).toUpperCase())}</span><span class="lb-who"><span class="lb-pre">Playing as</span> <b>${esc(name)}</b></span>${badge()}<button type="button" class="lb-edit">Change name</button></div>`
-        : `<div class="lb-chip empty"><span class="lb-who">Want your name on the leaderboards?</span>${badge()}<button type="button" class="lb-edit">Add your name</button></div>`;
+        ? `<div class="lb-chip"><span class="lb-avatar" aria-hidden="true">${esc(name.charAt(0).toUpperCase())}</span><span class="lb-who"><span class="lb-pre">Playing as</span> <b>${esc(name)}</b></span>${badge()}<button type="button" class="lb-edit"><span class="lb-lg">Change name</span><span class="lb-sm">Rename</span></button>${syncButton()}</div>`
+        : `<div class="lb-chip empty"><span class="lb-who">Want your name on the leaderboards?</span>${badge()}<button type="button" class="lb-edit">Add your name</button>${syncButton()}</div>`;
+      bar.querySelector('.lb-sync').addEventListener('click', async () => {
+        editing = true;
+        bar.innerHTML = '';
+        await accountPanel(bar);
+        editing = false;
+        render(cachedName());
+      });
       bar.querySelector('.lb-edit').addEventListener('click', async () => {
         editing = true;
         bar.innerHTML = '';
@@ -582,8 +821,9 @@
     render(cachedName());
     nameListeners.add(render);
     streakListeners.add(() => render(cachedName()));
-    // returning players: refresh the streak from the server in the background
-    if (cachedName() || (cachedDays().days || []).length) setTimeout(() => profile().catch(() => {}), 800);
+    accountListeners.add(() => render(cachedName()));
+    // returning players: refresh the streak (and sign-in state) from the server in the background
+    if (cachedName() || (cachedDays().days || []).length || account().signedIn) setTimeout(() => profile().catch(() => {}), 800);
     return bar;
   }
 
@@ -667,14 +907,23 @@
           showStreak(res);
           return;
         }
-        const change = '<button type="button" class="lb-textbtn">Change name</button>';
-        slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(res.name)}</b> ${change}</div>`;
-        slot.querySelector('.lb-textbtn').addEventListener('click', async () => {
-          slot.innerHTML = '';
-          const saved = await nameForm(slot, { button: 'Save name', cancel: true });
-          slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(saved || cachedName())}</b></div>`;
-          if (saved) { setNote(note, 'Name updated on all your scores.', 'ok'); loadInto(list, note, board); }
-        });
+        const posted = (name) => {
+          slot.innerHTML = `<div class="lb-you">Posted as <b>${esc(name)}</b> <button type="button" class="lb-textbtn lb-rename">Change name</button>${account().signedIn ? '' : '<button type="button" class="lb-textbtn lb-sync-link">☁️ Sync devices</button>'}</div>`;
+          slot.querySelector('.lb-rename').addEventListener('click', async () => {
+            slot.innerHTML = '';
+            const saved = await nameForm(slot, { button: 'Save name', cancel: true });
+            posted(saved || cachedName());
+            if (saved) { setNote(note, 'Name updated on all your scores.', 'ok'); loadInto(list, note, board); }
+          });
+          const sync = slot.querySelector('.lb-sync-link');
+          if (sync) sync.addEventListener('click', async () => {
+            slot.innerHTML = '';
+            const a = await accountPanel(slot);
+            posted(cachedName() || name);
+            if (a.signedIn) loadInto(list, note, board);
+          });
+        };
+        posted(res.name);
         if (res.improved) setNote(note, `${res.first ? 'On the board' : 'New personal best'}! You're #${res.rank.toLocaleString()} of ${res.total.toLocaleString()}.`, 'ok');
         else setNote(note, `Your best is still ${fmtEntry(board, res.best)} (#${res.rank.toLocaleString()}). Beat it to climb!`);
         showStreak(res);
@@ -756,6 +1005,7 @@
   window.Leaderboard = {
     BOARDS, info, dailyBoards, DAILY_GAMES, ICONS, gameOf, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime,
     startRun, played, resumeRun, runId, profile, streak, share, shareText, shareButton, count, dailyDone, nextDaily, playedDays,
-    onName: (fn) => nameListeners.add(fn), onStreak: (fn) => streakListeners.add(fn),
+    account, accountPanel, signInWithGoogle, signOut,
+    onName: (fn) => nameListeners.add(fn), onStreak: (fn) => streakListeners.add(fn), onAccount: (fn) => accountListeners.add(fn),
   };
 })();

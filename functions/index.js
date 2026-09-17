@@ -8,9 +8,11 @@
  *   logPlay({ board })                 → {}          counts a play (games that deal before the first move)
  *   submitScore({ runId, score, time, won }) → posts the run's result if it is plausible for its length
  *   setName({ name })                  → saves the display name and renames all of the player's entries
+ *   mergeAccount({ fromToken })        → folds a guest (anonymous) player into the signed-in account
  *   adminStats()                       → dashboard data, for accounts listed in config/admins
  */
 import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { setGlobalOptions } from 'firebase-functions';
 import { onCall, HttpsError } from 'firebase-functions/https';
@@ -117,6 +119,18 @@ function requireBoard(board) {
   return info;
 }
 const inc = (n = 1) => FieldValue.increment(n);
+
+// puts the player's current name on all of their leaderboard entries
+async function renameEntries(uid, name) {
+  const mine = await db.collectionGroup('scores').where('uid', '==', uid).get();
+  const stale = mine.docs.filter((d) => d.data().name !== name);
+  for (let i = 0; i < stale.length; i += 400) {
+    const batch = db.batch();
+    stale.slice(i, i + 400).forEach((d) => batch.update(d.ref, { name }));
+    await batch.commit();
+  }
+  return stale.length;
+}
 
 async function recordPlay(uid, info) {
   const day = utcToday();
@@ -273,14 +287,94 @@ export const setName = callable(async (req) => {
   const name = cleanName(req.data && req.data.name);
   if (!name) throw new HttpsError('invalid-argument', 'Use 1–16 letters, numbers or spaces.');
   await db.doc(`players/${uid}`).set({ name, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  const mine = await db.collectionGroup('scores').where('uid', '==', uid).get();
-  const stale = mine.docs.filter((d) => d.data().name !== name);
-  for (let i = 0; i < stale.length; i += 400) {
+  return { name, renamed: await renameEntries(uid, name) };
+});
+
+// ---------------------------------------------------------------------------
+// Accounts: a player who signs in with Google on a second device already has a guest (anonymous)
+// player there. The client proves it owns that guest by sending its ID token, then signs in to the
+// Google account and calls mergeAccount, which moves everything onto the Google account:
+// the better entry on each board, the union of daily-challenge days, summed play counts and any runs
+// still in progress. The guest player and its sign-in are deleted afterwards.
+// ---------------------------------------------------------------------------
+const better = (type, a, b) => (type === 'time' ? a.time < b.time : a.score > b.score);
+
+export const mergeAccount = callable(async (req) => {
+  const uid = requireUser(req);
+  const fromToken = req.data && req.data.fromToken;
+  if (typeof fromToken !== 'string' || fromToken.length > 4096) throw new HttpsError('invalid-argument', 'Missing guest token.');
+  let from;
+  try { from = await getAuth().verifyIdToken(fromToken, true); } catch (e) { throw new HttpsError('permission-denied', 'The guest sign-in could not be verified.'); }
+  if (from.firebase.sign_in_provider !== 'anonymous') throw new HttpsError('permission-denied', 'Only guest players can be merged.');
+  const fromUid = from.uid;
+  if (fromUid === uid) return { merged: false };
+
+  const fromRef = db.doc(`players/${fromUid}`);
+  const toRef = db.doc(`players/${uid}`);
+  const [fromSnap, toSnap, entries, runs] = await Promise.all([
+    fromRef.get(), toRef.get(),
+    db.collectionGroup('scores').where('uid', '==', fromUid).get(),
+    db.collection('runs').where('uid', '==', fromUid).get(),
+  ]);
+  const a = fromSnap.data() || {};
+  const b = toSnap.data() || {};
+  const name = b.name || a.name || null;
+
+  // player profile
+  const days = [...new Set([...(a.days || []), ...(b.days || [])])].sort((x, y) => x - y).slice(-400);
+  const plays = { ...(b.plays || {}) };
+  Object.entries(a.plays || {}).forEach(([g, n]) => { plays[g] = (plays[g] || 0) + n; });
+  const ms = (t) => (t ? t.toMillis() : null);
+  const newer = (ms(a.lastPlayedAt) || 0) > (ms(b.lastPlayedAt) || 0) ? a : b;
+  const earliest = [a.firstSeenAt, b.firstSeenAt].filter(Boolean).sort((x, y) => x.toMillis() - y.toMillis())[0];
+  const merged = {
+    ...(name ? { name } : {}),
+    days,
+    bestStreak: Math.max(a.bestStreak || 0, b.bestStreak || 0, bestStreakOf(days)),
+    dailyFinishes: (a.dailyFinishes || 0) + (b.dailyFinishes || 0),
+    plays,
+    totalPlays: (a.totalPlays || 0) + (b.totalPlays || 0),
+    ...(newer.lastPlayedAt ? { lastPlayedAt: newer.lastPlayedAt, lastGame: newer.lastGame || null } : {}),
+    ...(a.lastActiveDay || b.lastActiveDay ? { lastActiveDay: Math.max(a.lastActiveDay || 0, b.lastActiveDay || 0) } : {}),
+    ...(earliest ? { firstSeenAt: earliest } : {}),
+    mergedFrom: FieldValue.arrayUnion(fromUid),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  // leaderboard entries: keep the better of the two on each board
+  const writes = [];
+  const targets = await Promise.all(entries.docs.map((d) => db.doc(`boards/${d.ref.parent.parent.id}/scores/${uid}`).get()));
+  entries.docs.forEach((d, i) => {
+    const board = d.ref.parent.parent.id;
+    const info = boardInfo(board);
+    const mine = d.data();
+    const theirs = targets[i].exists ? targets[i].data() : null;
+    if (info && (!theirs || better(info.type, mine, theirs))) {
+      writes.push((batch) => batch.set(targets[i].ref, { uid, name: name || mine.name, score: mine.score, time: mine.time, won: mine.won, updatedAt: mine.updatedAt || FieldValue.serverTimestamp() }));
+    }
+    writes.push((batch) => batch.delete(d.ref));
+  });
+  // runs in progress (e.g. a saved infinite Minesweeper field) keep working on this device
+  runs.docs.forEach((d) => writes.push((batch) => batch.update(d.ref, { uid })));
+
+  // the two devices were counted as two players
+  if (a.firstSeenAt && b.firstSeenAt) {
+    const perGame = {};
+    Object.keys(a.plays || {}).forEach((g) => { if ((b.plays || {})[g]) perGame[g] = inc(-1); });
+    writes.push((batch) => batch.set(db.doc('stats/global'), { totalPlayers: inc(-1), ...(Object.keys(perGame).length ? { players: perGame } : {}) }, { merge: true }));
+  }
+  writes.push((batch) => batch.set(toRef, merged, { merge: true }));
+  writes.push((batch) => batch.delete(fromRef));
+
+  for (let i = 0; i < writes.length; i += 400) {
     const batch = db.batch();
-    stale.slice(i, i + 400).forEach((d) => batch.update(d.ref, { name }));
+    writes.slice(i, i + 400).forEach((w) => w(batch));
     await batch.commit();
   }
-  return { name, renamed: stale.length };
+  if (name) await renameEntries(uid, name);
+  try { await getAuth().deleteUser(fromUid); } catch (e) { logger.warn('could not delete merged guest', { fromUid, e: e.message }); }
+  logger.info('merged guest player', { from: fromUid, to: uid, entries: entries.size, runs: runs.size });
+  return { merged: true, name, days: days.slice(-60), bestStreak: merged.bestStreak, entries: entries.size };
 });
 
 export const adminStats = callable(async (req) => {
