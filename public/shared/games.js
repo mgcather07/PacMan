@@ -305,6 +305,25 @@
       ],
     },
     {
+      id: 'defender', name: 'Defender', icon: '🚁', color: '#5b8cff', path: '/defender/', category: 'arcade', type: 'score', daily: 'Same raid', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [20000, 1500, 3], assets: ['/defender/defender.js', '/defender/preview.js'], preview: ['/defender/preview.js'],
+      blurb: 'A planet that wraps forever and a raid that never stops. Shoot the landers before they drag your humanoids into the sky, catch the ones that fall, and keep a smart bomb for when the mutants find you.',
+      blurbClassic: 'Ten waves over one planet. Save every humanoid you can, clear wave ten and the raid is over.',
+      tags: ['Wrapping world', 'Radar scanner', 'Smart bombs'],
+      tagsClassic: ['10 waves', 'Rescue runs', 'Smart bombs'],
+      cta: 'SCRAMBLE ▶',
+      boards: [
+        { id: 'defender', title: 'Infinite Defender', group: 'Infinite', type: 'score', href: '/defender/' },
+        { id: 'defender-classic', title: 'Classic Defender', group: 'Classic', type: 'score', href: '/defender/?mode=classic' },
+      ],
+      classicWin: ['defender-classic'],
+      achievements: [
+        { id: 'defender-30k', icon: '🚁', name: 'Sky Patrol', desc: 'Score 30,000 in Defender', points: 20, kind: 'score', goal: 30000 },
+        { id: 'defender-150k', icon: '👨‍🚀', name: 'Planet Saved', desc: 'Score 150,000 in Defender', points: 50, kind: 'score', goal: 150000 },
+        { id: 'defender-classic', icon: '🌍', name: 'Ten Waves', desc: 'Beat Classic Defender', points: 40, kind: 'win', boards: ['defender-classic'] },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

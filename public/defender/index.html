@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Defender</title>
+  <meta name="description" content="Endless Defender: fly a wrapping planet, shoot landers before they abduct the humanoids, catch the ones that fall, and smart-bomb your way out of trouble. Or beat ten classic waves.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/defender/">
+  <meta property="og:title" content="Infinite Defender">
+  <meta property="og:description" content="Patrol a planet that wraps forever. Stop the landers, rescue the humanoids, and hold the line as mutants, bombers and baiters pile in.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #5b8cff; --accent-dark: #1b3f9e; --bg: #02030c; }
+    canvas.game { cursor: crosshair; }
+    #lives { color: #5b8cff; letter-spacing: 2px; }
+    #wave { font-size: 9px; }
+    #humans { font-size: 9px; color: #ffe6a7; }
+    #bombs { font-size: 9px; color: #ff9f43; }
+    .legend { display: flex; justify-content: center; gap: 10px 14px; flex-wrap: wrap; font-size: 8px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    /* touch controls: a big FIRE with the two one-shot weapons above it */
+    .ctrl { position: fixed; right: 14px; bottom: calc(70px + env(safe-area-inset-bottom)); flex-direction: column; align-items: flex-end; gap: 8px; z-index: 6; }
+    .ctrl .row { display: flex; gap: 8px; }
+    .pad-btn.wide { width: 76px; height: 44px; font-size: 9px; border-radius: 12px; }
+    .pad-btn.fire { width: 88px; height: 88px; font-size: 11px; border-color: #5b8cff; color: #5b8cff; }
+    @media (pointer: coarse) { .hud-buttons { bottom: 176px; } }
+    /* the touch weapons belong to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) .ctrl, body:has(#over:not([hidden])) .ctrl { display: none; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col center">
+      <span id="wave"></span>
+      <span id="humans"></span>
+      <span id="bombs"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch ctrl">
+    <div class="row">
+      <button class="pad-btn wide" id="bomb-btn" aria-label="Smart bomb">BOMB</button>
+      <button class="pad-btn wide" id="hyper-btn" aria-label="Hyperspace">HYPER</button>
+    </div>
+    <button class="pad-btn fire" id="fire-btn" aria-label="Fire">FIRE</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>DEFENDER</h1>
+      <p class="only-infinite">A planet that wraps forever and a raid that never ends. <br>Landers drag your humanoids to the sky to make mutants — catch the ones that fall and carry them home.</p>
+      <p class="only-classic">Ten waves over one planet. <br>Keep the humanoids alive and clear wave ten to save them all.</p>
+      <div class="legend">
+        <span><i style="background:#7dff6a"></i>LANDER 150</span>
+        <span><i style="background:#ff5ecf"></i>MUTANT 150</span>
+        <span><i style="background:#3fd8ff"></i>BOMBER 250</span>
+        <span><i style="background:#b77dff"></i>POD 1000</span>
+        <span><i style="background:#ffd23f"></i>SWARMER 150</span>
+        <span><i style="background:#ff4d6d"></i>BAITER 200</span>
+        <span><i style="background:#ffe6a7"></i>HUMANOID 500 · 1000 HOME</span>
+      </div>
+      <p><span class="k">ARROWS / WASD</span> to fly · <span class="k">SPACE</span> fire · <span class="k">B</span> smart bomb · <span class="k">H</span> hyperspace · <span class="k">P</span> pause <br>
+        Touch: drag anywhere to fly · tap or hold FIRE · BOMB and HYPER</p>
+      <button class="btn" id="play-btn">DEFEND</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>WAVE</span><b id="o-wave">0</b></div>
+        <div><span>SHOT DOWN</span><b id="o-kills">0</b></div>
+        <div><span>RESCUED</span><b id="o-saved">0</b></div>
+      </div>
+      <p class="only-infinite">The planet is still turning.</p>
+      <button class="btn" id="again-btn">DEFEND AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="defender.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

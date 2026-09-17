@@ -14,6 +14,7 @@
     "2048",
     "flyer",
     "bubble",
+    "defender",
     "klondike",
     "spider",
     "freecell"
@@ -184,6 +185,16 @@
       "classic",
       "score"
     ],
+    "defender": [
+      "defender",
+      "infinite",
+      "score"
+    ],
+    "defender-classic": [
+      "defender",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -285,6 +296,11 @@
       10000,
       700,
       1
+    ],
+    "defender": [
+      20000,
+      1500,
+      3
     ],
     "klondike": [
       50000,
