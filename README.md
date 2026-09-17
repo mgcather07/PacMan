@@ -5,7 +5,7 @@ Classic mode with an ending you can beat, a shared daily challenge, online leade
 and offline play.
 
 <!-- games:start -->
-**22 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
+**23 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
 
 | | Game | Kind | Infinite | Classic | Daily challenge |
 |---|---|---|---|---|---|
@@ -28,6 +28,7 @@ and offline play.
 | 🐛 | [Centipede](public/centipede/) | Arcade | Endless waves | 12 waves | Same swarm |
 | 🪖 | [Tank Battle](public/tanks/) | Arcade | Endless stages | 15 stages | Same battlefield |
 | 🔺 | [Pyramid](public/pyramid/) | Cards | Endless deals | — | Same deal |
+| 💎 | [Gem Match](public/match3/) | Puzzle | Clock tops up | 20 levels | Same board |
 | 🂡 | [Klondike](public/solitaire/) | Cards | Draw 1 or 3 | — | Draw 1 deal |
 | 🕷️ | [Spider](public/spider/) | Cards | 1, 2 or 4 suits | — | 1-suit deal |
 | 🃏 | [FreeCell](public/freecell/) | Cards | Numbered deals | — | Same deal |

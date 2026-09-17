@@ -400,6 +400,25 @@
       ],
     },
     {
+      id: 'match3', name: 'Gem Match', icon: '💎', color: '#ffd166', path: '/match3/', category: 'puzzle', type: 'score', daily: 'Same board', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [20000, 1200, 2], assets: ['/match3/match3.js', '/match3/preview.js'], preview: ['/match3/preview.js'],
+      blurb: 'Sixty seconds that never have to run out. Swap glowing gems to line up three, chain cascades for a rising multiplier, and build striped gems, bombs and colour bombs — every gem you clear buys more time.',
+      blurbClassic: 'Twenty levels, each with its own goal: clear a colour, hit a score in a set number of moves, or drop the keys to the bottom. Finish level twenty to win.',
+      tags: ['Clock tops up', 'Cascades', 'Special gems'],
+      tagsClassic: ['20 levels', 'Goals & moves', 'Special gems'],
+      cta: 'MATCH ▶',
+      boards: [
+        { id: 'match3', title: 'Infinite Gem Match', group: 'Infinite', type: 'score', href: '/match3/' },
+        { id: 'match3-classic', title: 'Classic Gem Match', group: 'Classic', type: 'score', href: '/match3/?mode=classic' },
+      ],
+      classicWin: ['match3-classic'],
+      achievements: [
+        { id: 'match3-20k', icon: '💎', name: 'Gem Hunter', desc: 'Score 20,000 in Gem Match', points: 20, kind: 'score', goal: 20000 },
+        { id: 'match3-100k', icon: '💠', name: 'Cascade King', desc: 'Score 100,000 in Gem Match', points: 50, kind: 'score', goal: 100000 },
+        { id: 'match3-classic', icon: '👑', name: 'Twenty Levels', desc: 'Beat Classic Gem Match', points: 40, kind: 'win', boards: ['match3-classic'] },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

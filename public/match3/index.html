@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Gem Match</title>
+  <meta name="description" content="Endless match-3: swap glowing gems, chain cascades for a rising multiplier and build striped gems, bombs and colour bombs to keep the clock alive. Or beat twenty classic levels.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/match3/">
+  <meta property="og:title" content="Infinite Gem Match">
+  <meta property="og:description" content="A match-3 on a clock that never has to stop. Every gem you clear buys time — cascade, combine specials and keep going.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #ffd166; --accent-dark: #a2700a; --bg: #0a0718; }
+    canvas.game { display: block; cursor: pointer; }
+    #combo { color: #ff6bd6; font-size: 9px; min-height: 9px; }
+    #level { font-size: 9px; }
+    #goal { font-size: 8px; min-height: 8px; }
+    .moves { display: inline-flex; align-items: baseline; gap: 6px; }
+    .moves .label { margin: 0; }
+    .legend { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; font-size: 8px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; flex-direction: column; align-items: center; gap: 5px; width: 78px; line-height: 1.5; }
+    .legend canvas { width: 38px; height: 38px; }
+    .hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5;
+      font-size: 8px; color: var(--accent); background: #0009; border: 1px solid #ffffff22; border-radius: 999px; padding: 8px 12px; pointer-events: none; }
+    /* the touch hint belongs to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) .hint, body:has(#over:not([hidden])) .hint { display: none; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="combo"></span>
+    </div>
+    <div class="col center">
+      <span id="level"></span>
+      <span id="goal" class="dim"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+      <span class="moves"><span class="label">MOVES</span><b id="moves">0</b></span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch hint" id="touch-hint">TAP TWO GEMS · OR SWIPE ONE INTO THE OTHER</div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>GEM MATCH</h1>
+      <p class="only-infinite">Sixty seconds on the clock — and every gem you clear buys more. <br>Swap two neighbours to line up three, chain the cascades for a rising multiplier, and the run never has to end.</p>
+      <p class="only-classic">Twenty levels, each with its own goal: clear a colour, hit a score in a set number of moves, <br>or drop the keys to the bottom of the board. Finish level twenty to win.</p>
+      <div class="legend">
+        <span><canvas id="lg-stripe" width="76" height="76"></canvas>MATCH 4<br>clears a line</span>
+        <span><canvas id="lg-bomb" width="76" height="76"></canvas>L OR T<br>blasts 3×3</span>
+        <span><canvas id="lg-color" width="76" height="76"></canvas>MATCH 5<br>clears a colour</span>
+      </div>
+      <p><span class="k">CLICK</span> a gem then a neighbour, or <span class="k">DRAG</span> one into the other <br>
+        <span class="k">ARROWS</span> move · <span class="k">SPACE</span> picks up · <span class="k">P</span> pause · Swap two specials for something bigger</p>
+      <button class="btn" id="play-btn">MATCH</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>BEST CASCADE</span><b id="o-cascade">×0</b></div>
+        <div><span>SPECIALS</span><b id="o-specials">0</b></div>
+        <div><span><span class="only-infinite">GEMS</span><span class="only-classic">LEVEL</span></span><b id="o-gems">0</b></div>
+      </div>
+      <p class="only-infinite">The board is already glowing again.</p>
+      <button class="btn" id="again-btn">MATCH AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="match3.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

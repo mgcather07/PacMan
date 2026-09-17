@@ -19,6 +19,7 @@
     "centipede",
     "tanks",
     "pyramid",
+    "match3",
     "klondike",
     "spider",
     "freecell"
@@ -240,6 +241,16 @@
       "solitaire",
       "time"
     ],
+    "match3": [
+      "match3",
+      "infinite",
+      "score"
+    ],
+    "match3-classic": [
+      "match3",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -366,6 +377,11 @@
       20000,
       200,
       0
+    ],
+    "match3": [
+      20000,
+      1200,
+      2
     ],
     "klondike": [
       50000,
