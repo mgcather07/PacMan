@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Profile — Infinite Arcade</title>
+  <meta name="description" content="Your arcade player card: level, avatar, achievements, personal bests and settings.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; min-height: 100%; }
+    body { background: radial-gradient(ellipse at 50% -10%, #2a1a52 0%, #05050f 55%) fixed, #05050f; color: #eee; font-family: Inter, system-ui, sans-serif; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 22px 22px; }
+    main { position: relative; max-width: 1040px; margin: 0 auto; padding: clamp(18px, 3.5vh, 36px) 16px 64px; }
+    .px { font-family: "Press Start 2P", monospace; font-weight: normal; }
+    button { font: inherit; }
+
+    /* ---- player card ---- */
+    .hero { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; padding: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, #1a1236f0, #0c0a18f0); border: 1px solid #c77dff55; box-shadow: 5px 5px 0 #2a1450; overflow: hidden; }
+    .hero::after { content: 'PLAYER CARD'; position: absolute; top: 12px; right: 14px; font: 7px "Press Start 2P", monospace; color: #c77dff88; letter-spacing: 2px; }
+    .big-av { position: relative; width: 112px; height: 112px; display: grid; place-items: center; border-radius: 8px; font-size: 58px; line-height: 1; cursor: pointer;
+      background: color-mix(in srgb, var(--av, #ff3b5c) 24%, #0b0b16); border: 3px solid var(--av, #ff3b5c); box-shadow: 4px 4px 0 color-mix(in srgb, var(--av, #ff3b5c) 35%, #000), 0 0 30px color-mix(in srgb, var(--av, #ff3b5c) 30%, transparent); color: #fff; }
+    .big-av.letter { font: 44px "Press Start 2P", monospace; }
+    .big-av .edit { position: absolute; right: -8px; bottom: -8px; font-size: 13px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #ffe600; color: #000; box-shadow: 2px 2px 0 #000; }
+    .big-av:hover { transform: translate(-1px, -1px); }
+    .id { min-width: 0; }
+    .name-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    h1 { margin: 0; font: clamp(16px, 3.6vw, 26px)/1.35 "Press Start 2P", monospace; color: #fff; text-shadow: 3px 3px 0 #2a1450; overflow-wrap: anywhere; }
+    .tbtn { font: 8px/1 "Press Start 2P", monospace; text-transform: uppercase; color: #ffe600; background: #ffe6000f; border: 1px solid #ffe60066; border-radius: 4px; padding: 8px 9px 7px; cursor: pointer; }
+    .tbtn:hover { background: #ffe60024; }
+    .title { margin: 10px 0 12px; font: 10px/1.6 "Press Start 2P", monospace; color: #c77dff; text-transform: uppercase; }
+    .title b { font-weight: normal; color: #ffe600; }
+    .xp { position: relative; height: 14px; border-radius: 3px; background: #000; border: 1px solid #ffffff2a; overflow: hidden; max-width: 460px; }
+    .xp i { position: absolute; inset: 0 auto 0 0; width: 0; background: repeating-linear-gradient(90deg, #ffe600 0 10px, #ffc400 10px 12px); box-shadow: 0 0 12px #ffe60088; transition: width .8s cubic-bezier(.2, .8, .2, 1); }
+    .xp-t { display: flex; justify-content: space-between; max-width: 460px; margin-top: 7px; font: 7px/1.4 "Press Start 2P", monospace; color: #9a9ab8; }
+    .xp-t b { font-weight: normal; color: #ffe600; }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+    .badges span { font: 7px/1 "Press Start 2P", monospace; text-transform: uppercase; padding: 6px 7px 5px; border-radius: 3px; color: #cfcfe6; background: #ffffff0a; border: 1px solid #ffffff2a; }
+    .badges .ok { color: #3cff8a; border-color: #3cff8a66; background: #3cff8a12; }
+    .badges .warn { color: #3fd8ff; border-color: #3fd8ff66; background: #3fd8ff12; cursor: pointer; }
+
+    .name-form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .name-form input { flex: 1 1 180px; min-width: 0; font: 700 16px Inter, system-ui, sans-serif; padding: 10px 12px; border-radius: 4px; border: 1px solid #ffffff40; background: #000a; color: #fff; }
+    .name-form input:focus { outline: 2px solid #ffe600; border-color: transparent; }
+    .msg { font-size: 13px; color: #bbb; min-height: 18px; margin-top: 6px; }
+    .msg.err { color: #ff8a8a; } .msg.ok { color: #7dff6a; }
+
+    /* ---- avatar picker ---- */
+    .picker { margin-top: 16px; padding: 18px; border-radius: 6px; background: #0c0a18f2; border: 1px solid #ffe60055; box-shadow: 4px 4px 0 #3a3000; }
+    .picker h3, .section h2 { margin: 0 0 12px; font: 10px/1.5 "Press Start 2P", monospace; color: #ffe600; text-transform: uppercase; }
+    .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+    .icons button { position: relative; aspect-ratio: 1; font-size: 26px; line-height: 1; border-radius: 6px; cursor: pointer; background: #ffffff08; border: 1px solid #ffffff1f; color: #fff; }
+    .icons button:hover:not(:disabled) { border-color: #ffe60088; transform: translateY(-2px); }
+    .icons button[aria-pressed="true"] { border: 2px solid #ffe600; background: #ffe6001a; box-shadow: 0 0 12px #ffe60055; }
+    .icons button:disabled { cursor: not-allowed; filter: grayscale(1); opacity: .35; }
+    .icons button:disabled::after { content: '🔒'; position: absolute; right: 2px; bottom: 2px; font-size: 11px; filter: none; }
+    .colors { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+    .colors button { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; background: var(--c); border: 3px solid #0c0a18; box-shadow: 0 0 0 1px #ffffff33; }
+    .colors button[aria-pressed="true"] { box-shadow: 0 0 0 3px #fff; }
+    .hint { font-size: 12px; color: #8a8aa6; margin: 8px 0 0; }
+
+    /* ---- buttons ---- */
+    .abtn { display: inline-flex; justify-content: center; align-items: center; gap: 8px; font: 10px/1.4 "Press Start 2P", monospace; text-transform: uppercase; text-decoration: none; cursor: pointer;
+      color: #0b0b12; padding: 12px 14px 11px; border-radius: 4px; border: 1px solid #ffe600; background: #ffe600; box-shadow: 3px 3px 0 #6b5a00; transition: transform .1s, box-shadow .1s; }
+    .abtn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #6b5a00; }
+    .abtn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #6b5a00; }
+    .abtn.ghost { color: #ffe600; background: #ffe6000f; border-color: #ffe60066; }
+    .abtn:disabled { opacity: .5; cursor: default; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* ---- tabs ---- */
+    .tabs { display: flex; gap: 6px; padding: 5px; margin: 26px 0 18px; border-radius: 6px; background: #ffffff0a; border: 1px solid #ffffff1a; overflow-x: auto; scrollbar-width: none; }
+    .tabs button { flex: 1 0 auto; font: 9px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 12px 12px 11px; cursor: pointer; white-space: nowrap; }
+    .tabs button:hover { color: #fff; }
+    .tabs button[aria-selected="true"] { background: #ffe600; color: #111; box-shadow: 2px 2px 0 #6b5a00; }
+    .tabs b { font-weight: normal; opacity: .7; }
+    .tabs .sm { display: none; }
+
+    /* ---- sections ---- */
+    .section { margin-bottom: 22px; }
+    .panel { padding: 16px 18px; border-radius: 6px; background: #0c0a18d9; border: 1px solid #ffffff1c; box-shadow: 4px 4px 0 #000; }
+    .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .stat { padding: 14px 12px; border-radius: 6px; background: #0c0a18d9; border: 1px solid var(--c, #ffffff22); box-shadow: 3px 3px 0 color-mix(in srgb, var(--c, #fff) 18%, #000); text-align: center; }
+    .stat .v { font: 18px/1.2 "Press Start 2P", monospace; color: var(--c, #fff); text-shadow: 2px 2px 0 #000; }
+    .stat .l { margin-top: 8px; font: 7px/1.5 "Press Start 2P", monospace; color: #9a9ab8; text-transform: uppercase; }
+    .cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; }
+
+    .fav { display: grid; gap: 10px; }
+    .fav a { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; color: #eee; text-decoration: none; }
+    .fav .ic { font-size: 20px; text-align: center; }
+    .fav .bar { height: 12px; border-radius: 2px; background: #ffffff0d; overflow: hidden; }
+    .fav .bar i { display: block; height: 100%; background: var(--acc); box-shadow: 0 0 8px var(--acc); }
+    .fav .nm { font: 8px/1 "Press Start 2P", monospace; color: var(--acc); margin-bottom: 6px; text-transform: uppercase; }
+    .fav .n { font: 9px "Press Start 2P", monospace; color: #cfcfe6; }
+
+    .empty { text-align: center; color: #8a8aa6; font: 8px/2 "Press Start 2P", monospace; text-transform: uppercase; padding: 18px 0; }
+    .empty a { color: #ffe600; }
+
+    /* ---- achievements ---- */
+    .ach-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .ach-head h2 { margin: 0; }
+    .filters { display: flex; gap: 4px; }
+    .filters button { font: 8px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: #ffffff08; border: 1px solid #ffffff1c; border-radius: 4px; padding: 8px 9px 7px; cursor: pointer; }
+    .filters button[aria-pressed="true"] { color: #fff; border-color: #ffe60088; background: #ffe6001a; }
+    .achs { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    .achs[data-filter="done"] .ach:not(.done), .achs[data-filter="locked"] .ach.done { display: none; }
+    .ach { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center; padding: 12px; border-radius: 6px; background: #0c0a18d9; border: 1px solid #ffffff17; }
+    .ach .ic { width: 52px; height: 52px; display: grid; place-items: center; font-size: 28px; border-radius: 6px; background: #ffffff08; border: 1px dashed #ffffff26; filter: grayscale(1); opacity: .45; }
+    .ach .nm { font: 9px/1.5 "Press Start 2P", monospace; color: #cfcfe6; text-transform: uppercase; }
+    .ach .ds { font-size: 12.5px; color: #9a9ab8; margin: 4px 0 7px; line-height: 1.35; }
+    .ach .pr { display: flex; align-items: center; gap: 8px; font: 7px "Press Start 2P", monospace; color: #8a8aa6; }
+    .ach .pr .bar { flex: 1; height: 6px; border-radius: 2px; background: #ffffff10; overflow: hidden; }
+    .ach .pr .bar i { display: block; height: 100%; background: #9a9ab8; }
+    .ach.done { border-color: #ffd70077; background: linear-gradient(135deg, #ffd70014, #0c0a18d9 60%); box-shadow: 3px 3px 0 #3a3000; }
+    .ach.done .ic { filter: none; opacity: 1; border: 1px solid #ffd700aa; background: #ffd7001c; box-shadow: 0 0 14px #ffd70044; }
+    .ach.done .nm { color: #ffd700; }
+    .ach.done .pr { color: #ffd700; }
+    .ach .pts { margin-left: auto; white-space: nowrap; }
+
+    /* ---- personal bests ---- */
+    .bests { display: grid; gap: 8px; }
+    .best { --acc: #ffe600; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 6px; background: #0c0a18d9;
+      border: 1px solid color-mix(in srgb, var(--acc) 30%, transparent); border-left: 4px solid var(--acc); color: #eee; text-decoration: none; }
+    .best:hover { background: color-mix(in srgb, var(--acc) 8%, #0c0a18); }
+    .best .ic { font-size: 22px; text-align: center; }
+    .best .t { font: 8px/1.6 "Press Start 2P", monospace; color: var(--acc); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .best .k { font-size: 12px; color: #8a8aa6; }
+    .best .v { font: 11px "Press Start 2P", monospace; color: #fff; text-align: right; }
+    .best .r { min-width: 86px; text-align: right; font: 9px/1.6 "Press Start 2P", monospace; color: #cfcfe6; }
+    .best .r small { display: block; font-size: 7px; color: #8a8aa6; }
+    .group-t { margin: 18px 0 10px; font: 8px "Press Start 2P", monospace; color: #9a9ab8; text-transform: uppercase; letter-spacing: 1px; }
+    .group-t:first-child { margin-top: 0; }
+
+    /* ---- settings ---- */
+    .settings { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+    .toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid #ffffff12; }
+    .toggle:first-of-type { border-top: 0; }
+    .toggle b { display: block; font-size: 15px; }
+    .toggle small { color: #8a8aa6; font-size: 13px; }
+    .switch { flex: none; position: relative; width: 58px; height: 30px; border-radius: 4px; background: #000; border: 1px solid #ffffff33; cursor: pointer; }
+    .switch::after { content: 'OFF'; position: absolute; top: 3px; left: 3px; width: 26px; height: 22px; border-radius: 2px; background: #555; display: grid; place-items: center; font: 6px "Press Start 2P", monospace; color: #ccc; transition: left .15s, background .15s; }
+    .switch[aria-checked="true"] { border-color: #3cff8a88; }
+    .switch[aria-checked="true"]::after { content: 'ON'; left: 29px; background: #3cff8a; color: #002a10; }
+    .settings .lb-acct { box-shadow: none; border: 0; background: transparent; padding: 0; text-align: left; }
+    .settings .lb-acct-row { justify-content: flex-start; }
+    .pid { font-size: 12px; color: #6f6f88; margin-top: 14px; }
+
+    .skel { height: 120px; border-radius: 6px; background: linear-gradient(90deg, #ffffff06, #ffffff12, #ffffff06); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    @media (max-width: 860px) { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .cols, .settings { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) {
+      .tabs .em, .tabs .lg, .tabs b { display: none; }
+      .tabs .sm { display: inline; }
+      .tabs button { font-size: 8px; padding: 11px 6px 10px; }
+      .hero { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 26px 16px 18px; }
+      .name-row, .badges { justify-content: center; }
+      .xp, .xp-t { margin-left: auto; margin-right: auto; width: 100%; }
+      .big-av { width: 96px; height: 96px; font-size: 50px; }
+      .stats { gap: 8px; } .stat { padding: 12px 6px; } .stat .v { font-size: 14px; }
+      .best { grid-template-columns: 32px minmax(0, 1fr) auto; }
+      .best .v { grid-column: 2; text-align: left; font-size: 10px; }
+      .best .r { grid-row: 1 / span 2; grid-column: 3; min-width: 0; }
+      .achs { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { .skel { animation: none; } .xp i { transition: none; } }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <nav id="site-nav"></nav>
+  <main>
+    <section class="hero" id="hero">
+      <button type="button" class="big-av letter" id="big-av" aria-label="Change avatar"><span id="av-glyph">?</span><span class="edit" aria-hidden="true">✏️</span></button>
+      <div class="id">
+        <div class="name-row" id="name-row">
+          <h1 id="name">GUEST</h1>
+          <button type="button" class="tbtn" id="rename">Edit name</button>
+        </div>
+        <div class="title" id="title">LV 1 · <b>ROOKIE</b></div>
+        <div class="xp"><i id="xp-fill"></i></div>
+        <div class="xp-t"><span id="xp-text"><b>0</b> / 40 XP</span><span id="xp-next">Next level: 40 XP</span></div>
+        <div class="badges" id="badges"></div>
+      </div>
+    </section>
+
+    <section class="picker" id="picker" hidden>
+      <h3>Choose your avatar</h3>
+      <div class="icons" id="icons"></div>
+      <div class="colors" id="colors"></div>
+      <div class="row">
+        <button type="button" class="abtn" id="save-av">Save avatar</button>
+        <button type="button" class="abtn ghost" id="cancel-av">Cancel</button>
+      </div>
+      <div class="msg" id="av-msg"></div>
+      <p class="hint">🔒 Locked avatars unlock with achievements. Your avatar shows next to your name on every leaderboard.</p>
+    </section>
+
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="overview" aria-selected="true"><span class="em">📊 </span>Overview</button>
+      <button role="tab" data-tab="achievements" aria-selected="false"><span class="em">🏆 </span><span class="lg">Achievements</span><span class="sm">Awards</span> <b id="ach-count"></b></button>
+      <button role="tab" data-tab="bests" aria-selected="false"><span class="em">⭐ </span><span class="lg">Personal bests</span><span class="sm">Bests</span></button>
+      <button role="tab" data-tab="settings" aria-selected="false"><span class="em">⚙️ </span>Settings</button>
+    </nav>
+
+    <section data-panel="overview">
+      <div class="stats" id="stats"></div>
+      <div class="cols">
+        <div class="section panel"><h2>Up next</h2><div id="next-achs"></div></div>
+        <div class="section panel"><h2>Most played</h2><div class="fav" id="fav"></div></div>
+      </div>
+      <div class="section panel"><h2>Best ranks</h2><div class="bests" id="top-ranks"></div></div>
+    </section>
+
+    <section data-panel="achievements" hidden>
+      <div class="ach-head">
+        <h2 class="px" style="font-size:10px;color:#ffe600" id="ach-title">ACHIEVEMENTS</h2>
+        <div class="filters" id="ach-filters">
+          <button type="button" data-f="all" aria-pressed="true">All</button>
+          <button type="button" data-f="done" aria-pressed="false">Unlocked</button>
+          <button type="button" data-f="locked" aria-pressed="false">Locked</button>
+        </div>
+      </div>
+      <div class="achs" id="achs" data-filter="all"></div>
+    </section>
+
+    <section data-panel="bests" hidden>
+      <div id="bests"></div>
+    </section>
+
+    <section data-panel="settings" hidden>
+      <div class="settings">
+        <div class="panel"><h2 class="px" style="font-size:10px;color:#ffe600;margin:0 0 12px">☁️ Account</h2><div id="account"></div><div class="pid" id="pid"></div></div>
+        <div class="panel">
+          <h2 class="px" style="font-size:10px;color:#ffe600;margin:0 0 6px">🔊 Sound</h2>
+          <div class="toggle"><div><b>Menu music</b><small>Chiptune on title screens and arcade pages</small></div><button type="button" role="switch" class="switch" id="sw-music" aria-label="Menu music"></button></div>
+          <div class="toggle"><div><b>Sound effects</b><small>Blips, crashes and power-ups in games</small></div><button type="button" role="switch" class="switch" id="sw-sound" aria-label="Sound effects"></button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="/shared/nav.js"></script>
+  <script type="module">
+    import { AVATARS, COLORS, ACHIEVEMENTS } from '/shared/achievements.js';
+    const LB = window.Leaderboard;
+    LB.injectCss();
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (n) => Number(n || 0).toLocaleString();
+    const GAME_ORDER = Object.keys(LB.DAILY_GAMES);
+    let data = null;
+
+    // ---------------- tabs ----------------
+    const TABS = ['overview', 'achievements', 'bests', 'settings'];
+    function showTab(tab) {
+      document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+      document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== tab; });
+      history.replaceState(null, '', tab === 'overview' ? location.pathname : '#' + tab);
+    }
+    document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    showTab(TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview');
+
+    // ---------------- hero ----------------
+    function renderHero() {
+      const name = LB.cachedName();
+      const look = LB.cachedAvatar();
+      $('name').textContent = name || 'GUEST';
+      $('rename').textContent = name ? 'Edit name' : 'Add your name';
+      const av = $('big-av');
+      av.classList.toggle('letter', !look);
+      av.style.setProperty('--av', look ? look.color : '#ff3b5c');
+      $('av-glyph').textContent = look ? look.icon : (name || '?').charAt(0).toUpperCase();
+      const acct = LB.account();
+      const badges = [];
+      badges.push(acct.signedIn ? '<span class="ok">☁️ Synced with Google</span>' : '<span class="warn" data-go="settings">☁️ Guest on this device · sync</span>');
+      if (!data) {
+        const cached = LB.cachedLevel();
+        $('title').innerHTML = cached ? `LV ${cached.level} · <b>${esc(cached.title.toUpperCase())}</b>` : 'LOADING…';
+        $('xp-text').textContent = '';
+        $('xp-next').textContent = '';
+      } else {
+        const s = LB.streak();
+        if (s.current) badges.push(`<span>🔥 ${s.current}-day streak</span>`);
+        const since = data.player.firstSeenAt && data.player.firstSeenAt.toDate ? data.player.firstSeenAt.toDate() : null;
+        if (since) badges.push(`<span>Since ${since.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>`);
+        const L = data.level;
+        $('title').innerHTML = `LV ${L.level} · <b>${esc(L.title.toUpperCase())}</b>`;
+        const pct = Math.max(0, Math.min(100, ((L.xp - L.floor) / (L.next - L.floor)) * 100));
+        $('xp-fill').style.width = pct + '%';
+        $('xp-text').innerHTML = `<b>${num(L.xp)}</b> / ${num(L.next)} XP`;
+        $('xp-next').textContent = `${num(L.next - L.xp)} XP to LV ${L.level + 1}`;
+      }
+      $('badges').innerHTML = badges.join('');
+      const go = $('badges').querySelector('[data-go]');
+      if (go) go.addEventListener('click', () => showTab('settings'));
+    }
+
+    function editName() {
+      const row = $('name-row');
+      const prev = row.innerHTML;
+      row.innerHTML = `<form class="name-form" style="width:100%"><input maxlength="16" placeholder="Your name" aria-label="Your name" value="${esc(LB.cachedName())}"><button class="abtn" type="submit">Save</button><button class="abtn ghost" type="button">Cancel</button></form><div class="msg" style="width:100%"></div>`;
+      const form = row.querySelector('form');
+      const input = form.querySelector('input');
+      const msg = row.querySelector('.msg');
+      input.focus();
+      const restore = () => { row.innerHTML = prev; $('rename').addEventListener('click', editName); renderHero(); };
+      form.querySelector('.ghost').addEventListener('click', restore);
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg.className = 'msg'; msg.textContent = 'Saving…';
+        form.querySelectorAll('input, button').forEach((el) => { el.disabled = true; });
+        try { await LB.setName(input.value); restore(); } catch (err) {
+          msg.className = 'msg err';
+          msg.textContent = err && err.message === 'bad-name' ? 'Use 1–16 letters, numbers or spaces (keep it friendly).' : 'Couldn’t save — check your connection.';
+          form.querySelectorAll('input, button').forEach((el) => { el.disabled = false; });
+        }
+      });
+    }
+    $('rename').addEventListener('click', editName);
+
+    // ---------------- avatar picker ----------------
+    let pick = null;
+    function openPicker() {
+      const look = LB.cachedAvatar() || {};
+      const done = new Set(data ? data.achievements.filter((a) => a.done).map((a) => a.id) : []);
+      const byId = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
+      pick = { icon: look.icon || AVATARS[0].icon, color: look.color || COLORS[0] };
+      $('icons').innerHTML = AVATARS.map((a) => {
+        const locked = a.unlock && !done.has(a.unlock);
+        const tip = locked ? `Unlock with “${byId[a.unlock].name}”: ${byId[a.unlock].desc}` : a.icon;
+        return `<button type="button" data-icon="${a.icon}" ${locked ? 'disabled' : ''} title="${esc(tip)}" aria-label="${esc(tip)}" aria-pressed="${a.icon === pick.icon}">${a.icon}</button>`;
+      }).join('');
+      $('colors').innerHTML = COLORS.map((c) => `<button type="button" data-color="${c}" style="--c:${c}" aria-label="Color ${c}" aria-pressed="${c === pick.color}"></button>`).join('');
+      $('av-msg').textContent = '';
+      $('picker').hidden = false;
+      $('picker').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      preview();
+    }
+    function preview() {
+      document.querySelectorAll('#icons button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.icon === pick.icon)));
+      document.querySelectorAll('#colors button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.color === pick.color)));
+      const av = $('big-av');
+      av.classList.remove('letter');
+      av.style.setProperty('--av', pick.color);
+      $('av-glyph').textContent = pick.icon;
+    }
+    $('big-av').addEventListener('click', openPicker);
+    $('icons').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && !b.disabled) { pick.icon = b.dataset.icon; preview(); } });
+    $('colors').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { pick.color = b.dataset.color; preview(); } });
+    $('cancel-av').addEventListener('click', () => { $('picker').hidden = true; renderHero(); });
+    $('save-av').addEventListener('click', async () => {
+      const btn = $('save-av');
+      btn.disabled = true;
+      $('av-msg').className = 'msg'; $('av-msg').textContent = 'Saving…';
+      try {
+        await LB.setAvatar(pick.icon, pick.color);
+        $('picker').hidden = true;
+        load();
+      } catch (e) {
+        $('av-msg').className = 'msg err'; $('av-msg').textContent = 'Couldn’t save your avatar — check your connection.';
+      }
+      btn.disabled = false;
+    });
+
+    // ---------------- overview ----------------
+    const fmtBest = (e) => (LB.info(e.board).type === 'time' ? LB.fmtTime(e.time) : num(e.score));
+    const medal = (r) => (r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : '');
+
+    function bestRow(e) {
+      const meta = LB.info(e.board);
+      const game = LB.gameOf(e.board);
+      const kind = meta.type === 'time' ? 'Fastest win' : 'High score';
+      return `<a class="best" href="${meta.href}" style="--acc:${LB.COLORS[game] || '#ffe600'}">
+        <span class="ic">${LB.ICONS[game] || '🎮'}</span>
+        <span style="min-width:0"><div class="t">${esc(meta.title)}</div><div class="k">${kind}</div></span>
+        <span class="v">${fmtBest(e)}</span>
+        <span class="r">${e.rank ? `${medal(e.rank)} #${num(e.rank)}<small>of ${num(e.total)}</small>` : '—'}</span>
+      </a>`;
+    }
+
+    function renderOverview() {
+      const { player, entries, achievements } = data;
+      const s = LB.streak();
+      const unlocked = achievements.filter((a) => a.done).length;
+      const stats = [
+        [num(player.totalPlays), 'Games played', '#3fd8ff'],
+        [num(player.dailyFinishes), 'Daily finishes', '#ff3b5c'],
+        [s.current, 'Day streak', '#ff9f1c'],
+        [Math.max(player.bestStreak || 0, s.best), 'Best streak', '#ffb347'],
+        [entries.filter((e) => !/^daily-/.test(e.board)).length, 'Boards', '#3cff8a'],
+        [`${unlocked}/${achievements.length}`, 'Achievements', '#ffd700'],
+      ];
+      $('stats').innerHTML = stats.map(([v, l, c]) => `<div class="stat" style="--c:${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+      const next = achievements.filter((a) => !a.done).sort((a, b) => b.cur / b.max - a.cur / a.max).slice(0, 3);
+      $('next-achs').innerHTML = next.length
+        ? `<div class="achs" style="grid-template-columns:1fr">${next.map(achCard).join('')}</div>`
+        : '<div class="empty">Every achievement unlocked. Legend! 👑</div>';
+
+      const plays = player.plays || {};
+      const fav = GAME_ORDER.filter((g) => plays[g]).sort((a, b) => plays[b] - plays[a]).slice(0, 5);
+      const max = fav.length ? plays[fav[0]] : 1;
+      $('fav').innerHTML = fav.length
+        ? fav.map((g) => `<a href="${LB.DAILY_GAMES[g][2]}" style="--acc:${LB.COLORS[g]}"><span class="ic">${LB.ICONS[g]}</span><span><div class="nm">${esc(LB.DAILY_GAMES[g][0])}</div><div class="bar"><i style="width:${Math.max(4, (plays[g] / max) * 100)}%"></i></div></span><span class="n">${num(plays[g])}</span></a>`).join('')
+        : '<div class="empty">No games yet.<br><a href="/">Pick one ▶</a></div>';
+
+      const ranked = entries.filter((e) => e.rank && !/^daily-/.test(e.board)).sort((a, b) => a.rank - b.rank || a.total - b.total).slice(0, 5);
+      $('top-ranks').innerHTML = ranked.length ? ranked.map(bestRow).join('') : '<div class="empty">Post a score to get ranked.<br><a href="/leaderboards/">See the leaderboards ▶</a></div>';
+    }
+
+    // ---------------- achievements ----------------
+    function achCard(a) {
+      const pct = Math.round((a.cur / a.max) * 100);
+      return `<div class="ach${a.done ? ' done' : ''}">
+        <span class="ic" aria-hidden="true">${a.icon}</span>
+        <span><div class="nm">${esc(a.name)}</div><div class="ds">${esc(a.desc)}</div>
+        <div class="pr">${a.done ? '<span>✓ UNLOCKED</span>' : `<span class="bar"><i style="width:${pct}%"></i></span><span>${num(a.cur)}/${num(a.max)}</span>`}<span class="pts">${a.points} XP</span></div></span>
+      </div>`;
+    }
+    function renderAchievements() {
+      const list = data.achievements;
+      const unlocked = list.filter((a) => a.done).length;
+      $('ach-count').textContent = `${unlocked}/${list.length}`;
+      $('ach-title').textContent = `ACHIEVEMENTS · ${unlocked}/${list.length}`;
+      $('achs').innerHTML = [...list].sort((a, b) => (b.done - a.done)).map(achCard).join('');
+    }
+    $('ach-filters').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      $('ach-filters').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      $('achs').dataset.filter = b.dataset.f;
+    });
+
+    // ---------------- personal bests ----------------
+    function renderBests() {
+      const groups = ['Infinite', 'Classic', 'Solitaire', 'Daily'];
+      const order = Object.keys(LB.BOARDS);
+      const html = groups.map((g) => {
+        let rows = data.entries.filter((e) => LB.info(e.board).group === g);
+        if (g === 'Daily') rows = rows.sort((a, b) => b.board.slice(-8) - a.board.slice(-8)).slice(0, 11);
+        else rows = rows.sort((a, b) => order.indexOf(a.board) - order.indexOf(b.board));
+        if (!rows.length) return '';
+        return `<div class="group-t">${g === 'Daily' ? '📅 Recent daily challenges' : g === 'Infinite' ? '∞ Infinite' : g === 'Classic' ? '🏆 Classic' : '🃏 Solitaire'}</div><div class="bests">${rows.map(bestRow).join('')}</div>`;
+      }).join('');
+      $('bests').innerHTML = html || '<div class="panel empty">No scores posted yet.<br>Finish a game to put your name on a leaderboard.<br><a href="/">Play now ▶</a></div>';
+    }
+
+    // ---------------- settings ----------------
+    function renderSettings() {
+      const acct = $('account');
+      if (!acct.firstChild) LB.accountPanel(acct, { inline: true });
+      const music = (() => { try { return localStorage.getItem('arcade.music') !== 'off'; } catch (e) { return true; } })();
+      const sound = (() => { try { return JSON.parse(localStorage.getItem('arcade.sound') ?? 'true') !== false; } catch (e) { return true; } })();
+      $('sw-music').setAttribute('aria-checked', String(music));
+      $('sw-sound').setAttribute('aria-checked', String(sound));
+      if (data) $('pid').textContent = `Player ID ${data.uid.slice(0, 8)}`;
+    }
+    $('sw-music').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = $('sw-music').getAttribute('aria-checked') !== 'true';
+      try { localStorage.setItem('arcade.music', on ? 'on' : 'off'); } catch (err) { /* ignore */ }
+      if (window.ArcadeMusic) { if (on) ArcadeMusic.start(); else ArcadeMusic.stop(); }
+      renderSettings();
+    });
+    $('sw-sound').addEventListener('click', () => {
+      const on = $('sw-sound').getAttribute('aria-checked') !== 'true';
+      try { localStorage.setItem('arcade.sound', JSON.stringify(on)); } catch (err) { /* ignore */ }
+      renderSettings();
+    });
+
+    // ---------------- load ----------------
+    function skeleton() {
+      $('stats').innerHTML = Array.from({ length: 6 }, () => '<div class="skel" style="height:78px"></div>').join('');
+      ['next-achs', 'fav', 'top-ranks', 'achs', 'bests'].forEach((id) => { $(id).innerHTML = '<div class="skel"></div>'; });
+    }
+    async function load() {
+      try {
+        data = await LB.summary({ ranks: true });
+        LB.markAchievementsSeen(data.achievements);
+        renderHero(); renderOverview(); renderAchievements(); renderBests(); renderSettings();
+      } catch (e) {
+        console.error('[profile] load failed', e);
+        $('stats').innerHTML = '<div class="panel empty" style="grid-column:1/-1">Couldn’t load your profile — check your connection and refresh.</div>';
+        ['next-achs', 'fav', 'top-ranks', 'achs', 'bests'].forEach((id) => { $(id).innerHTML = ''; });
+      }
+    }
+    renderHero();
+    renderSettings();
+    skeleton();
+    load();
+    LB.onName(() => renderHero());
+    LB.onAccount(() => { renderHero(); load(); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted) load(); });
+  </script>
+  <script src="/shared/music.js"></script>
+  <script>ArcadeMusic.mount();</script>
+</body>
+</html>

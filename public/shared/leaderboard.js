@@ -78,7 +78,16 @@
     if (!fbPromise) {
       fbPromise = (async () => {
         const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
-        if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+        const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+        // local development against the Firebase emulators: open any page with ?emulators (remembered for the tab)
+        let emulators = false;
+        if (local) {
+          try {
+            if (new URLSearchParams(location.search).has('emulators')) sessionStorage.setItem('arcade.emulators', '1');
+            emulators = sessionStorage.getItem('arcade.emulators') === '1';
+          } catch (e) { /* ignore */ }
+        }
+        if (local && !emulators) {
           // local development: use a registered App Check debug token (or print a new one to the console)
           let token = null;
           try { token = localStorage.getItem('appcheck.debug'); } catch (e) { /* ignore */ }
@@ -91,13 +100,23 @@
           import(`${base}/firebase-firestore-lite.js`),
           import(`${base}/firebase-functions.js`),
         ]), 20000, 'loading Firebase');
-        const app = appMod.initializeApp(CONFIG, 'arcade-leaderboards');
-        checkMod.initializeAppCheck(app, { provider: new checkMod.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
+        const app = appMod.initializeApp(emulators ? { ...CONFIG, projectId: 'demo-arcade' } : CONFIG, 'arcade-leaderboards');
+        const provider = emulators
+          // the emulators don't verify App Check tokens, so an unsigned one will do
+          ? new checkMod.CustomProvider({ getToken: async () => ({ token: `e30.${btoa(JSON.stringify({ sub: CONFIG.appId, aud: ['projects/demo-arcade'], exp: Math.floor(Date.now() / 1000) + 3600 })).replace(/=+$/, '')}.x`, expireTimeMillis: Date.now() + 3600000 }) })
+          : new checkMod.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY);
+        checkMod.initializeAppCheck(app, { provider, isTokenAutoRefreshEnabled: true });
         const auth = authMod.getAuth(app);
         const functions = fnMod.getFunctions(app, 'us-central1');
+        if (emulators) {
+          authMod.connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+          fnMod.connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+        }
         const call = async (name, data) => (await fnMod.httpsCallable(functions, name, { timeout: 30000 })(data)).data;
         authMod.onAuthStateChanged(auth, authChanged);
-        return (fbLoaded = { fs, db: fs.getFirestore(app), auth, authMod, call });
+        const db = fs.getFirestore(app);
+        if (emulators) fs.connectFirestoreEmulator(db, '127.0.0.1', 8080);
+        return (fbLoaded = { fs, db, auth, authMod, call });
       })().catch((e) => { fbPromise = null; throw e; });
     }
     return fbPromise;
@@ -125,6 +144,8 @@
     return withTimeout(fb.call(name, data), 35000, name);
   }
 
+  // per-game accent colors, shared by the site pages
+  const COLORS = { pacman: '#ffe600', snake: '#3cff8a', minesweeper: '#c5ec7a', frogger: '#7dff6a', breakout: '#3fd8ff', asteroids: '#ffb347', tetris: '#c77dff', shooter: '#ff6b8a', klondike: '#7ee2a8', spider: '#5fd4e0', freecell: '#b8e986' };
   const ICONS = { pacman: '🟡', snake: '🐍', minesweeper: '💣', frogger: '🐸', breakout: '🧱', asteroids: '☄️', tetris: '🟪', shooter: '🚀', klondike: '🂡', spider: '🕷️', freecell: '🃏' };
   const gameOf = (board) => {
     const m = /^daily-([a-z]+)-\d{8}$/.exec(board || '');
@@ -214,6 +235,13 @@
   }
   const cachedName = () => { try { return localStorage.getItem('arcade.name') || ''; } catch (e) { return ''; } };
   const cacheName = (n) => { try { localStorage.setItem('arcade.name', n); } catch (e) { /* ignore */ } };
+  const cachedAvatar = () => { try { return JSON.parse(localStorage.getItem('arcade.avatar') || 'null'); } catch (e) { return null; } };
+  const cacheAvatar = (p) => { try { if (p && p.avatar) localStorage.setItem('arcade.avatar', JSON.stringify({ icon: p.avatar, color: p.color || '#ff3b5c' })); else localStorage.removeItem('arcade.avatar'); } catch (e) { /* ignore */ } };
+  // avatar tile: the chosen icon on its color, or the name's first letter
+  function avatarHtml(name, look, cls = 'lb-avatar') {
+    if (look && look.icon) return `<span class="${cls} has-icon" style="--av:${esc(look.color || '#ff3b5c')}" aria-hidden="true">${esc(look.icon)}</span>`;
+    return `<span class="${cls}" aria-hidden="true">${esc((name || '?').charAt(0).toUpperCase())}</span>`;
+  }
   const nameListeners = new Set();
   const notifyName = (name) => nameListeners.forEach((fn) => { try { fn(name); } catch (e) { console.error('[leaderboard] name listener', e); } });
 
@@ -252,6 +280,7 @@
         const snap = await withTimeout(fs.getDoc(fs.doc(db, 'players', u.uid)), 12000, 'reading profile');
         const data = snap.exists() ? snap.data() : {};
         if (data.name) cacheName(data.name);
+        if (snap.exists()) cacheAvatar(data);
         cacheDays(data.days || [], data.bestStreak || 0);
         return { name: data.name || '', streak: streak() };
       })().catch((e) => { profilePromise = null; throw e; });
@@ -273,6 +302,78 @@
     if (window.Analytics) Analytics.event('name_set');
     return name;
   }
+
+  async function setAvatar(icon, color) {
+    const res = await call('setAvatar', { icon, color });
+    cacheAvatar({ avatar: res.icon, color: res.color });
+    notifyName(cachedName());
+    if (window.Analytics) Analytics.event('avatar_set', { avatar: icon });
+    return res;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Player summary: stats, personal bests, achievements and level (see achievements.js)
+  // ---------------------------------------------------------------------------
+  let achievementsModule = null;
+  const loadAchievements = () => (achievementsModule = achievementsModule || import('/shared/achievements.js').catch((e) => { achievementsModule = null; throw e; }));
+  const summaryListeners = new Set();
+  const cachedLevel = () => readJson('arcade.level');
+
+  // every leaderboard entry this player has, optionally with rank and player count
+  async function myEntries({ ranks = false } = {}) {
+    const { fs, db } = await firebase();
+    const u = await user();
+    const snap = await withTimeout(fs.getDocs(fs.query(fs.collectionGroup(db, 'scores'), fs.where('uid', '==', u.uid))), 15000, 'reading your scores');
+    const entries = snap.docs.map((d) => ({ board: d.ref.parent.parent.id, ...d.data() })).filter((e) => info(e.board));
+    if (ranks) {
+      await Promise.all(entries.map(async (e) => {
+        try { [e.rank, e.total] = await Promise.all([rankOf(e.board, e), count(e.board)]); } catch (err) { /* leave unranked */ }
+      }));
+    }
+    return entries;
+  }
+
+  async function summary({ ranks = false } = {}) {
+    const { fs, db } = await firebase();
+    const u = await user();
+    const [mod, snap, entries] = await Promise.all([
+      loadAchievements(),
+      withTimeout(fs.getDoc(fs.doc(db, 'players', u.uid)), 12000, 'reading profile'),
+      myEntries({ ranks }),
+    ]);
+    const player = snap.exists() ? snap.data() : {};
+    if (player.name) cacheName(player.name);
+    if (snap.exists()) cacheAvatar(player);
+    cacheDays(player.days || [], player.bestStreak || 0);
+    const achievements = mod.evaluate({ player, entries, signedIn: !u.isAnonymous });
+    const xp = mod.xpOf(player, achievements);
+    const level = mod.levelOf(xp);
+    writeJson('arcade.level', { level: level.level, title: level.title });
+    const result = { uid: u.uid, player, entries, achievements, xp, level, signedIn: !u.isAnonymous, email: account().email };
+    summaryListeners.forEach((fn) => { try { fn(result); } catch (e) { console.error('[leaderboard] summary listener', e); } });
+    return result;
+  }
+
+  // achievements unlocked by the game that just ended (each one is announced once per device)
+  const SEEN_KEY = 'arcade.achSeen';
+  async function newAchievements(board, res) {
+    const s = await summary();
+    if (res && res.rank) s.entries.filter((e) => e.board === board).forEach((e) => { e.rank = res.rank; });
+    const mod = await loadAchievements();
+    const done = mod.evaluate({ player: s.player, entries: s.entries, signedIn: s.signedIn }).filter((a) => a.done);
+    const seenList = readJson(SEEN_KEY);
+    // players from before achievements existed: remember what they already have without announcing it
+    const seen = new Set(seenList || ((s.player.totalPlays || 0) > 3 ? done.map((a) => a.id) : []));
+    const fresh = done.filter((a) => !seen.has(a.id));
+    fresh.forEach((a) => seen.add(a.id));
+    writeJson(SEEN_KEY, [...seen]);
+    return fresh;
+  }
+  const markAchievementsSeen = (list) => {
+    const seen = new Set(readJson(SEEN_KEY) || []);
+    list.filter((a) => a.done).forEach((a) => seen.add(a.id));
+    writeJson(SEEN_KEY, [...seen]);
+  };
 
   // ---------------------------------------------------------------------------
   // Accounts: everyone starts as a guest; signing in with Google makes the same player (name, scores,
@@ -319,6 +420,7 @@
     const snap = await withTimeout(fs.getDoc(fs.doc(db, 'players', u.uid)), 12000, 'reading profile');
     const data = snap.exists() ? snap.data() : {};
     cacheName(data.name || '');
+    cacheAvatar(data);
     cacheDays(data.days || [], data.bestStreak || 0, true);
     profilePromise = Promise.resolve({ name: data.name || '', streak: streak() });
     notifyName(data.name || '');
@@ -560,6 +662,19 @@
       .lb-namebar > div:not(.lb-chip) { width: 100%; max-width: 420px; }
       .lb-chip { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 6px 6px 6px 8px; border-radius: 999px; background: #ffffff0d; border: 1px solid #ffffff1f; font: 14px Inter, system-ui, -apple-system, sans-serif; color: #b8b8d0; line-height: 1; }
       .lb-avatar { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #ff3b5c, #a50d2b); color: #fff; font: 800 13px Inter, system-ui, sans-serif; }
+      .lb-avatar.has-icon, .lb-av.has-icon { background: color-mix(in srgb, var(--av) 26%, #0b0b16); box-shadow: inset 0 0 0 1.5px var(--av); font-size: 15px; line-height: 1; }
+      .lb-av { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: #ffffff14; color: #ddd; font: 800 11px Inter, system-ui, sans-serif; vertical-align: middle; }
+      .lb-av.has-icon { font-size: 12px; border-radius: 5px; }
+      .lb li .nm { display: flex; align-items: center; gap: 7px; min-width: 0; }
+      .lb li .nm .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .lb-ach { margin: 4px 0 12px; padding: 12px 14px; border-radius: 6px; text-align: center; background: linear-gradient(180deg, #ffd70024, #ffd70008); border: 1px solid #ffd70088; box-shadow: 3px 3px 0 #5a4500; animation: lb-pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+      .lb-ach h4 { margin: 0 0 8px; font: 9px/1.5 "Press Start 2P", monospace; color: #ffd700; text-shadow: 0 0 10px #ffd70088; }
+      .lb-ach .row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0; font: 700 14px Inter, system-ui, sans-serif; color: #fff; text-align: left; }
+      .lb-ach .row .ic { font-size: 24px; }
+      .lb-ach .row small { display: block; font-weight: 400; color: #d8cfa0; font-size: 12px; }
+      .lb-ach .row .xp { font: 8px "Press Start 2P", monospace; color: #ffd700; margin-left: 4px; white-space: nowrap; }
+      .lb-ach a { display: inline-block; margin-top: 6px; font: 8px "Press Start 2P", monospace; color: #ffd700; text-decoration: none; }
+      @keyframes lb-pop { from { transform: scale(.7); opacity: 0; } }
       .lb-chip .lb-who { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
       .lb-chip .lb-who b { color: #fff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .lb-chip .lb-edit { flex: none; font: 600 13px Inter, system-ui, sans-serif; color: #ffe600; background: #ffe60014; border: 1px solid #ffe60040; border-radius: 999px; padding: 7px 12px; cursor: pointer; line-height: 1; }
@@ -577,7 +692,7 @@
         padding: 11px 14px; border-radius: 4px; background: linear-gradient(#dc143c33, #dc143c33), #12080d; border: 1px solid #dc143c99; box-shadow: 3px 3px 0 #5a0717; }
       .lb-next:hover { background: linear-gradient(#dc143c55, #dc143c55), #12080d; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #5a0717; }
       .lb-chip .lb-sm { display: none; }
-      .lb-sync { flex: none; position: relative; font: 600 13px Inter, system-ui, sans-serif; color: #9fe9ff; background: #3fd8ff14; border: 1px solid #3fd8ff47; border-radius: 999px; padding: 7px 11px; cursor: pointer; line-height: 1; white-space: nowrap; }
+      .lb-sync { flex: none; position: relative; text-decoration: none; font: 600 13px Inter, system-ui, sans-serif; color: #9fe9ff; background: #3fd8ff14; border: 1px solid #3fd8ff47; border-radius: 999px; padding: 7px 11px; cursor: pointer; line-height: 1; white-space: nowrap; }
       .lb-sync:hover { background: #3fd8ff29; }
       .lb-sync.on { color: #7dff9a; background: #3cff8a12; border-color: #3cff8a47; }
       .lb-sync.on::after { content: ''; position: absolute; top: 1px; right: 1px; width: 8px; height: 8px; border-radius: 50%; background: #3cff8a; box-shadow: 0 0 6px #3cff8a; }
@@ -601,6 +716,7 @@
         .lb-chip .lb-sm { display: inline; }
         .lb-chip { gap: 7px; }
         .lb-chip .lb-edit, .lb-sync { padding: 7px 9px; }
+        .lb-sync span { display: none; }
         .lb-chip.empty .lb-who { white-space: normal; line-height: 1.3; }
       }
       .lb-note { font-size: 13px; color: #bbb; text-align: center; min-height: 18px; margin: 4px 0 8px; }
@@ -614,7 +730,7 @@
       .lb li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .lb li .sc { font-variant-numeric: tabular-nums; font-weight: 700; }
       .lb li.me { background: #ffe60026; }
-      .lb li.me .nm::after { content: ' (you)'; color: #ffe600; font-size: 12px; }
+      .lb li.me .nm .txt::after { content: ' (you)'; color: #ffe600; font-size: 12px; }
       .lb li.empty { display: block; text-align: center; color: #999; }
       .lb-btn.ghost { background: #ffffff18; color: #fff; border: 1px solid #ffffff30; }
       .lb-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: #000b; padding: 16px; }
@@ -641,7 +757,7 @@
     listEl.innerHTML = entries.map((e, i) => `
       <li class="${e.id === myId ? 'me' : ''}">
         <span class="rk">#${i + 1}</span>
-        <span class="nm">${esc(e.name)}${e.won && !isTime(board) && info(board).group === 'Classic' ? ' 🏆' : ''}</span>
+        <span class="nm">${avatarHtml(e.name, e.avatar ? { icon: e.avatar, color: e.color } : null, 'lb-av')}<span class="txt">${esc(e.name)}${e.won && !isTime(board) && info(board).group === 'Classic' ? ' 🏆' : ''}</span></span>
         <span class="sc">${fmtEntry(board, e)}</span>
       </li>`).join('');
   }
@@ -712,7 +828,7 @@
   }
 
   // Sign in with Google / signed-in details. Resolves when the panel is closed.
-  function accountPanel(parent) {
+  function accountPanel(parent, { inline = false } = {}) {
     injectCss();
     return new Promise((resolve) => {
       const wrap = document.createElement('div');
@@ -772,7 +888,8 @@
               });
           });
         }
-        wrap.querySelector('.lb-done').addEventListener('click', close);
+        const done = wrap.querySelector('.lb-done');
+        if (inline) done.remove(); else done.addEventListener('click', close);
       };
       render();
     });
@@ -792,24 +909,16 @@
       const title = s.playedToday ? `${s.current}-day daily challenge streak` : `${s.current}-day streak — play today's challenge to keep it`;
       return `<span class="lb-streak${s.playedToday ? '' : ' dim'}" title="${esc(title)}">🔥 ${s.current}</span>`;
     };
-    const syncButton = () => {
+    const profileLink = () => {
+      if (location.pathname.startsWith('/profile')) return '';
       const a = account();
-      return a.signedIn
-        ? `<button type="button" class="lb-sync on" title="${esc(`Synced with Google (${a.email})`)}" aria-label="Account: synced across devices">☁️<span class="lb-lg"> Synced</span></button>`
-        : '<button type="button" class="lb-sync" title="Play as the same player on all your devices" aria-label="Sync across devices">☁️<span> Sync</span></button>';
+      return `<a class="lb-sync${a.signedIn ? ' on' : ''}" href="/profile/" title="${esc(a.signedIn ? `Your profile · synced with Google (${a.email})` : 'Your profile, achievements and settings')}">👤<span> Profile</span></a>`;
     };
     const render = (name) => {
       if (editing) return;
       bar.innerHTML = name
-        ? `<div class="lb-chip"><span class="lb-avatar" aria-hidden="true">${esc(name.charAt(0).toUpperCase())}</span><span class="lb-who"><span class="lb-pre">Playing as</span> <b>${esc(name)}</b></span>${badge()}<button type="button" class="lb-edit"><span class="lb-lg">Change name</span><span class="lb-sm">Rename</span></button>${syncButton()}</div>`
-        : `<div class="lb-chip empty"><span class="lb-who">Want your name on the leaderboards?</span>${badge()}<button type="button" class="lb-edit">Add your name</button>${syncButton()}</div>`;
-      bar.querySelector('.lb-sync').addEventListener('click', async () => {
-        editing = true;
-        bar.innerHTML = '';
-        await accountPanel(bar);
-        editing = false;
-        render(cachedName());
-      });
+        ? `<div class="lb-chip">${avatarHtml(name, cachedAvatar())}<span class="lb-who"><span class="lb-pre">Playing as</span> <b>${esc(name)}</b></span>${badge()}<button type="button" class="lb-edit"><span class="lb-lg">Change name</span><span class="lb-sm">Rename</span></button>${profileLink()}</div>`
+        : `<div class="lb-chip empty"><span class="lb-who">Want your name on the leaderboards?</span>${badge()}<button type="button" class="lb-edit">Add your name</button>${profileLink()}</div>`;
       bar.querySelector('.lb-edit').addEventListener('click', async () => {
         editing = true;
         bar.innerHTML = '';
@@ -888,6 +997,17 @@
       extra.appendChild(row);
     };
 
+    const showAchievements = (res) => {
+      newAchievements(board, res).then((fresh) => {
+        if (!fresh.length || !wrap.isConnected) return;
+        const box = document.createElement('div');
+        box.className = 'lb-ach';
+        box.innerHTML = `<h4>🏆 ACHIEVEMENT${fresh.length > 1 ? 'S' : ''} UNLOCKED!</h4>${fresh.map((a) => `<div class="row"><span class="ic">${a.icon}</span><span>${esc(a.name)}<small>${esc(a.desc)}</small></span><span class="xp">+${a.points} XP</span></div>`).join('')}<a href="/profile/#achievements">VIEW ACHIEVEMENTS ▶</a>`;
+        extra.prepend(box);
+        if (window.Analytics) fresh.forEach((a) => Analytics.event('unlock_achievement', { achievement_id: a.id }));
+      }).catch((e) => console.warn('[leaderboard] achievements check failed:', e));
+    };
+
     const post = async () => {
       setNote(note, canRank ? 'Posting your score…' : 'Saving today’s challenge…');
       try {
@@ -905,6 +1025,7 @@
         if (!res.posted) {
           setNote(note, isTime(board) ? 'Win to post a time.' : '');
           showStreak(res);
+          showAchievements(res);
           return;
         }
         const posted = (name) => {
@@ -928,6 +1049,7 @@
         else setNote(note, `Your best is still ${fmtEntry(board, res.best)} (#${res.rank.toLocaleString()}). Beat it to climb!`);
         showStreak(res);
         showShare(res);
+        showAchievements(res);
         loadInto(list, note, board);
       } catch (e) {
         console.error('[leaderboard] posting score failed:', e);
@@ -1005,7 +1127,8 @@
   window.Leaderboard = {
     BOARDS, info, dailyBoards, DAILY_GAMES, ICONS, gameOf, myEntry, top, submit, offer, open, button, nameBar, getName, setName, user, fmtTime,
     startRun, played, resumeRun, runId, profile, streak, share, shareText, shareButton, count, dailyDone, nextDaily, playedDays,
-    account, accountPanel, signInWithGoogle, signOut,
+    account, accountPanel, signInWithGoogle, signOut, injectCss, COLORS, avatarHtml, cachedAvatar, setAvatar, summary, myEntries, cachedLevel, markAchievementsSeen,
+    cachedName: () => cachedName(), onSummary: (fn) => summaryListeners.add(fn),
     onName: (fn) => nameListeners.add(fn), onStreak: (fn) => streakListeners.add(fn), onAccount: (fn) => accountListeners.add(fn),
   };
 })();

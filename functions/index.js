@@ -8,6 +8,7 @@
  *   logPlay({ board })                 → {}          counts a play (games that deal before the first move)
  *   submitScore({ runId, score, time, won }) → posts the run's result if it is plausible for its length
  *   setName({ name })                  → saves the display name and renames all of the player's entries
+ *   setAvatar({ icon, color })         → saves the player's avatar and puts it on all of their entries
  *   mergeAccount({ fromToken })        → folds a guest (anonymous) player into the signed-in account
  *   adminStats()                       → dashboard data, for accounts listed in config/admins
  */
@@ -120,17 +121,25 @@ function requireBoard(board) {
 }
 const inc = (n = 1) => FieldValue.increment(n);
 
-// puts the player's current name on all of their leaderboard entries
-async function renameEntries(uid, name) {
+// puts the player's current name / avatar on all of their leaderboard entries
+async function updateEntries(uid, fields) {
   const mine = await db.collectionGroup('scores').where('uid', '==', uid).get();
-  const stale = mine.docs.filter((d) => d.data().name !== name);
+  const stale = mine.docs.filter((d) => Object.entries(fields).some(([k, v]) => d.data()[k] !== v));
   for (let i = 0; i < stale.length; i += 400) {
     const batch = db.batch();
-    stale.slice(i, i + 400).forEach((d) => batch.update(d.ref, { name }));
+    stale.slice(i, i + 400).forEach((d) => batch.update(d.ref, fields));
     await batch.commit();
   }
   return stale.length;
 }
+const renameEntries = (uid, name) => updateEntries(uid, { name });
+
+// ---------------------------------------------------------------------------
+// Avatars (some are unlocked by achievements on the client; any listed one is accepted here)
+// ---------------------------------------------------------------------------
+const AVATAR_ICONS = ['👾', '🕹️', '👻', '🤖', '👽', '🐱', '🦊', '🐸', '🐍', '🚀', '🍒', '⭐', '🪙', '🔥', '🐉', '🌋', '👑', '🥉', '💣', '⚡', '🃏', '🕷️', '🌈', '💎', '🦄', '🏁'];
+const AVATAR_COLORS = ['#ff3b5c', '#ffe600', '#3cff8a', '#3fd8ff', '#c77dff', '#ff9f1c', '#ff6bd6', '#7ee2a8'];
+const avatarOf = (p) => (p && AVATAR_ICONS.includes(p.avatar) ? { avatar: p.avatar, color: AVATAR_COLORS.includes(p.color) ? p.color : AVATAR_COLORS[0] } : {});
 
 async function recordPlay(uid, info) {
   const day = utcToday();
@@ -263,7 +272,7 @@ export const submitScore = callable(async (req) => {
 
     const prev = prevSnap.exists ? prevSnap.data() : null;
     const improved = !prev || (info.type === 'time' ? result.time < prev.time : result.score > prev.score);
-    if (improved) tx.set(entryRef, { uid, name, score: result.score, time: result.time, won: result.won, updatedAt: FieldValue.serverTimestamp() });
+    if (improved) tx.set(entryRef, { uid, name, ...avatarOf(player), score: result.score, time: result.time, won: result.won, updatedAt: FieldValue.serverTimestamp() });
     tx.update(runRef, { result, used: true, posted: true, submittedAt: Timestamp.now() });
     return { ...base, posted: true, name, improved, first: !prev, best: improved ? { score: result.score, time: result.time } : { score: prev.score, time: prev.time } };
   });
@@ -288,6 +297,14 @@ export const setName = callable(async (req) => {
   if (!name) throw new HttpsError('invalid-argument', 'Use 1–16 letters, numbers or spaces.');
   await db.doc(`players/${uid}`).set({ name, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   return { name, renamed: await renameEntries(uid, name) };
+});
+
+export const setAvatar = callable(async (req) => {
+  const uid = requireUser(req);
+  const { icon, color } = req.data || {};
+  if (!AVATAR_ICONS.includes(icon) || !AVATAR_COLORS.includes(color)) throw new HttpsError('invalid-argument', 'Unknown avatar.');
+  await db.doc(`players/${uid}`).set({ avatar: icon, color, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  return { icon, color, updated: await updateEntries(uid, { avatar: icon, color }) };
 });
 
 // ---------------------------------------------------------------------------
@@ -319,6 +336,7 @@ export const mergeAccount = callable(async (req) => {
   const a = fromSnap.data() || {};
   const b = toSnap.data() || {};
   const name = b.name || a.name || null;
+  const look = b.avatar ? avatarOf(b) : avatarOf(a);
 
   // player profile
   const days = [...new Set([...(a.days || []), ...(b.days || [])])].sort((x, y) => x - y).slice(-400);
@@ -329,6 +347,7 @@ export const mergeAccount = callable(async (req) => {
   const earliest = [a.firstSeenAt, b.firstSeenAt].filter(Boolean).sort((x, y) => x.toMillis() - y.toMillis())[0];
   const merged = {
     ...(name ? { name } : {}),
+    ...look,
     days,
     bestStreak: Math.max(a.bestStreak || 0, b.bestStreak || 0, bestStreakOf(days)),
     dailyFinishes: (a.dailyFinishes || 0) + (b.dailyFinishes || 0),
@@ -350,7 +369,7 @@ export const mergeAccount = callable(async (req) => {
     const mine = d.data();
     const theirs = targets[i].exists ? targets[i].data() : null;
     if (info && (!theirs || better(info.type, mine, theirs))) {
-      writes.push((batch) => batch.set(targets[i].ref, { uid, name: name || mine.name, score: mine.score, time: mine.time, won: mine.won, updatedAt: mine.updatedAt || FieldValue.serverTimestamp() }));
+      writes.push((batch) => batch.set(targets[i].ref, { uid, name: name || mine.name, ...look, score: mine.score, time: mine.time, won: mine.won, updatedAt: mine.updatedAt || FieldValue.serverTimestamp() }));
     }
     writes.push((batch) => batch.delete(d.ref));
   });
@@ -371,7 +390,7 @@ export const mergeAccount = callable(async (req) => {
     writes.slice(i, i + 400).forEach((w) => w(batch));
     await batch.commit();
   }
-  if (name) await renameEntries(uid, name);
+  if (name) await updateEntries(uid, { name, ...look });
   try { await getAuth().deleteUser(fromUid); } catch (e) { logger.warn('could not delete merged guest', { fromUid, e: e.message }); }
   logger.info('merged guest player', { from: fromUid, to: uid, entries: entries.size, runs: runs.size });
   return { merged: true, name, days: days.slice(-60), bestStreak: merged.bestStreak, entries: entries.size };

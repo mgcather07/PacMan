@@ -129,7 +129,6 @@
     body[data-tab="classic"] h1 span { color: #7dff6a; text-shadow: 0 0 24px #7dff6a66, 5px 5px 0 #2e7d32; }
     .lb-link { display: inline-block; margin-top: 16px; font: 11px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding: 10px 14px; border-radius: 10px; border: 1px solid #ffe60055; }
     .lb-link:hover { background: #ffe60018; }
-    .home-namebar { margin: 14px auto 0; }
     .home-links { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
     .home-links .lb-link { margin-top: 0; }
     .daily-link { display: inline-block; font: 11px "Press Start 2P", monospace; color: #fff; background: #dc143c; text-decoration: none; padding: 11px 14px; border-radius: 10px; box-shadow: 0 4px 0 #6e0a1c; }
@@ -142,6 +141,7 @@
   <script src="/shared/pwa.js"></script>
 </head>
 <body>
+  <nav id="site-nav"></nav>
   <canvas id="bg"></canvas>
   <main>
     <header>
@@ -153,7 +153,6 @@
         <button role="tab" data-tab="classic">🏆 Classic</button>
       </nav>
       <div class="home-links"><a class="daily-link" href="/daily/">📅 Daily Challenge</a><a class="lb-link" href="/leaderboards/">🏅 View leaderboards</a><button type="button" class="lb-link install-link" data-install hidden>📲 Install app</button></div>
-      <div id="namebar" class="home-namebar"></div>
     </header>
 
     <section class="grid">
@@ -283,9 +282,7 @@
 
   <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
-  <script>
-    if (window.Leaderboard) Leaderboard.nameBar(document.getElementById('namebar'));
-  </script>
+  <script src="/shared/nav.js"></script>
   <script>
     // Infinite / Classic tabs
     (() => {

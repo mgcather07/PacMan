@@ -51,6 +51,13 @@ Online top-10 boards for every game live in Cloud Firestore, with a page at `/le
 
 To remove an entry, use the Firebase console or `firebase firestore:delete boards/<board>/scores/<uid>`.
 
+## Profile, levels and achievements
+
+- **Top bar** (`public/shared/nav.js`): the home, Daily, Leaderboards and Profile pages share a sticky bar with section links (a red dot on Daily until today's challenge is done) and the player badge: avatar, name, level, streak and ☁️ when synced. It opens `/profile/`.
+- **Profile page** (`public/profile/`): the player card (avatar, name, level title and XP bar), then tabs for an overview (stats, closest achievements, most-played games, best ranks), achievements, personal bests on every board with rank, and settings (Google sync/sign-out, menu music, sound effects).
+- **Avatars:** 26 emoji avatars on 8 colors, saved with the `setAvatar` function and copied onto the player's leaderboard entries (like names), so they show next to names on every leaderboard. The first 12 are free; the rest unlock with achievements (checked on the client).
+- **Achievements and XP** (`public/shared/achievements.js`): 26 achievements computed from the player doc and their entries (plays, streaks, daily finishes, Classic clears, solitaire wins, holding top-3 or #1 spots). XP = 5 per play + 20 per daily finish + achievement points; level = ⌊√(XP/40)⌋ + 1 with titles from Rookie to Legend. After posting a result the game-over screen announces newly unlocked achievements (each once per device, tracked in `localStorage`).
+
 ## Daily Challenge page
 
 `/daily/` is the hub for the day: a live countdown, a **streak panel** (flame, current/best streak, last 7 days), a **progress panel** (one lit tile per finished game, **▶ Next** to the first unplayed challenge, **Share today**), Today/Yesterday tabs, **All / To play / Done** filters, and an arcade-style card per game in its own color (your best + rank, 🥇🥈🥉 or ✓ DONE stamp, top 5, player count, Play / Beat your best). Yesterday shows final results with the winner crowned.
@@ -103,6 +110,12 @@ No build step. Everything lives in `public/`.
 
 ```bash
 python3 -m http.server 5173 --directory public
+```
+
+Local pages can't reach the live Firebase project (App Check only trusts the real domains). To test leaderboards, profiles and sign-in locally, start the emulators (needs Java 21+) and open any page with `?emulators`, which points that tab at them:
+
+```bash
+firebase emulators:start --only auth,firestore,functions --project demo-arcade
 ```
 
 ## Deploy

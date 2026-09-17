@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "site", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "5173", "--directory", "public"], "port": 5173 }
+    { "name": "site", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "5173", "--directory", "public"], "port": 5173 },
+    { "name": "emulators", "runtimeExecutable": "bash", "runtimeArgs": ["-c", "J=$(/usr/libexec/java_home -v 21+ 2>/dev/null); [ -n \"$J\" ] && export JAVA_HOME=$J PATH=$J/bin:$PATH; exec firebase emulators:start --only auth,firestore,functions --project demo-arcade"], "port": 9099 }
   ]
 }

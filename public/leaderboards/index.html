@@ -25,103 +25,246 @@
   <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html, body { margin: 0; min-height: 100%; }
-    body { background: #05050f; color: #eee; font-family: Inter, system-ui, sans-serif; }
-    main { max-width: 1100px; margin: 0 auto; padding: clamp(24px, 5vh, 56px) 18px 48px; }
-    .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
-    .back { font: 11px "Press Start 2P", monospace; color: #9a9ab8; text-decoration: none; }
-    .back:hover { color: #fff; }
-    h1 { font: clamp(20px, 5vw, 40px) "Press Start 2P", monospace; color: #ffe600; text-shadow: 0 0 24px #ffe60066, 4px 4px 0 #b37400; margin: 8px 0 6px; text-align: center; line-height: 1.3; }
-    .sub { text-align: center; color: #9a9ab8; margin: 0 0 22px; }
-    .tabs { display: flex; justify-content: center; gap: 6px; margin: 0 auto 26px; padding: 6px; border-radius: 16px; background: #ffffff0d; border: 1px solid #ffffff1a; width: fit-content; max-width: 100%; flex-wrap: wrap; }
-    .tabs button { font: 11px "Press Start 2P", monospace; color: #9a9ab8; background: transparent; border: 0; border-radius: 11px; padding: 13px 16px; cursor: pointer; }
-    .tabs button[aria-selected="true"] { background: #ffe600; color: #1b1400; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-    .board { background: #0b0b1d; border: 1px solid #ffffff1a; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-    .board header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-    .board h2 { margin: 0; font: 11px/1.6 "Press Start 2P", monospace; color: #fff; }
-    .board .kind { font-size: 11px; color: #9a9ab8; white-space: nowrap; }
-    .board ol { list-style: none; margin: 0; padding: 0; }
-    .board li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; padding: 6px 2px; border-top: 1px solid #ffffff10; font-size: 14px; }
+    body { background: radial-gradient(ellipse at 50% -10%, #3a2c00 0%, #05050f 55%) fixed, #05050f; color: #eee; font-family: Inter, system-ui, sans-serif; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 22px 22px; }
+    main { position: relative; max-width: 1120px; margin: 0 auto; padding: clamp(20px, 4vh, 44px) 16px 56px; }
+
+    .hero { text-align: center; }
+    h1 { font: clamp(20px, 5.4vw, 44px)/1.3 "Press Start 2P", monospace; color: #ffd700; text-shadow: 0 0 26px #ffd70066, 4px 4px 0 #7a5a00; margin: 4px 0 12px; }
+    .sub { max-width: 620px; margin: 0 auto 20px; color: #a8a08a; line-height: 1.55; font-size: 15px; }
+
+    /* ---- your standings ---- */
+    .me { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; max-width: 860px; margin: 0 auto 24px; padding: 12px 16px; border-radius: 6px; background: #14110acc; border: 1px solid #ffd70055; box-shadow: 4px 4px 0 #3a2c00; }
+    .me .lb-avatar { width: 44px; height: 44px; border-radius: 6px; font-size: 18px; }
+    .me .lb-avatar.has-icon { font-size: 24px; }
+    .me .who { font: 10px/1.6 "Press Start 2P", monospace; color: #fff; }
+    .me .who small { display: block; font: 13px Inter, system-ui, sans-serif; color: #a8a08a; }
+    .me .facts { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .me .fact { font: 8px/1 "Press Start 2P", monospace; text-transform: uppercase; color: #ffd700; padding: 7px 8px 6px; border-radius: 3px; background: #ffd70012; border: 1px solid #ffd70055; white-space: nowrap; }
+    .me a.go { font: 8px "Press Start 2P", monospace; color: #0b0b12; background: #ffd700; padding: 9px 10px 8px; border-radius: 4px; text-decoration: none; box-shadow: 2px 2px 0 #7a5a00; white-space: nowrap; }
+
+    /* ---- tabs + game filter ---- */
+    .controls { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 0 auto 22px; }
+    .tabs { display: flex; gap: 6px; padding: 5px; border-radius: 6px; background: #ffffff0a; border: 1px solid #ffffff1a; flex-wrap: wrap; justify-content: center; }
+    .tabs button { font: 10px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 12px 13px 11px; cursor: pointer; }
+    .tabs button:hover { color: #fff; }
+    .tabs button[aria-selected="true"] { background: #ffd700; color: #1b1400; box-shadow: 2px 2px 0 #7a5a00; }
+    .games { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .games button { --acc: #ffd700; display: inline-flex; align-items: center; gap: 6px; font: 8px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: #ffffff08; border: 1px solid #ffffff1c; border-radius: 4px; padding: 7px 9px 6px; cursor: pointer; }
+    .games button .ic { font-size: 14px; line-height: 1; }
+    .games button:hover { color: #fff; }
+    .games button[aria-pressed="true"] { color: var(--acc); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); }
+
+    /* ---- board cards ---- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+    .card { --acc: #ffe600; position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 6px; background: #0c0a14;
+      border: 1px solid color-mix(in srgb, var(--acc) 32%, transparent); box-shadow: 4px 4px 0 color-mix(in srgb, var(--acc) 14%, #000); transition: transform .15s, box-shadow .15s; }
+    .card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 color-mix(in srgb, var(--acc) 24%, #000); }
+    .card header { display: flex; align-items: center; gap: 12px; }
+    .card .icon { flex: none; font-size: 26px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 4px;
+      background: color-mix(in srgb, var(--acc) 12%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 50%, transparent); box-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 22%, #000); }
+    .card h2 { margin: 0 0 8px; font: 12px/1.4 "Press Start 2P", monospace; text-transform: uppercase; color: var(--acc); text-shadow: 2px 2px 0 color-mix(in srgb, var(--acc) 25%, #000); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips span { font: 7px/1 "Press Start 2P", monospace; text-transform: uppercase; letter-spacing: .4px; padding: 5px 6px 4px; border-radius: 3px;
+      color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent); }
+    .chips span.kind { color: #cfcfe6; border-color: #ffffff30; background: #ffffff0a; }
+
+    .board { list-style: none; margin: 0; padding: 0; }
+    .board li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 6px; font-size: 14px; border-top: 1px solid #ffffff0d; }
     .board li:first-child { border-top: 0; }
-    .board li .rk { color: #888; font-weight: 800; }
-    .board li:nth-child(1) .rk { color: #ffd700; } .board li:nth-child(2) .rk { color: #d0d8e8; } .board li:nth-child(3) .rk { color: #e0a060; }
-    .board li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .board li .sc { font-variant-numeric: tabular-nums; font-weight: 700; }
-    .board li.empty { display: block; color: #777; text-align: center; padding: 14px 0; }
-    .board .play { margin-top: auto; align-self: flex-start; font: 10px "Press Start 2P", monospace; color: #ffe600; text-decoration: none; padding-top: 6px; }
-    .namebar { max-width: 460px; margin: 0 auto 22px; }
-    .board li.me { background: #ffe60022; border-radius: 6px; }
-    .board li.me .nm::after { content: ' (you)'; color: #ffe600; font-size: 12px; }
-    .note { text-align: center; color: #666; font-size: 13px; margin-top: 28px; }
+    .board .rk { font: 9px "Press Start 2P", monospace; color: #6f6f88; text-align: center; }
+    .board .rk.medal { font: 17px/1 system-ui, sans-serif; }
+    .board li.p1 { background: linear-gradient(90deg, #ffd70026, transparent 70%); border-radius: 3px; }
+    .board li.p1 .nm .txt { color: #ffd700; font-weight: 700; }
+    .board .nm { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .board .nm .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .board .lb-av { width: 24px; height: 24px; }
+    .board .sc { font: 10px "Press Start 2P", monospace; font-variant-numeric: tabular-nums; color: #eee; }
+    .board li.me { background: color-mix(in srgb, var(--acc) 16%, transparent); border-radius: 3px; box-shadow: inset 3px 0 0 var(--acc); }
+    .board li.me .nm .txt { color: var(--acc); font-weight: 700; }
+    .board li.me .nm .txt::after { content: ' (you)'; font-weight: 400; font-size: 12px; opacity: .8; }
+    .board li.gap { display: block; text-align: center; color: #55556a; font: 9px/1 "Press Start 2P", monospace; padding: 6px 0 2px; border-top: 0; letter-spacing: 4px; }
+    .board li.empty { display: block; text-align: center; color: #77778f; font: 8px/1.8 "Press Start 2P", monospace; text-transform: uppercase; padding: 22px 0; }
+    .board li.skel { height: 37px; }
+    .board li.skel::after { content: ''; grid-column: 1 / -1; height: 12px; border-radius: 3px; background: linear-gradient(90deg, #ffffff08, #ffffff18, #ffffff08); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .foot { margin-top: auto; display: flex; align-items: center; gap: 10px; }
+    .players { font: 7px/1.5 "Press Start 2P", monospace; color: #77778f; text-transform: uppercase; }
+    .play { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font: 10px/1 "Press Start 2P", monospace; text-transform: uppercase;
+      color: #0b0b12; background: var(--acc); border: 1px solid var(--acc); border-radius: 4px; padding: 12px 14px 11px; box-shadow: 3px 3px 0 color-mix(in srgb, var(--acc) 35%, #000); transition: transform .1s, box-shadow .1s; }
+    .play:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 color-mix(in srgb, var(--acc) 35%, #000); }
+    .play:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 color-mix(in srgb, var(--acc) 35%, #000); }
+    .note { text-align: center; color: #666; font-size: 13px; margin-top: 30px; line-height: 1.5; }
+    .note a { color: #ffd700; }
+
+    @media (max-width: 560px) {
+      .tabs { flex-wrap: nowrap; }
+      .tabs .em { display: none; }
+      .tabs button { padding: 11px 9px 10px; font-size: 9px; }
+      .games { flex-wrap: nowrap; justify-content: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; }
+      .games .gl { display: none; }
+      .games button { padding: 7px 10px 6px; }
+      .games button .ic { font-size: 17px; }
+    }
+    @media (max-width: 420px) {
+      .grid { grid-template-columns: 1fr; }
+      .tabs button { padding: 10px 7px 9px; font-size: 8px; }
+      .me .facts { margin-left: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { .board li.skel::after { animation: none; } }
   </style>
   <script src="/shared/analytics.js"></script>
   <script src="/shared/pwa.js"></script>
 </head>
 <body>
+  <nav id="site-nav"></nav>
   <main>
-    <div class="top"><a class="back" href="/">⌂ ARCADE</a></div>
-    <h1>🏆 LEADERBOARDS</h1>
-    <p class="sub">Top 10 on every board. Finish a game to post your score — your best result on each board is kept.</p>
-    <div id="namebar" class="namebar"></div>
-    <nav class="tabs" role="tablist">
-      <button role="tab" data-group="Daily">📅 Today</button>
-      <button role="tab" data-group="Infinite">∞ Infinite</button>
-      <button role="tab" data-group="Classic">🏆 Classic</button>
-      <button role="tab" data-group="Solitaire">🃏 Solitaire</button>
-    </nav>
+    <header class="hero">
+      <h1>🏅 LEADERBOARDS</h1>
+      <p class="sub">The top 10 on every board. Finish a game to post your score; your best result on each board is kept.</p>
+    </header>
+    <section class="me" id="me" hidden></section>
+    <div class="controls">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-group="Daily"><span class="em">📅 </span>Today</button>
+        <button role="tab" data-group="Infinite"><span class="em">∞ </span>Infinite</button>
+        <button role="tab" data-group="Classic"><span class="em">🏆 </span>Classic</button>
+        <button role="tab" data-group="Solitaire"><span class="em">🃏 </span>Solitaire</button>
+      </nav>
+      <div class="games" id="games"></div>
+    </div>
     <section class="grid" id="grid"></section>
-    <p class="note">Scores are public. You play as a guest on each device, or tap ☁️ Sync to sign in with Google and use the same player everywhere. Names are limited to letters, numbers and simple punctuation.</p>
+    <p class="note">Scores are public. Set your name, avatar and device sync on <a href="/profile/">your profile</a>.</p>
   </main>
 
   <script src="/shared/daily.js"></script>
   <script src="/shared/leaderboard.js"></script>
+  <script src="/shared/nav.js"></script>
   <script>
     (() => {
-      const { BOARDS, top, fmtTime, nameBar, user, onName, info, dailyBoards } = window.Leaderboard;
-      nameBar(document.getElementById('namebar'));
-      let myId = null;
-      user().then((u) => { myId = u.uid; if (current) show(current); return Leaderboard.getName(); }).catch(() => {});
-      // renamed, or signed in as another player
-      onName(() => user().then((u) => { myId = u.uid; if (current) show(current); }).catch(() => {}));
-      const grid = document.getElementById('grid');
+      const LB = window.Leaderboard;
+      const { BOARDS, top, count, fmtTime, user, onName, info, dailyBoards, gameOf, ICONS, COLORS, DAILY_GAMES, avatarHtml, cachedAvatar, cachedName } = LB;
+      LB.injectCss();
+      const $ = (id) => document.getElementById(id);
+      const grid = $('grid');
       const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const num = (n) => Number(n || 0).toLocaleString();
+      const fmt = (id, e) => (info(id).type === 'time' ? fmtTime(e.time) : num(e.score));
+      const MEDALS = ['🥇', '🥈', '🥉'];
+      let myId = null;
+      let mine = {}; // board → my entry with rank
       let current = null;
+      let game = 'all';
+      let token = 0;
+
+      // ---- your standings ----
+      async function loadMine() {
+        try {
+          const u = await user();
+          myId = u.uid;
+          const entries = await LB.myEntries({ ranks: true });
+          mine = Object.fromEntries(entries.map((e) => [e.board, e]));
+          renderMe(entries);
+          if (current) show(current);
+        } catch (e) { /* standings are optional */ }
+      }
+      function renderMe(entries) {
+        const el = $('me');
+        const boards = entries.filter((e) => !/^daily-/.test(e.board) && e.rank);
+        if (!boards.length) { el.hidden = true; return; }
+        const best = boards.reduce((a, b) => (b.rank < a.rank ? b : a));
+        const golds = boards.filter((e) => e.rank === 1).length;
+        const podiums = boards.filter((e) => e.rank <= 3).length;
+        const name = cachedName();
+        el.innerHTML = `${avatarHtml(name, cachedAvatar())}
+          <div class="who">${esc(name || 'You')}<small>Your standings</small></div>
+          <div class="facts">
+            <span class="fact">📋 ${boards.length} board${boards.length === 1 ? '' : 's'}</span>
+            <span class="fact">⭐ Best #${num(best.rank)} · ${esc(info(best.board).title)}</span>
+            ${golds ? `<span class="fact">🥇 ×${golds}</span>` : ''}
+            ${podiums > golds ? `<span class="fact">🏆 Top 3 ×${podiums}</span>` : ''}
+          </div>
+          <a class="go" href="/profile/#bests">PROFILE ▶</a>`;
+        el.hidden = false;
+      }
+
+      // ---- boards ----
+      function boardsFor(group) {
+        return group === 'Daily' ? dailyBoards(Daily.todayKey()) : Object.keys(BOARDS).filter((id) => BOARDS[id].group === group);
+      }
+      function renderGames(ids) {
+        const games = [...new Set(ids.map(gameOf))];
+        if (!games.includes(game)) game = 'all';
+        $('games').innerHTML = games.length > 1
+          ? `<button type="button" data-game="all" aria-pressed="${game === 'all'}">All</button>` + games.map((g) => `<button type="button" data-game="${g}" style="--acc:${COLORS[g]}" aria-pressed="${game === g}" title="${esc(DAILY_GAMES[g][0])}"><span class="ic">${ICONS[g]}</span><span class="gl">${esc(DAILY_GAMES[g][0])}</span></button>`).join('')
+          : '';
+      }
+      $('games').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        game = b.dataset.game;
+        $('games').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        grid.querySelectorAll('.card').forEach((c) => { c.hidden = game !== 'all' && c.dataset.game !== game; });
+      });
+
+      function rows(id, entries) {
+        if (!entries.length) return '<li class="empty">No scores yet.<br>Be the first!</li>';
+        const row = (e, i) => `<li class="${e.id === myId ? 'me' : ''}${i === 0 ? ' p1' : ''}"><span class="rk${i < 3 ? ' medal' : ''}">${i < 3 ? MEDALS[i] : `#${i + 1}`}</span><span class="nm">${avatarHtml(e.name, e.avatar ? { icon: e.avatar, color: e.color } : null, 'lb-av')}<span class="txt">${esc(e.name)}${e.won && info(id).group === 'Classic' && info(id).type !== 'time' ? ' 🏆' : ''}</span></span><span class="sc">${fmt(id, e)}</span></li>`;
+        let html = entries.map(row).join('');
+        const me = mine[id];
+        if (me && me.rank > entries.length && !entries.some((e) => e.id === myId)) {
+          html += `<li class="gap">···</li><li class="me"><span class="rk">#${num(me.rank)}</span><span class="nm">${avatarHtml(me.name, me.avatar ? { icon: me.avatar, color: me.color } : null, 'lb-av')}<span class="txt">${esc(me.name)}</span></span><span class="sc">${fmt(id, me)}</span></li>`;
+        }
+        return html;
+      }
 
       function show(group) {
         current = group;
+        const my = ++token;
         document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.group === group)));
         try { localStorage.setItem('arcade.lbtab', group); } catch (e) { /* ignore */ }
         history.replaceState(null, '', '#' + group.toLowerCase());
-        const ids = group === 'Daily' ? dailyBoards(Daily.todayKey()) : Object.keys(BOARDS).filter((id) => BOARDS[id].group === group);
-        grid.innerHTML = ids.map((id) => `
-          <article class="board" data-board="${id}">
-            <header><h2>${esc(info(id).title)}</h2><span class="kind">${info(id).type === 'time' ? 'fastest win' : 'high score'}</span></header>
-            <ol><li class="empty">Loading…</li></ol>
-            <a class="play" href="${info(id).href}">PLAY ▶</a>
-          </article>`).join('');
+        const ids = boardsFor(group);
+        renderGames(ids);
+        grid.innerHTML = ids.map((id) => {
+          const meta = info(id);
+          const g = gameOf(id);
+          const variant = group === 'Daily' ? Daily.label(meta.day) : (meta.title.split(' · ')[1] || group);
+          return `<article class="card" data-board="${id}" data-game="${g}" style="--acc:${COLORS[g] || '#ffe600'}"${game !== 'all' && game !== g ? ' hidden' : ''}>
+            <header><span class="icon" aria-hidden="true">${ICONS[g] || '🎮'}</span><div><h2>${esc(DAILY_GAMES[g][0])}</h2>
+              <div class="chips"><span>▸ ${esc(variant)}</span><span class="kind">${meta.type === 'time' ? '⏱ Fastest win' : '★ High score'}</span></div></div></header>
+            <ol class="board">${'<li class="skel"></li>'.repeat(5)}</ol>
+            <div class="foot"><span class="players"></span><a class="play" href="${meta.href}">PLAY ▶</a></div>
+          </article>`;
+        }).join('');
         ids.forEach(async (id) => {
-          const list = grid.querySelector(`[data-board="${id}"] ol`);
+          const card = grid.querySelector(`[data-board="${id}"]`);
+          const list = card.querySelector('ol');
           try {
-            const entries = await top(id, 10);
-            if (current !== group) return;
-            list.innerHTML = entries.length
-              ? entries.map((e, i) => `<li class="${e.id === myId ? 'me' : ''}"><span class="rk">#${i + 1}</span><span class="nm">${esc(e.name)}</span><span class="sc">${info(id).type === 'time' ? fmtTime(e.time) : e.score.toLocaleString()}</span></li>`).join('')
-              : '<li class="empty">No scores yet — be the first!</li>';
+            const [entries, total] = await Promise.all([top(id, 10), count(id).catch(() => null)]);
+            if (my !== token) return;
+            list.innerHTML = rows(id, entries);
+            if (total) card.querySelector('.players').textContent = `${num(total)} player${total === 1 ? '' : 's'}`;
           } catch (e) {
-            list.innerHTML = '<li class="empty">Unavailable right now</li>';
+            if (my === token) list.innerHTML = '<li class="empty">Unavailable right now</li>';
           }
         });
       }
 
-      document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => show(b.dataset.group)));
+      document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { game = 'all'; show(b.dataset.group); }));
       const fromHash = { '#daily': 'Daily', '#infinite': 'Infinite', '#classic': 'Classic', '#solitaire': 'Solitaire' }[location.hash];
       let saved = null;
       try { saved = localStorage.getItem('arcade.lbtab'); } catch (e) { /* ignore */ }
       show(fromHash || (['Daily', 'Infinite', 'Classic', 'Solitaire'].includes(saved) ? saved : 'Infinite'));
+      loadMine();
+      // renamed, new avatar, or signed in as another player
+      onName(() => loadMine());
+      window.addEventListener('pageshow', (e) => { if (e.persisted) loadMine(); });
     })();
   </script>
   <script src="/shared/music.js"></script>
