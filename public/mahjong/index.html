@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Infinite Mahjong</title>
+  <meta name="description" content="Endless Mahjong Solitaire: every layout is bigger and denser than the last, and every deal can be cleared. Or beat the classic 144-tile turtle.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/mahjong/">
+  <meta property="og:title" content="Infinite Mahjong">
+  <meta property="og:description" content="Match free tiles two at a time through layout after layout — every deal is guaranteed solvable. Or clear the classic turtle against the clock.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #d97b7b; --accent-dark: #7e3236; --bg: #0a1310; }
+    #pairs { color: #ffd98a; font-size: 9px; }
+    #aids { color: #9fd8b8; font-size: 9px; letter-spacing: 1px; }
+    #layout { font-size: 9px; }
+    /* the tile tools belong to the game, not the title or game-over screens */
+    .tools { position: fixed; bottom: 12px; left: 12px; display: flex; gap: 6px; z-index: 6; }
+    .tools .icon-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 15px; padding: 8px 9px; }
+    .tools .icon-btn b { font-size: 8px; font-weight: normal; color: var(--accent); }
+    .tools .icon-btn[disabled] { opacity: .35; cursor: default; }
+    .tools .icon-btn.on { border-color: var(--accent); color: var(--accent); }
+    body:has(#title:not([hidden])) .tools, body:has(#over:not([hidden])) .tools { display: none; }
+    .legend { display: flex; justify-content: center; gap: clamp(6px, 2vw, 14px); flex-wrap: wrap; margin: 16px 0; font-size: 8px; color: #bbb; }
+    .legend span { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .legend canvas { width: 34px; height: 46px; }
+    @media (max-width: 480px) {
+      .tools { bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; gap: 5px; }
+      .tools .icon-btn { padding: 8px 7px; font-size: 14px; }
+      .tools .icon-btn span { display: none; }
+    }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="tiles" class="dim">0 TILES</span>
+    </div>
+    <div class="col center">
+      <span id="layout"></span>
+      <span id="pairs"></span>
+      <span id="aids"></span>
+    </div>
+    <div class="col right">
+      <span class="label">TIME</span>
+      <span id="time">0:00</span>
+      <span id="high" class="dim"></span>
+    </div>
+  </div>
+
+  <div class="tools">
+    <button class="icon-btn" id="new-btn" title="New layout (N)">＋<span>New</span></button>
+    <button class="icon-btn" id="undo-btn" title="Undo (Z)">↶<span>Undo</span></button>
+    <button class="icon-btn" id="hint-btn" title="Hint (H)">💡<b id="hint-n">5</b></button>
+    <button class="icon-btn" id="shuffle-btn" title="Shuffle (S)">🔀<b id="shuffle-n">3</b></button>
+    <button class="icon-btn" id="free-btn" title="Show the free tiles (F)">👁<span>Free</span></button>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>MAHJONG</h1>
+      <p class="only-infinite not-daily">Layout after layout, each one bigger and denser than the last. <br>100 points a pair, 1,000 for every layout you clear, and a bonus for clearing it quickly. The run ends when the board jams and your shuffles are gone.</p>
+      <p class="only-classic">One classic 144-tile turtle, dealt so it can always be cleared. <br>Take every tile off the table to win — the board ranks the fastest.</p>
+      <p class="only-daily">Today's turtle: the same 144 tiles, stacked the same way, for everyone. <br>Clear the table to post a time — the fastest win tops today's board.</p>
+      <div class="legend">
+        <span><canvas class="lt" width="68" height="92" data-face="b3"></canvas>BAMBOO</span>
+        <span><canvas class="lt" width="68" height="92" data-face="c5"></canvas>CHARACTERS</span>
+        <span><canvas class="lt" width="68" height="92" data-face="d7"></canvas>CIRCLES</span>
+        <span><canvas class="lt" width="68" height="92" data-face="w1"></canvas>WINDS</span>
+        <span><canvas class="lt" width="68" height="92" data-face="g1"></canvas>DRAGONS</span>
+        <span><canvas class="lt" width="68" height="92" data-face="f1"></canvas>FLOWERS</span>
+      </div>
+      <p>Match two identical tiles that are <span class="k">FREE</span>: nothing stacked on top of them, <br>and the left or right side clear. Flowers match any flower, seasons any season.</p>
+      <p><span class="k">CLICK / TAP</span> a tile then its twin · <span class="k">H</span> hint · <span class="k">S</span> shuffle · <span class="k">Z</span> undo <br><span class="k">F</span> show free tiles · <span class="k">N</span> new layout · <span class="k">P</span> pause · <span class="k">M</span> sound</p>
+      <button class="btn" id="play-btn">MATCH</button>
+      <a class="btn alt small not-daily" id="mode-link" href="/mahjong/?mode=classic">CLASSIC TURTLE ▶</a>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span><span class="only-infinite not-daily">LAYOUTS</span><span class="only-classic">TILES LEFT</span><span class="only-daily">TILES LEFT</span></span><b id="o-layouts">0</b></div>
+        <div><span>PAIRS</span><b id="o-pairs">0</b></div>
+        <div><span>TIME</span><b id="o-time">0:00</b></div>
+      </div>
+      <p class="only-infinite not-daily">A bigger table is already being stacked.</p>
+      <button class="btn" id="again-btn">DEAL AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="mahjong.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

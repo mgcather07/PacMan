@@ -21,6 +21,9 @@
     "pyramid",
     "match3",
     "tripeaks",
+    "mahjong",
+    "digger",
+    "sokoban",
     "klondike",
     "spider",
     "freecell"
@@ -28,6 +31,8 @@
   "timeGames": [
     "pyramid",
     "tripeaks",
+    "mahjong",
+    "sokoban",
     "klondike",
     "spider",
     "freecell"
@@ -263,6 +268,36 @@
       "solitaire",
       "time"
     ],
+    "mahjong": [
+      "mahjong",
+      "infinite",
+      "score"
+    ],
+    "mahjong-classic": [
+      "mahjong",
+      "solitaire",
+      "time"
+    ],
+    "digger": [
+      "digger",
+      "infinite",
+      "score"
+    ],
+    "digger-classic": [
+      "digger",
+      "classic",
+      "score"
+    ],
+    "sokoban": [
+      "sokoban",
+      "infinite",
+      "score"
+    ],
+    "sokoban-classic": [
+      "sokoban",
+      "classic",
+      "time"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -400,6 +435,21 @@
       250,
       0
     ],
+    "mahjong": [
+      30000,
+      300,
+      0
+    ],
+    "digger": [
+      15000,
+      900,
+      2
+    ],
+    "sokoban": [
+      20000,
+      400,
+      0
+    ],
     "klondike": [
       50000,
       100,
@@ -425,6 +475,10 @@
     "pyramid-classic": 25,
     "tripeaks": 20,
     "tripeaks-classic": 20,
+    "mahjong": 60,
+    "mahjong-classic": 60,
+    "sokoban": 15,
+    "sokoban-classic": 120,
     "klondike": 30,
     "klondike-1": 30,
     "klondike-3": 30,

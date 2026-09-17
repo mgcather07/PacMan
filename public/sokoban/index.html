@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Sokoban</title>
+  <meta name="description" content="Endless Sokoban: warehouse rooms built fresh every time and always solvable, growing from tiny two-crate puzzles to twelve-square mazes. Or push through thirty classic rooms.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/sokoban/">
+  <meta property="og:title" content="Infinite Sokoban">
+  <meta property="og:description" content="Push crates onto the pads in warehouse rooms that are generated fresh — and always solvable. Unlimited undo, endless rooms, or thirty classic ones.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #8bd450; --accent-dark: #3d6b1c; --bg: #05070a; }
+    #crates { color: #8bd450; font-size: 13px; }
+    #time.low { color: #ff6b6b; }
+    #extras, #stats, #best { color: #8a9a80; font-size: 8px; }
+    .touch { position: fixed; left: 0; right: 0; bottom: calc(12px + env(safe-area-inset-bottom)); justify-content: center; gap: 10px; z-index: 5; }
+    .touch .pad-btn { width: 92px; height: 56px; font-size: 10px; }
+    /* phones: sound/home move up so they never sit under the control row */
+    @media (pointer: coarse) { .hud-buttons { bottom: auto; top: calc(66px + env(safe-area-inset-top)); } }
+    /* the control row belongs to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) .touch, body:has(#over:not([hidden])) .touch { display: none; }
+    .legend { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; font-size: 8px; color: #bbb; margin: 16px 0; }
+    .legend span { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; }
+    .legend i { width: 30px; height: 30px; border-radius: 5px; font-style: normal; display: inline-grid; place-items: center; }
+    .legend .wall { background: #323c53; border-top: 2px solid #8bd45033; }
+    .legend .crate { background: linear-gradient(135deg, #b07a3f, #6b4420); box-shadow: inset 0 0 0 2px #b9c3d144; }
+    .legend .home { background: linear-gradient(135deg, #9fe063, #4e8f2a); box-shadow: 0 0 10px #8bd45088; }
+    .legend .goal { background: #0d1119; box-shadow: inset 0 0 0 2px #8bd450; }
+    .legend .you { background: #2b6fa8; color: #ffb703; font-size: 15px; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="best">BEST 0</span>
+    </div>
+    <div class="col center">
+      <span class="label" id="level">ROOM 1</span>
+      <span id="crates">—</span>
+      <span id="extras"></span>
+    </div>
+    <div class="col right">
+      <span class="label" id="time-label">TIME</span>
+      <span id="time">0:00</span>
+      <span id="stats"></span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch">
+    <button class="pad-btn" id="undo-btn" aria-label="Undo">↩ UNDO</button>
+    <button class="pad-btn" id="reset-btn" aria-label="Reset the room">↺ RESET</button>
+    <button class="pad-btn" id="skip-btn" aria-label="Skip this room">⏭ SKIP</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>SOKOBAN</h1>
+      <p class="only-infinite not-daily">A warehouse that keeps building itself. Every room is generated fresh — and proved solvable before you see it — growing from tiny two-crate closets to twelve-square halls. Clear it fast and with few moves for the biggest bonus. Three skips a run; run the clock out with none left and the shift is over.</p>
+      <p class="only-infinite only-daily">One warehouse room, the same for everyone today. Push every crate onto a pad as quickly as you can — the board ranks the fastest shift.</p>
+      <p class="only-classic">Thirty rooms, from a single push to a twenty-push tangle. <br>No clock pressure and unlimited undo — clear room thirty to beat it. The board ranks the fastest run.</p>
+      <div class="legend">
+        <span><i class="wall"></i>WALL</span>
+        <span><i class="crate"></i>CRATE</span>
+        <span><i class="goal"></i>PAD</span>
+        <span><i class="home"></i>DELIVERED</span>
+        <span><i class="you">☺</i>YOU</span>
+      </div>
+      <p><span class="k">ARROWS / WASD</span> push · <span class="k">U</span> or <span class="k">Z</span> undo (unlimited) · <span class="k">R</span> reset · <span class="k">P</span> pause<span class="only-infinite not-daily"> · <span class="k">K</span> skip</span><br>
+        Touch: swipe to move, then UNDO and RESET below · you can only push, never pull</p>
+      <button class="btn" id="play-btn">PUSH</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>SHIFT OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>ROOMS</span><b id="o-rooms">0</b></div>
+        <div><span>MOVES</span><b id="o-moves">0</b></div>
+        <div><span>TIME</span><b id="o-time">0:00</b></div>
+      </div>
+      <p class="only-infinite not-daily">The next warehouse is already being built.</p>
+      <button class="btn" id="again-btn">PUSH AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="sokoban.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>

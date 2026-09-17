@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Digger</title>
+  <meta name="description" content="Endless Digger: tunnel through layered soil, pump blobs and fire-breathing dragons until they pop, or drop a rock on a whole nest. Or beat twelve classic caves.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/digger/">
+  <meta property="og:title" content="Infinite Digger">
+  <meta property="og:description" content="Dig your own tunnels through caves that never end. Pump the blobs until they pop, dodge the dragons' fire and crush a whole nest with a falling rock.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #f4a259; --accent-dark: #8f4d10; --bg: #140c07; }
+    canvas.game { cursor: none; }
+    #lives { color: #f4a259; letter-spacing: 2px; }
+    #level { font-size: 11px; }
+    #foes { font-size: 8px; color: #ff8f6a; }
+    #depth { font-size: 8px; color: #9fb7e8; }
+    .legend { display: flex; justify-content: center; gap: 12px 18px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 12px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend canvas { height: 24px; width: auto; image-rendering: pixelated; }
+    .touch { position: fixed; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom)); padding: 0 14px;
+      justify-content: space-between; align-items: flex-end; z-index: 6; pointer-events: none; }
+    .dpad { display: grid; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(3, 52px); gap: 4px;
+      grid-template-areas: ". u ." "l . r" ". d ."; pointer-events: auto; }
+    .dpad .pad-btn { width: 58px; height: 52px; font-size: 18px; }
+    .dpad [data-key="up"] { grid-area: u; }
+    .dpad [data-key="left"] { grid-area: l; }
+    .dpad [data-key="right"] { grid-area: r; }
+    .dpad [data-key="down"] { grid-area: d; }
+    .pump-btn { pointer-events: auto; width: 88px; height: 88px; font-size: 11px; border-radius: 50%; border-width: 3px; color: #f4a259; }
+    @media (pointer: coarse) { .hud-buttons { bottom: calc(180px + env(safe-area-inset-bottom)); } }
+    @media (max-width: 380px) {
+      .touch { padding: 0 8px; }
+      .dpad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 48px); }
+      .dpad .pad-btn { width: 52px; height: 48px; }
+      .pump-btn { width: 78px; height: 78px; }
+    }
+    /* the pad belongs to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) .touch, body:has(#over:not([hidden])) .touch { display: none !important; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="lives"></span>
+    </div>
+    <div class="col center">
+      <span id="level"></span>
+      <span id="foes"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+      <span id="depth"></span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch" aria-hidden="true">
+    <div class="dpad">
+      <button class="pad-btn" data-key="up">▲</button>
+      <button class="pad-btn" data-key="left">◀</button>
+      <button class="pad-btn" data-key="right">▶</button>
+      <button class="pad-btn" data-key="down">▼</button>
+    </div>
+    <button class="pad-btn pump-btn" data-key="fire">PUMP</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>DIGGER</h1>
+      <p class="only-infinite">The caves go down forever. Tunnel your own way through the soil, <br>pump the blobs and dragons until they pop, or dig out the dirt under a rock and flatten a whole nest. Every level is deeper, busier and faster.</p>
+      <p class="only-classic">Twelve caves, one harpoon. <br>Clear every blob and dragon in all twelve and the caves are yours.</p>
+      <div class="legend">
+        <span><canvas id="lg-blob" width="30" height="30"></canvas>BLOB 200-500</span>
+        <span><canvas id="lg-dragon" width="36" height="30"></canvas>DRAGON 200-500</span>
+      </div>
+      <div class="legend">
+        <span><canvas id="lg-rock" width="30" height="30"></canvas>ROCK 1,000 / 2,500 / 4,000</span>
+        <span><canvas id="lg-bonus" width="30" height="30"></canvas>BONUS 400-5,000</span>
+      </div>
+      <p>Deeper soil pays more. The last enemy always runs for the surface. <br>
+        <span class="k">ARROWS / WASD</span> to dig · hold <span class="k">SPACE</span> to fire the harpoon and keep pumping · <span class="k">P</span> pause <br>
+        Touch: D-pad to dig · hold <span class="k">PUMP</span></p>
+      <button class="btn" id="play-btn">START DIGGING</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>LEVEL</span><b id="o-level">0</b></div>
+        <div><span>POPPED</span><b id="o-popped">0</b></div>
+        <div><span>CRUSHED</span><b id="o-crushed">0</b></div>
+      </div>
+      <p class="only-infinite">There is always deeper soil.</p>
+      <button class="btn" id="again-btn">DIG AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="digger.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>
