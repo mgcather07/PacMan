@@ -155,10 +155,11 @@ One object per game; the file's header comment documents every field. Checklist:
   and optionally a speed goal (`kind: 'fastest'`). Ids must be unique across the whole arcade; keep
   points in line with other games (20 / 40–50 for the harder ones).
 
-Then regenerate the server's copy:
+Then regenerate the server's copy and the README table:
 
 ```bash
 node scripts/sync-games.mjs
+node scripts/update-readme-games.mjs
 ```
 
 ## 5. Testing before it ships
