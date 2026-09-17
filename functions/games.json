@@ -25,6 +25,7 @@
     "digger",
     "sokoban",
     "racer",
+    "blackjack",
     "klondike",
     "spider",
     "freecell"
@@ -309,6 +310,16 @@
       "classic",
       "score"
     ],
+    "blackjack": [
+      "blackjack",
+      "infinite",
+      "score"
+    ],
+    "blackjack-classic": [
+      "blackjack",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -465,6 +476,11 @@
       10000,
       700,
       1
+    ],
+    "blackjack": [
+      20000,
+      400,
+      0.5
     ],
     "klondike": [
       50000,

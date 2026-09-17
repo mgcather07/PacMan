@@ -305,7 +305,7 @@
       ],
     },
     {
-      id: 'defender', name: 'Defender', icon: '🚁', color: '#5b8cff', path: '/defender/', category: 'arcade', type: 'score', daily: 'Same raid', added: '2026-09-17', added: '2026-09-17',
+      id: 'defender', name: 'Defender', icon: '🚁', color: '#5b8cff', path: '/defender/', category: 'arcade', type: 'score', daily: 'Same raid', added: '2026-09-17',
       scoreCap: [20000, 1500, 3], assets: ['/defender/defender.js', '/defender/preview.js'], preview: ['/defender/preview.js'],
       blurb: 'A planet that wraps forever and a raid that never stops. Shoot the landers before they drag your humanoids into the sky, catch the ones that fall, and keep a smart bomb for when the mutants find you.',
       blurbClassic: 'Ten waves over one planet. Save every humanoid you can, clear wave ten and the raid is over.',
@@ -324,7 +324,7 @@
       ],
     },
     {
-      id: 'tempest', name: 'Tempest', icon: '🌀', color: '#ff2e88', path: '/tempest/', category: 'arcade', type: 'score', daily: 'Same tubes', added: '2026-09-17', added: '2026-09-17',
+      id: 'tempest', name: 'Tempest', icon: '🌀', color: '#ff2e88', path: '/tempest/', category: 'arcade', type: 'score', daily: 'Same tubes', added: '2026-09-17',
       scoreCap: [15000, 1200, 3], assets: ['/tempest/tempest.js', '/tempest/preview.js'], preview: ['/tempest/preview.js'],
       blurb: 'Ride the rim of a glowing tube and shoot down its lanes. Flippers, tankers, spikers and fuseballs climb towards you, and every level warps you into a new shape and a new colour.',
       blurbClassic: 'Sixteen tubes, one after another: circles, squares, crosses, stars and figure-eights. Clear the sixteenth to win.',
@@ -343,7 +343,7 @@
       ],
     },
     {
-      id: 'centipede', name: 'Centipede', icon: '🐛', color: '#b4f000', path: '/centipede/', category: 'arcade', type: 'score', daily: 'Same swarm', added: '2026-09-17', added: '2026-09-17',
+      id: 'centipede', name: 'Centipede', icon: '🐛', color: '#b4f000', path: '/centipede/', category: 'arcade', type: 'score', daily: 'Same swarm', added: '2026-09-17',
       scoreCap: [10000, 900, 2], assets: ['/centipede/centipede.js', '/centipede/preview.js'], preview: ['/centipede/preview.js'],
       blurb: 'A swarm that never stops winding down the garden. Split a centipede in two and it grows another mushroom to hide behind, dodge the bouncing spider, and never let a scorpion poison the field — a poisoned centipede dives straight at you.',
       blurbClassic: 'Twelve waves in one garden, each one faster and longer than the last. Clear every last segment of wave twelve to win.',
@@ -362,7 +362,7 @@
       ],
     },
     {
-      id: 'tanks', name: 'Tank Battle', icon: '🪖', color: '#d9a066', path: '/tanks/', category: 'arcade', type: 'score', daily: 'Same battlefield', added: '2026-09-17', added: '2026-09-17',
+      id: 'tanks', name: 'Tank Battle', icon: '🪖', color: '#d9a066', path: '/tanks/', category: 'arcade', type: 'score', daily: 'Same battlefield', added: '2026-09-17',
       scoreCap: [15000, 1000, 2], assets: ['/tanks/tanks.js', '/tanks/preview.js'], preview: ['/tanks/preview.js'],
       blurb: 'Defend the eagle forever. Every stage builds a new maze of brick, steel, water, bushes and ice, and sends more and tougher tanks down it — armoured ones take four hits, and shooting the flashing ones is the only way to get a power-up.',
       blurbClassic: 'Fifteen hand-built battlefields. Clear stage fifteen with the eagle still standing and you win.',
@@ -381,7 +381,7 @@
       ],
     },
     {
-      id: 'pyramid', name: 'Pyramid', icon: '🔺', color: '#e8c07d', path: '/pyramid/', category: 'cards', type: 'time', daily: 'Same deal', added: '2026-09-17', added: '2026-09-17',
+      id: 'pyramid', name: 'Pyramid', icon: '🔺', color: '#e8c07d', path: '/pyramid/', category: 'cards', type: 'time', daily: 'Same deal', added: '2026-09-17',
       scoreCap: [20000, 200, 0], dailyMinTime: 25, assets: ['/solitaire/style.css', '/pyramid/pyramid.js', '/pyramid/preview.js'], preview: ['/pyramid/preview.js'],
       blurb: 'Pair exposed cards that add to 13 until the pyramid is gone — then another is dealt, and another, with the stock passes tightening as you go.',
       blurbClassic: 'One solvable deal and three passes through the stock. Clear all twenty-eight cards as fast as you can.',
@@ -400,7 +400,7 @@
       ],
     },
     {
-      id: 'match3', name: 'Gem Match', icon: '💎', color: '#ffd166', path: '/match3/', category: 'puzzle', type: 'score', daily: 'Same board', added: '2026-09-17', added: '2026-09-17',
+      id: 'match3', name: 'Gem Match', icon: '💎', color: '#ffd166', path: '/match3/', category: 'puzzle', type: 'score', daily: 'Same board', added: '2026-09-17',
       scoreCap: [20000, 1200, 2], assets: ['/match3/match3.js', '/match3/preview.js'], preview: ['/match3/preview.js'],
       blurb: 'Sixty seconds that never have to run out. Swap glowing gems to line up three, chain cascades for a rising multiplier, and build striped gems, bombs and colour bombs — every gem you clear buys more time.',
       blurbClassic: 'Twenty levels, each with its own goal: clear a colour, hit a score in a set number of moves, or drop the keys to the bottom. Finish level twenty to win.',
@@ -419,7 +419,7 @@
       ],
     },
     {
-      id: 'tripeaks', name: 'TriPeaks', icon: '⛰️', color: '#7ec8e3', path: '/tripeaks/', category: 'cards', type: 'time', daily: 'Same deal', added: '2026-09-17', added: '2026-09-17',
+      id: 'tripeaks', name: 'TriPeaks', icon: '⛰️', color: '#7ec8e3', path: '/tripeaks/', category: 'cards', type: 'time', daily: 'Same deal', added: '2026-09-17',
       scoreCap: [20000, 250, 0], dailyMinTime: 20, assets: ['/tripeaks/tripeaks.js', '/tripeaks/preview.js', '/solitaire/style.css'], preview: ['/tripeaks/preview.js'],
       blurb: 'Three peaks, then three more, forever. Take any uncovered card one rank from the waste, chain them into a streak worth ten points a link, and clear the board to deal a fresh one — with a smaller stock and a bigger bonus every time.',
       blurbClassic: 'One solvable deal over three peaks. Clear all twenty-eight cards to win — the board ranks the fastest climb.',
@@ -438,7 +438,7 @@
       ],
     },
     {
-      id: 'mahjong', name: 'Mahjong', icon: '🀄', color: '#d97b7b', path: '/mahjong/', category: 'cards', type: 'time', daily: 'Same layout', added: '2026-09-17', added: '2026-09-17',
+      id: 'mahjong', name: 'Mahjong', icon: '🀄', color: '#d97b7b', path: '/mahjong/', category: 'cards', type: 'time', daily: 'Same layout', added: '2026-09-17',
       scoreCap: [30000, 300, 0], dailyMinTime: 60, assets: ['/mahjong/mahjong.js'], preview: ['/mahjong/preview.js'],
       blurb: 'Match free tiles two at a time through layout after layout, each one bigger and denser than the last — or take on the classic 144-tile turtle against the clock. Every deal is built so it can be cleared.',
       tags: ['Endless layouts', 'Always solvable', 'Hints & shuffles'],
@@ -455,7 +455,7 @@
       ],
     },
     {
-      id: 'digger', name: 'Digger', icon: '⛏️', color: '#f4a259', path: '/digger/', category: 'arcade', type: 'score', daily: 'Same caves', added: '2026-09-17', added: '2026-09-17',
+      id: 'digger', name: 'Digger', icon: '⛏️', color: '#f4a259', path: '/digger/', category: 'arcade', type: 'score', daily: 'Same caves', added: '2026-09-17',
       scoreCap: [15000, 900, 2], assets: ['/digger/digger.js', '/digger/preview.js'], preview: ['/digger/preview.js'],
       blurb: 'Caves that go down forever. Tunnel your own way through four layers of soil, pump the blobs and fire-breathing dragons until they pop, or dig out the dirt under a rock and flatten a whole nest at once. Deeper soil pays more.',
       blurbClassic: 'Twelve caves, one harpoon. Clear every blob and dragon in all twelve and the soil is yours.',
@@ -474,7 +474,7 @@
       ],
     },
     {
-      id: 'sokoban', name: 'Sokoban', icon: '📦', color: '#8bd450', path: '/sokoban/', category: 'puzzle', type: 'time', daily: 'Same puzzle', added: '2026-09-17', added: '2026-09-17',
+      id: 'sokoban', name: 'Sokoban', icon: '📦', color: '#8bd450', path: '/sokoban/', category: 'puzzle', type: 'time', daily: 'Same puzzle', added: '2026-09-17',
       scoreCap: [20000, 400, 0], dailyMinTime: 15, assets: ['/sokoban/sokoban.js', '/sokoban/preview.js'], preview: ['/sokoban/preview.js'],
       blurb: 'A warehouse that keeps building itself. Every room is generated fresh and proved solvable before you see it, growing from two-crate closets to twelve-square halls. Unlimited undo, three skips, and a clock on every room.',
       blurbClassic: 'Thirty rooms, from a single push to a twenty-push tangle. No clock, unlimited undo, and the board ranks the fastest run to room thirty.',
@@ -493,7 +493,7 @@
       ],
     },
     {
-      id: 'racer', name: 'Micro Racer', icon: '🏎️', color: '#e94f37', path: '/racer/', category: 'arcade', type: 'score', daily: 'Same track', added: '2026-09-17', added: '2026-09-17',
+      id: 'racer', name: 'Micro Racer', icon: '🏎️', color: '#e94f37', path: '/racer/', category: 'arcade', type: 'score', daily: 'Same track', added: '2026-09-17',
       scoreCap: [10000, 700, 1], assets: ['/racer/racer.js', '/racer/preview.js'], preview: ['/racer/preview.js'],
       blurb: 'A road that keeps unrolling ahead of you, with corners that keep tightening. Drift through them, hop the kerbs, dodge sand, oil and traffic, and stay ahead of the cut-off line that is always creeping up behind.',
       blurbClassic: 'A championship over five circuits, three laps each, against three rivals. Win the final race and the title is yours.',
@@ -509,6 +509,25 @@
         { id: 'racer-15k', icon: '🏎️', name: 'Hot Lap', desc: 'Score 15,000 in Micro Racer', points: 20, kind: 'score', goal: 15000 },
         { id: 'racer-60k', icon: '🏁', name: 'Grand Prix', desc: 'Score 60,000 in Micro Racer', points: 50, kind: 'score', goal: 60000 },
         { id: 'racer-classic', icon: '🏆', name: 'Champion', desc: 'Win the Classic championship', points: 40, kind: 'win', boards: ['racer-classic'] },
+      ],
+    },
+    {
+      id: 'blackjack', name: 'Blackjack', icon: '♠️', color: '#f25f5c', path: '/blackjack/', category: 'cards', type: 'score', daily: 'Same shoe', added: '2026-09-17',
+      scoreCap: [20000, 400, 0.5], assets: ['/solitaire/style.css', '/blackjack/blackjack.js', '/blackjack/preview.js'], preview: ['/blackjack/preview.js'],
+      blurb: 'Six decks, dealer stands on soft 17, blackjack pays 3:2. Start on 500 play chips and keep going — the table limit doubles every 25 hands, and your score is the highest your stack ever reaches.',
+      blurbClassic: 'A hundred hands out of one shoe, starting on 500 chips. Finish the last hand holding 1,000 or more and you beat the table.',
+      tags: ['Endless shoe', 'Strategy hints', 'Chips are points'],
+      tagsClassic: ['100 hands', 'Beat 1,000 chips', 'Strategy hints'],
+      cta: 'DEAL ▶',
+      boards: [
+        { id: 'blackjack', title: 'Infinite Blackjack', group: 'Infinite', type: 'score', href: '/blackjack/', unit: 'chips' },
+        { id: 'blackjack-classic', title: 'Classic Blackjack', group: 'Classic', type: 'score', href: '/blackjack/?mode=classic', unit: 'chips' },
+      ],
+      classicWin: ['blackjack-classic'],
+      achievements: [
+        { id: 'bj-2k', icon: '♠️', name: 'Card Counter', desc: 'Reach 2,000 chips in Blackjack', points: 20, kind: 'score', goal: 2000 },
+        { id: 'bj-10k', icon: '💎', name: 'Table Legend', desc: 'Reach 10,000 chips in Blackjack', points: 50, kind: 'score', goal: 10000 },
+        { id: 'bj-classic', icon: '🎩', name: 'Hundred Hands', desc: 'Finish Classic Blackjack with 1,000 chips', points: 40, kind: 'win', boards: ['blackjack-classic'] },
       ],
     },
     {

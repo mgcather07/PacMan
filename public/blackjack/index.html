@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Infinite Blackjack</title>
+  <meta name="description" content="Endless arcade blackjack: a six-deck shoe, 500 play chips, and a table limit that climbs every 25 hands. Play the hand right and see how high the stack goes.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/blackjack/">
+  <meta property="og:title" content="Infinite Blackjack">
+  <meta property="og:description" content="Six-deck shoe, dealer stands on soft 17, blackjack pays 3:2. Start with 500 play chips and see how high you can stack them.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Infinite Arcade: a Pac-Man ace of spades playing card">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Infinite Blackjack">
+  <meta name="twitter:description" content="Six-deck shoe, dealer stands on soft 17, blackjack pays 3:2. Play chips only — the score is the stack.">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/solitaire/style.css">
+  <style>
+    /* Blackjack keeps the card faces and toolbar of the other card games and lays a felt
+       table under them. Accent matches the registry colour. */
+    :root { --accent: #f25f5c; --accent-dark: #8c2b29; --cw: 72px; --ch: 101px; --sp: .55; }
+
+    body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+    #table { flex: 1 1 auto; display: flex; padding: 10px clamp(8px, 2vw, 20px) 4px; }
+
+    .felt {
+      position: relative; flex: 1 1 auto; display: flex; flex-direction: column; align-items: center;
+      max-width: 1000px; margin: 0 auto; width: 100%; padding: 12px 10px 14px;
+      border-radius: 22px; border: 3px solid #0000004d;
+      background: radial-gradient(ellipse at 50% 18%, #1c8a56 0%, #126640 42%, #0a4029 100%);
+      box-shadow: inset 0 0 60px #00000059, 0 10px 34px #0007;
+    }
+    .felt::before {
+      content: ""; position: absolute; inset: 9px; border-radius: 16px;
+      border: 1px solid #ffffff1f; pointer-events: none;
+    }
+
+    /* The shoe: a card-sized block that empties as the shoe is dealt, with the cut card showing. */
+    .shoe {
+      position: absolute; top: 14px; right: 14px; width: calc(var(--cw) * .72); height: calc(var(--ch) * .72);
+      border-radius: 7px; overflow: hidden; border: 1px solid #ffffff33;
+      background: repeating-linear-gradient(#e9e3d2 0 2px, #c9c1ab 2px 4px);
+      box-shadow: 0 3px 10px #0006;
+    }
+    .shoe-used { position: absolute; left: 0; right: 0; top: 0; height: 0%; background: #06301fdd; transition: height .3s; }
+    .shoe .cut { position: absolute; left: 0; right: 0; top: 75%; height: 4px; background: #d7263d; box-shadow: 0 0 6px #d7263d; }
+    .shoe-label { position: absolute; top: calc(14px + var(--ch) * .72 + 4px); right: 14px; font: 700 9px Inter, sans-serif; color: #9fd8b8; letter-spacing: .08em; }
+
+    .seat { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .hand-cards { display: flex; align-items: flex-start; justify-content: center; min-height: var(--ch); }
+    .hand-cards .card {
+      position: relative; left: auto; top: auto; flex: 0 0 auto;
+      transition: transform .26s cubic-bezier(.2,.8,.2,1), opacity .2s;
+    }
+    .hand-cards .card + .card { margin-left: calc(var(--cw) * (var(--sp) - 1)); }
+    .hand-cards .card .inner { transition: transform .3s ease; }
+
+    .badge {
+      min-width: 46px; padding: 3px 9px; border-radius: 999px; font: 800 13px Inter, system-ui, sans-serif;
+      background: #00000059; border: 1px solid #ffffff2b; color: #fff; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .badge.soft { color: #ffe600; }
+    .badge.bust { background: #8c2b2999; border-color: #f25f5c; color: #ffd3d2; }
+    .badge.bj { background: #ffe60026; border-color: #ffe600; color: #ffe600; }
+    .badge.hidden-total { opacity: .75; }
+
+    .dealer-tag, .msg { font: 700 10px Inter, sans-serif; letter-spacing: .14em; color: #9fd8b8; }
+    .msg { min-height: 17px; margin: 8px 0 6px; text-align: center; color: #fff; font-size: 12px; letter-spacing: .02em; padding: 0 6px; }
+    .msg b { color: var(--accent); }
+
+    .hands { display: flex; justify-content: center; align-items: flex-start; gap: clamp(6px, 2vw, 22px); width: 100%; }
+    .hands .seat { padding: 6px 6px 7px; border-radius: 14px; border: 2px solid transparent; min-width: 0; }
+    .hands .seat.active { border-color: var(--accent); background: #ffffff0f; box-shadow: 0 0 18px #f25f5c4d; }
+    .hands .seat.settled { opacity: .95; }
+
+    /* Chips: the bet, stacked */
+    .stack { display: flex; align-items: flex-end; height: 20px; }
+    .stack i { display: block; width: 18px; height: 18px; border-radius: 50%; margin-left: -9px; border: 2px dashed #ffffffb3; box-shadow: 0 1px 3px #0008; }
+    .stack i:first-child { margin-left: 0; }
+    .c10 { background: #d7263d; } .c50 { background: #2e8b57; } .c100 { background: #1b1b1b; }
+    .c500 { background: #6a4fbf; } .c1000 { background: #d4a017; }
+    .bet-tag { display: flex; align-items: center; gap: 6px; font: 800 12px Inter, sans-serif; color: #ffe600; font-variant-numeric: tabular-nums; }
+
+    .outcome { font: 800 11px Inter, sans-serif; letter-spacing: .06em; min-height: 14px; }
+    .outcome.win { color: #7dff6a; } .outcome.lose { color: #ff8f8d; } .outcome.push { color: #d8d3c4; }
+
+    /* Controls */
+    .controls {
+      position: sticky; bottom: 0; z-index: 900; display: flex; flex-direction: column; gap: 6px;
+      min-height: 62px;                       /* keeps the table still while a hand plays out */
+      padding: 8px clamp(8px, 2vw, 20px) calc(8px + env(safe-area-inset-bottom));
+      background: linear-gradient(#0000, #04241799 22%, #04241f 60%);
+    }
+    .row { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; max-width: 1000px; margin: 0 auto; width: 100%; }
+    .act, .ctl {
+      font: 800 12px Inter, system-ui, sans-serif; letter-spacing: .06em; color: #f4f1e8;
+      background: #ffffff1a; border: 1px solid #ffffff2e; border-radius: 11px; padding: 11px 10px;
+      cursor: pointer; flex: 1 1 0; min-width: 0; min-height: 46px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px;
+    }
+    .act small, .btn small { font: 600 9px Inter, sans-serif; opacity: .6; letter-spacing: .1em; }
+    .act:hover:not(:disabled), .ctl:hover:not(:disabled) { background: #ffffff2e; }
+    .act:disabled, .ctl:disabled { opacity: .28; cursor: default; }
+    .act.suggest { border-color: #ffe600; background: #ffe6002e; box-shadow: 0 0 0 1px #ffe60066, 0 0 16px #ffe6004d; color: #fff; }
+    .act.suggest::after { content: "BASIC STRATEGY"; font: 700 7px Inter, sans-serif; letter-spacing: .12em; color: #ffe600; }
+    .ctl { flex: 0 0 auto; min-width: 46px; font-size: 16px; }
+    .ctl.max { font-size: 11px; }
+    #bet-slider { flex: 1 1 140px; max-width: 320px; accent-color: var(--accent); height: 30px; }
+    .btn.deal { flex: 0 0 auto; margin: 0; padding: 12px 18px; font-size: 12px; line-height: 1.5; }
+    .ins-row .ins-q { flex: 1 1 200px; font: 600 11px Inter, sans-serif; color: #d8e8de; text-align: center; }
+    #hint-btn.on { background: #ffe6002e; border-color: #ffe60088; }
+
+    /* Overlays: the arcade's title / end screens, dressed for the felt table */
+    .overlay {
+      position: fixed; inset: 0; z-index: 4000; display: grid; place-items: center; padding: 20px; overflow-y: auto;
+      background: radial-gradient(ellipse at center, #062a1acc 0%, #031711f2 70%);
+    }
+    .overlay .panel {
+      text-align: center; max-width: 580px; width: 100%;
+      background: #062a1a; border: 1px solid #ffffff2b; border-radius: 18px; padding: 26px 24px;
+      box-shadow: 0 20px 60px #000a;
+    }
+    .panel h1 {
+      margin: 0 0 8px; font-family: "Press Start 2P", monospace; color: var(--accent); line-height: 1.35;
+      font-size: clamp(18px, 5.4vw, 34px); text-shadow: 3px 3px 0 var(--accent-dark);
+    }
+    .panel h1 small { display: block; font-size: .42em; color: #fff; opacity: .85; margin-bottom: 10px; letter-spacing: 4px; text-shadow: none; }
+    .panel p { font-size: 13px; line-height: 1.8; color: #bcd9c8; margin: 14px 0; }
+    .panel .k { color: #fff; font-weight: 700; }
+    .rules { background: #ffffff10; border-radius: 12px; padding: 12px 14px; text-align: left; }
+    .rules b { color: var(--accent); }
+    .chip-note { font-size: 11px !important; color: #8fb9a3 !important; }
+    .btn {
+      font: 700 15px "Press Start 2P", monospace; background: var(--accent); color: #2a0806; border: 0; border-radius: 8px;
+      padding: 15px 24px; margin: 8px 6px 0; cursor: pointer; box-shadow: 0 6px 0 var(--accent-dark); text-decoration: none; display: inline-block;
+    }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--accent-dark); }
+    .btn:disabled { opacity: .4; box-shadow: 0 6px 0 var(--accent-dark); }
+    .btn.alt { background: #10412b; color: #fff; box-shadow: 0 6px 0 #052316; }
+    .overlay .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin: 18px 0 6px; }
+    .overlay .stats div { background: #ffffff10; border: 1px solid #ffffff1f; border-radius: 10px; padding: 10px 4px; flex-direction: column; }
+    .overlay .stats span { display: block; font-size: 10px; color: var(--accent); letter-spacing: .1em; margin-bottom: 6px; }
+    .overlay .stats b { font-size: 19px; }
+
+    /* Infinite / Classic content switching (mirrors /shared/arcade.css) */
+    .only-classic { display: none !important; }
+    [data-mode="classic"] .only-classic { display: revert !important; }
+    [data-mode="classic"] .only-infinite { display: none !important; }
+    .end-message { color: #fff !important; }
+    #over.won h1 { color: #7dff6a; text-shadow: 3px 3px 0 #1c6b21; }
+
+    @media (max-width: 400px) { .act { font-size: 9px; padding: 9px 2px; } .act small { font-size: 8px; } }
+    @media (max-width: 560px) {
+      #table { padding: 6px 6px 2px; }
+      .felt { padding: 10px 6px 10px; border-radius: 16px; }
+      .shoe { top: 8px; right: 8px; }
+      .shoe-label { display: none; }
+      .hands { gap: 4px; }
+      .hands .seat { padding: 4px 2px 5px; }
+      .badge { min-width: 38px; font-size: 11px; padding: 2px 6px; }
+      .act { font-size: 10px; padding: 9px 4px; letter-spacing: .02em; }
+      .act.suggest::after { display: none; }
+      .ctl { min-width: 40px; }
+      .btn.deal { padding: 11px 12px; font-size: 11px; }
+      .overlay { padding: 14px 12px calc(14px + env(safe-area-inset-bottom)); }
+      .overlay .panel { padding: 20px 16px; }
+      .panel p { font-size: 12px; line-height: 1.7; margin: 10px 0; }
+      .panel p br { display: none; }
+      .btn { font-size: 12px; padding: 13px 16px; }
+    }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/" title="Back to the arcade">⌂ <span>ARCADE</span></a>
+    <div class="stats">
+      <div><span>CHIPS</span><b id="chips">500</b></div>
+      <div><span>BET</span><b id="bet">10</b></div>
+      <div><span>HANDS</span><b id="hands-played">0</b></div>
+      <div class="hide-sm"><span>SHOE</span><b id="shoe-pct">0%</b></div>
+      <div><span>BEST</span><b id="best">0</b></div>
+    </div>
+    <div class="actions">
+      <button id="sound-btn" title="Sound (M)">🔊</button>
+      <button id="hint-btn" title="Basic strategy hint (T)">💡<span> Hint</span></button>
+      <button id="new-btn" class="primary" title="New run (N)">＋<span> New</span></button>
+    </div>
+  </header>
+
+  <main id="table" aria-label="Blackjack table">
+    <div class="felt">
+      <div class="shoe" id="shoe" aria-hidden="true"><div class="shoe-used" id="shoe-used"></div><div class="cut"></div></div>
+      <div class="shoe-label">SHOE</div>
+      <div class="seat" id="dealer-seat">
+        <div class="dealer-tag">DEALER · STANDS ON SOFT 17</div>
+        <div class="badge hidden-total" id="dealer-badge">—</div>
+        <div class="hand-cards" id="dealer-cards"></div>
+      </div>
+      <div class="msg" id="msg">Place your bet.</div>
+      <div class="hands" id="hands"></div>
+    </div>
+  </main>
+
+  <div class="controls">
+    <div class="row bet-row" id="bet-row">
+      <div class="bet-tag"><span class="stack" id="bet-stack"></span><span id="bet-amount">10</span></div>
+      <button class="ctl" id="bet-down" title="Lower the bet (←)">−</button>
+      <input id="bet-slider" type="range" min="10" max="100" step="10" value="10" aria-label="Bet">
+      <button class="ctl" id="bet-up" title="Raise the bet (→)">＋</button>
+      <button class="ctl max" id="bet-max" title="Bet the table limit">MAX</button>
+      <button class="btn deal" id="deal-btn">DEAL <small>SPACE</small></button>
+    </div>
+    <div class="row act-row" id="act-row" hidden>
+      <button class="act" id="hit-btn" data-act="hit">HIT<small>H</small></button>
+      <button class="act" id="stand-btn" data-act="stand">STAND<small>S</small></button>
+      <button class="act" id="double-btn" data-act="double">DOUBLE<small>D</small></button>
+      <button class="act" id="split-btn" data-act="split">SPLIT<small>P</small></button>
+      <button class="act" id="surrender-btn" data-act="surrender">SURRENDER<small>R</small></button>
+    </div>
+    <div class="row ins-row" id="ins-row" hidden>
+      <span class="ins-q">Dealer shows an ace. Insurance costs half your bet and pays 2:1 if the dealer has blackjack.</span>
+      <button class="act" id="ins-yes">TAKE IT<small>Y</small></button>
+      <button class="act" id="ins-no">NO THANKS<small>N</small></button>
+    </div>
+  </div>
+
+  <div id="toast" class="sol-toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>BLACKJACK</h1>
+      <p class="only-infinite not-daily">Five hundred chips, a six-deck shoe and no last hand. <br>Your score is the highest your stack ever reaches, so a run is won by knowing when to push and when to sit on 12. Every 25 hands the table limit doubles.</p>
+      <p class="only-classic">One hundred hands, starting at five hundred chips. <br>Finish the hundredth hand holding 1,000 chips or more and you beat the table. Your score is the stack you end with.</p>
+      <p class="only-daily">Everyone gets the same shoe today — the same cards in the same order. <br>The only difference is how you play them and how you size your bets. Your score is the highest your stack ever reaches.</p>
+      <p class="rules">
+        <b>Six decks · dealer stands on soft 17 · blackjack pays 3:2.</b><br>
+        Double on any two cards · split up to three hands (aces get one card each) ·<br>
+        insurance when the dealer shows an ace · surrender your first two cards for half back.
+      </p>
+      <p><span class="k">SPACE</span> deal · <span class="k">←</span> <span class="k">→</span> bet · <span class="k">H</span> hit · <span class="k">S</span> stand · <span class="k">D</span> double · <span class="k">P</span> split · <span class="k">R</span> surrender · <span class="k">T</span> hint</p>
+      <p class="chip-note">Play chips only. Nothing here costs anything, and nothing here pays out — it is a game about playing the hand well.</p>
+      <button class="btn" id="play-btn">SIT DOWN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>OUT OF CHIPS</h1>
+      <div class="stats">
+        <div><span>CHIPS</span><b id="o-chips">0</b></div>
+        <div><span>BEST</span><b id="o-peak">0</b></div>
+        <div><span>HANDS</span><b id="o-hands">0</b></div>
+        <div><span>BLACKJACKS</span><b id="o-bj">0</b></div>
+        <div><span>BIGGEST POT</span><b id="o-pot">0</b></div>
+      </div>
+      <p class="only-infinite not-daily">Your score is the highest chip total you reached, not the pile you walked away with.</p>
+      <p class="only-classic">A hundred hands, and the stack you finish with is the score.</p>
+      <button class="btn" id="again-btn">PLAY AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="paused" hidden>
+    <div class="panel">
+      <h1>PAUSED</h1>
+      <p>The table is waiting.</p>
+      <button class="btn" id="resume-btn">RESUME</button>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="blackjack.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>
