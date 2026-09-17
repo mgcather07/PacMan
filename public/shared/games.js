@@ -286,6 +286,25 @@
       ],
     },
     {
+      id: 'bubble', name: 'Bubble Shooter', icon: '🫧', color: '#ff6bd6', path: '/bubble/', category: 'puzzle', type: 'score', daily: 'Same wall', added: '2026-09-17',
+      scoreCap: [10000, 700, 1], assets: ['/bubble/bubble.js', '/bubble/preview.js'], preview: ['/bubble/preview.js'],
+      blurb: 'The ceiling never stops. Match three of a colour to pop the wall, cut whole clusters loose so they rain down, and bank shots off the side walls before the wall reaches your launcher.',
+      blurbClassic: 'Twenty hand-built walls, from simple shapes to seven-colour tangles. Clear every bubble on level twenty to win.',
+      tags: ['Endless wall', 'Bank shots', 'Combos'],
+      tagsClassic: ['20 levels', 'Hand-built shapes', 'Bank shots'],
+      cta: 'POP ▶',
+      boards: [
+        { id: 'bubble', title: 'Infinite Bubble Shooter', group: 'Infinite', type: 'score', href: '/bubble/' },
+        { id: 'bubble-classic', title: 'Classic Bubble Shooter', group: 'Classic', type: 'score', href: '/bubble/?mode=classic' },
+      ],
+      classicWin: ['bubble-classic'],
+      achievements: [
+        { id: 'bubble-10k', icon: '🫧', name: 'Pop Star', desc: 'Score 10,000 in Bubble Shooter', points: 20, kind: 'score', goal: 10000 },
+        { id: 'bubble-50k', icon: '🌈', name: 'Chain Reaction', desc: 'Score 50,000 in Bubble Shooter', points: 50, kind: 'score', goal: 50000 },
+        { id: 'bubble-classic', icon: '🏅', name: 'Wall Cleared', desc: 'Beat Classic Bubble Shooter', points: 40, kind: 'win', boards: ['bubble-classic'] },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

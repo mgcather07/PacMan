@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Bubble Shooter</title>
+  <meta name="description" content="Endless Bubble Shooter: a ceiling that never stops dropping, bank shots off the walls, bombs, rainbows and laser sights. Or clear twenty hand-built classic walls.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/bubble/">
+  <meta property="og:title" content="Infinite Bubble Shooter">
+  <meta property="og:description" content="A wall of bubbles that never stops coming down. Match three, cut clusters loose and bank shots off the walls.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #ff6bd6; --accent-dark: #8c1f6c; --bg: #0a0416; }
+    canvas.game { display: block; cursor: crosshair; }
+    #combo { color: #ffd23f; font-size: 9px; min-height: 9px; }
+    #depth { font-size: 9px; }
+    #dropin { font-size: 8px; }
+    #specials { color: #3fd8ff; font-size: 8px; min-height: 8px; }
+    .nextwrap { display: flex; align-items: center; gap: 6px; }
+    .nextwrap .label { margin: 0; }
+    #next { width: 26px; height: 26px; }
+    .legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 14px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend b { font-size: 15px; font-weight: normal; }
+    .hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 5;
+      font-size: 8px; color: var(--accent); background: #0009; border: 1px solid #ffffff22; border-radius: 999px; padding: 8px 12px; pointer-events: none; }
+    /* the touch hint belongs to the game, not the title or game-over screens */
+    body:has(#title:not([hidden])) .hint, body:has(#over:not([hidden])) .hint { display: none; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="combo"></span>
+    </div>
+    <div class="col center">
+      <span id="depth"></span>
+      <span id="dropin" class="dim"></span>
+      <span id="specials"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+      <span class="nextwrap"><span class="label">NEXT</span><canvas id="next" width="52" height="52"></canvas></span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch hint" id="touch-hint">DRAG TO AIM · LIFT TO FIRE</div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>BUBBLE SHOOTER</h1>
+      <p class="only-infinite">The ceiling never stops. Match three of a colour to pop the wall, <br>cut whole clusters loose so they rain down, and find more colours the deeper you go.</p>
+      <p class="only-classic">Twenty hand-built walls, from simple shapes to seven-colour tangles. <br>Clear every bubble on level twenty to win — but a run of wasted shots brings the ceiling down.</p>
+      <div class="legend">
+        <span><b>💣</b>bomb</span>
+        <span><b>🌈</b>rainbow</span>
+        <span><b>⚡</b>laser sight</span>
+        <span><b>🎯</b>precision</span>
+      </div>
+      <p><span class="k">MOUSE</span> or <span class="k">ARROWS</span> to aim · <span class="k">CLICK</span> or <span class="k">SPACE</span> to fire · <span class="k">P</span> pause <br>
+        Bank shots off the side walls · Touch: drag to aim, lift your finger to fire</p>
+      <button class="btn" id="play-btn">POP</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span>POPPED</span><b id="o-pop">0</b></div>
+        <div><span>BEST COMBO</span><b id="o-combo">×0</b></div>
+        <div><span><span class="only-infinite">DEPTH</span><span class="only-classic">LEVEL</span></span><b id="o-depth">0</b></div>
+      </div>
+      <p class="only-infinite">The wall is already rebuilding itself.</p>
+      <button class="btn" id="again-btn">POP AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="bubble.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>
