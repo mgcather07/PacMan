@@ -28,6 +28,7 @@
     "blackjack",
     "poker",
     "skeeball",
+    "climber",
     "klondike",
     "spider",
     "freecell"
@@ -342,6 +343,16 @@
       "classic",
       "score"
     ],
+    "climber": [
+      "climber",
+      "infinite",
+      "score"
+    ],
+    "climber-classic": [
+      "climber",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -513,6 +524,11 @@
       5000,
       400,
       0.5
+    ],
+    "climber": [
+      15000,
+      800,
+      1.5
     ],
     "klondike": [
       50000,

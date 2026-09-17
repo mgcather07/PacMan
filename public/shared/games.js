@@ -569,6 +569,25 @@
       ],
     },
     {
+      id: 'climber', name: 'Barrel Climber', icon: '🦍', color: '#9d4edd', path: '/climber/', category: 'arcade', type: 'score', daily: 'Same tower', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [15000, 800, 1.5], assets: ['/climber/climber.js', '/climber/preview.js'], preview: ['/climber/preview.js'],
+      blurb: 'Climb girders and ladders forever while an ape hurls barrels down at you. Hop them for points, grab the hammer and smash them, pull the rivets out of the floor, ride the elevators — and every tower is faster than the last.',
+      blurbClassic: 'Twelve hand-built towers: sloped girders, rivets, conveyor belts and elevators. Reach the top of the twelfth and the ape finally falls.',
+      tags: ['Endless towers', 'Hammer smash', 'D-pad + jump'],
+      tagsClassic: ['12 towers', 'Four stage types', 'Bonus timer'],
+      cta: 'CLIMB ▶',
+      boards: [
+        { id: 'climber', title: 'Infinite Barrel Climber', group: 'Infinite', type: 'score', href: '/climber/' },
+        { id: 'climber-classic', title: 'Classic Barrel Climber', group: 'Classic', type: 'score', href: '/climber/?mode=classic' },
+      ],
+      classicWin: ['climber-classic'],
+      achievements: [
+        { id: 'climber-20k', icon: '🦍', name: 'Barrel Jumper', desc: 'Score 20,000 in Barrel Climber', points: 20, kind: 'score', goal: 20000 },
+        { id: 'climber-80k', icon: '🔨', name: 'Hammer Time', desc: 'Score 80,000 in Barrel Climber', points: 50, kind: 'score', goal: 80000 },
+        { id: 'climber-classic', icon: '🏗️', name: 'Top of the Tower', desc: 'Beat Classic Barrel Climber', points: 40, kind: 'win', boards: ['climber-classic'] },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

@@ -5,7 +5,7 @@ Classic mode with an ending you can beat, a shared daily challenge, online leade
 and offline play.
 
 <!-- games:start -->
-**31 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
+**32 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
 
 | | Game | Kind | Infinite | Classic | Daily challenge |
 |---|---|---|---|---|---|
@@ -37,6 +37,7 @@ and offline play.
 | ♠️ | [Blackjack](public/blackjack/) | Cards | Endless shoe | 100 hands | Same shoe |
 | 🃏 | [Video Poker](public/poker/) | Cards | Endless hands | 50 hands | Same deck |
 | 🎳 | [Skee-Ball](public/skeeball/) | Arcade | Endless lanes | 3 frames | Same lanes |
+| 🦍 | [Barrel Climber](public/climber/) | Arcade | Endless towers | 12 towers | Same tower |
 | 🂡 | [Klondike](public/solitaire/) | Cards | Draw 1 or 3 | — | Draw 1 deal |
 | 🕷️ | [Spider](public/spider/) | Cards | 1, 2 or 4 suits | — | 1-suit deal |
 | 🃏 | [FreeCell](public/freecell/) | Cards | Numbered deals | — | Same deal |
