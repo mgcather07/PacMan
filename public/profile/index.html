@@ -116,7 +116,10 @@
     .filters button { font: 8px "Press Start 2P", monospace; text-transform: uppercase; color: #9a9ab8; background: #ffffff08; border: 1px solid #ffffff1c; border-radius: 4px; padding: 8px 9px 7px; cursor: pointer; }
     .filters button[aria-pressed="true"] { color: #fff; border-color: #ffe60088; background: #ffe6001a; }
     .achs { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
-    .achs[data-filter="done"] .ach:not(.done), .achs[data-filter="locked"] .ach.done { display: none; }
+    .ach-group { margin-bottom: 22px; }
+    .ach-group h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--acc) 35%, transparent); font: 9px/1.5 "Press Start 2P", monospace; color: var(--acc); }
+    .ach-group h3 span { font-size: 16px; }
+    .ach-group h3 small { margin-left: auto; font-size: 8px; color: #9a9ab8; }
     .ach { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center; padding: 12px; border-radius: 6px; background: #0c0a18d9; border: 1px solid #ffffff17; }
     .ach .ic { width: 52px; height: 52px; display: grid; place-items: center; font-size: 28px; border-radius: 6px; background: #ffffff08; border: 1px dashed #ffffff26; filter: grayscale(1); opacity: .45; }
     .ach .nm { font: 9px/1.5 "Press Start 2P", monospace; color: #cfcfe6; text-transform: uppercase; }
@@ -235,7 +238,7 @@
           <button type="button" data-f="locked" aria-pressed="false">Locked</button>
         </div>
       </div>
-      <div class="achs" id="achs" data-filter="all"></div>
+      <div id="achs"></div>
     </section>
 
     <section data-panel="bests" hidden>
@@ -258,7 +261,7 @@
   <script src="/shared/leaderboard.js"></script>
   <script src="/shared/nav.js"></script>
   <script type="module">
-    import { AVATARS, COLORS, ACHIEVEMENTS } from '/shared/achievements.js';
+    import { AVATARS, COLORS, ACHIEVEMENTS, CATEGORIES } from '/shared/achievements.js';
     const LB = window.Leaderboard;
     LB.injectCss();
     const $ = (id) => document.getElementById(id);
@@ -434,18 +437,32 @@
         <div class="pr">${a.done ? '<span>✓ UNLOCKED</span>' : `<span class="bar"><i style="width:${pct}%"></i></span><span>${num(a.cur)}/${num(a.max)}</span>`}<span class="pts">${a.points} XP</span></div></span>
       </div>`;
     }
+    let achFilter = 'all';
     function renderAchievements() {
       const list = data.achievements;
       const unlocked = list.filter((a) => a.done).length;
       $('ach-count').textContent = `${unlocked}/${list.length}`;
       $('ach-title').textContent = `ACHIEVEMENTS · ${unlocked}/${list.length}`;
-      $('achs').innerHTML = [...list].sort((a, b) => (b.done - a.done)).map(achCard).join('');
+      const show = (a) => achFilter === 'all' || (achFilter === 'done' ? a.done : !a.done);
+      const html = CATEGORIES.map((cat) => {
+        const all = list.filter((a) => a.cat === cat.id);
+        const shown = all.filter(show).sort((a, b) => b.done - a.done);
+        if (!shown.length) return '';
+        const got = all.filter((a) => a.done).length;
+        const acc = LB.COLORS[cat.id] || '#ffe600';
+        return `<div class="ach-group" style="--acc:${acc}">
+          <h3><span>${cat.icon}</span> ${esc(cat.name.toUpperCase())} <small>${got}/${all.length}${got === all.length ? ' ✓' : ''}</small></h3>
+          <div class="achs">${shown.map(achCard).join('')}</div>
+        </div>`;
+      }).join('');
+      $('achs').innerHTML = html || '<div class="empty">Nothing here yet.</div>';
     }
     $('ach-filters').addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
       $('ach-filters').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      $('achs').dataset.filter = b.dataset.f;
+      achFilter = b.dataset.f;
+      if (data) renderAchievements();
     });
 
     // ---------------- personal bests ----------------
