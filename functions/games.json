@@ -24,6 +24,7 @@
     "mahjong",
     "digger",
     "sokoban",
+    "racer",
     "klondike",
     "spider",
     "freecell"
@@ -298,6 +299,16 @@
       "classic",
       "time"
     ],
+    "racer": [
+      "racer",
+      "infinite",
+      "score"
+    ],
+    "racer-classic": [
+      "racer",
+      "classic",
+      "score"
+    ],
     "klondike-1": [
       "klondike",
       "solitaire",
@@ -449,6 +460,11 @@
       20000,
       400,
       0
+    ],
+    "racer": [
+      10000,
+      700,
+      1
     ],
     "klondike": [
       50000,

@@ -493,6 +493,25 @@
       ],
     },
     {
+      id: 'racer', name: 'Micro Racer', icon: '🏎️', color: '#e94f37', path: '/racer/', category: 'arcade', type: 'score', daily: 'Same track', added: '2026-09-17', added: '2026-09-17',
+      scoreCap: [10000, 700, 1], assets: ['/racer/racer.js', '/racer/preview.js'], preview: ['/racer/preview.js'],
+      blurb: 'A road that keeps unrolling ahead of you, with corners that keep tightening. Drift through them, hop the kerbs, dodge sand, oil and traffic, and stay ahead of the cut-off line that is always creeping up behind.',
+      blurbClassic: 'A championship over five circuits, three laps each, against three rivals. Win the final race and the title is yours.',
+      tags: ['Endless road', 'Drift + boost', 'Ghost pace'],
+      tagsClassic: ['5 circuits', '3 laps each', 'Lap records'],
+      cta: 'RACE ▶',
+      boards: [
+        { id: 'racer', title: 'Infinite Micro Racer', group: 'Infinite', type: 'score', href: '/racer/' },
+        { id: 'racer-classic', title: 'Classic Micro Racer', group: 'Classic', type: 'score', href: '/racer/?mode=classic' },
+      ],
+      classicWin: ['racer-classic'],
+      achievements: [
+        { id: 'racer-15k', icon: '🏎️', name: 'Hot Lap', desc: 'Score 15,000 in Micro Racer', points: 20, kind: 'score', goal: 15000 },
+        { id: 'racer-60k', icon: '🏁', name: 'Grand Prix', desc: 'Score 60,000 in Micro Racer', points: 50, kind: 'score', goal: 60000 },
+        { id: 'racer-classic', icon: '🏆', name: 'Champion', desc: 'Win the Classic championship', points: 40, kind: 'win', boards: ['racer-classic'] },
+      ],
+    },
+    {
       id: 'klondike', name: 'Klondike', icon: '🂡', color: '#7ee2a8', path: '/solitaire/', category: 'cards', type: 'time', daily: 'Draw 1 deal',
       scoreCap: [50000, 100, 0], dailyMinTime: 30, assets: ['/solitaire/style.css', '/solitaire/engine.js', '/solitaire/solitaire.js'], preview: ['/solitaire/preview.js'],
       blurb: 'The patience everyone knows, with Draw 1 or Draw 3, drag and drop, tap-to-move, unlimited undo and hints.',

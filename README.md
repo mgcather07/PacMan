@@ -5,7 +5,7 @@ Classic mode with an ending you can beat, a shared daily challenge, online leade
 and offline play.
 
 <!-- games:start -->
-**27 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
+**28 games.** Every one has an endless Infinite mode, most have a Classic mode with an ending you can beat, and all of them have a daily challenge everyone plays from the same seed.
 
 | | Game | Kind | Infinite | Classic | Daily challenge |
 |---|---|---|---|---|---|
@@ -33,6 +33,7 @@ and offline play.
 | 🀄 | [Mahjong](public/mahjong/) | Cards | Endless layouts | — | Same layout |
 | ⛏️ | [Digger](public/digger/) | Arcade | Endless caves | 12 caves | Same caves |
 | 📦 | [Sokoban](public/sokoban/) | Puzzle | Endless rooms | 30 rooms | Same puzzle |
+| 🏎️ | [Micro Racer](public/racer/) | Arcade | Endless road | 5 circuits | Same track |
 | 🂡 | [Klondike](public/solitaire/) | Cards | Draw 1 or 3 | — | Draw 1 deal |
 | 🕷️ | [Spider](public/spider/) | Cards | 1, 2 or 4 suits | — | 1-suit deal |
 | 🃏 | [FreeCell](public/freecell/) | Cards | Numbered deals | — | Same deal |

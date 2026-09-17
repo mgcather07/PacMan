@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Infinite Micro Racer</title>
+  <meta name="description" content="An endless road that never stops unrolling: drift through tightening corners, dodge traffic and oil, grab boosts and stay ahead of the cut-off. Or win a five-circuit championship.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Infinite Arcade">
+  <meta property="og:url" content="https://pacman-d28dc.web.app/racer/">
+  <meta property="og:title" content="Infinite Micro Racer">
+  <meta property="og:description" content="An endless road with tightening corners, traffic and oil. Drift, boost, overtake and stay ahead of the cut-off.">
+  <meta property="og:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://pacman-d28dc.web.app/og-card-v3.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/arcade.css">
+  <style>
+    :root { --accent: #e94f37; --accent-dark: #7a2114; --bg: #0a0f0c; }
+    #pickups { font-size: 10px; letter-spacing: 1px; min-height: 10px; }
+    #lapinfo { font-size: 10px; color: #fff; }
+    #timer { font-size: 13px; color: #ffd23f; }
+    #split { font-size: 8px; min-height: 8px; color: #9fe8a0; }
+    #split.slow { color: #ff8f6a; }
+    #dist { font-size: 8px; color: #8fd0ff; }
+    .legend { display: flex; justify-content: center; gap: 10px 16px; flex-wrap: wrap; font-size: 9px; color: #bbb; margin: 12px 0; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend b { font-size: 14px; font-weight: normal; }
+    /* touch: drag anywhere to steer, with a one-thumb button cluster in the bottom corner */
+    /* display stays with arcade.css (none on desktop, shown on touch) — only the layout lives here */
+    .touch { position: fixed; right: calc(8px + env(safe-area-inset-right)); bottom: calc(10px + env(safe-area-inset-bottom));
+      grid-template-columns: repeat(2, 66px); gap: 8px; z-index: 6; }
+    @media (pointer: coarse) { .touch { display: grid; } }
+    .touch .pad-btn { width: 66px; height: 62px; font-size: 20px; border-radius: 14px; }
+    .touch .pad-btn small { display: block; font-size: 7px; color: #ddd; margin-top: 3px; }
+    @media (pointer: coarse) { .hud-buttons { bottom: calc(150px + env(safe-area-inset-bottom)); } }
+    @media (max-width: 380px) {
+      .touch { grid-template-columns: repeat(2, 60px); gap: 6px; }
+      .touch .pad-btn { width: 60px; height: 58px; font-size: 18px; }
+    }
+    /* the pad belongs to the race, not to the title or game-over screens */
+    body:has(#title:not([hidden])) .touch, body:has(#over:not([hidden])) .touch { display: none; }
+  </style>
+  <script src="/shared/analytics.js"></script>
+  <script src="/shared/pwa.js"></script>
+</head>
+<body>
+  <canvas id="game" class="game"></canvas>
+
+  <div class="hud">
+    <div class="col">
+      <span class="label">SCORE</span>
+      <span id="score">0</span>
+      <span id="pickups"></span>
+    </div>
+    <div class="col center">
+      <span id="lapinfo"></span>
+      <span id="timer"></span>
+      <span id="split"></span>
+    </div>
+    <div class="col right">
+      <span class="label">HIGH SCORE</span>
+      <span id="high">0</span>
+      <span id="dist"></span>
+    </div>
+  </div>
+
+  <div class="hud-buttons">
+    <button class="icon-btn" id="sound-btn" title="Sound (M)">🔊</button>
+    <a class="icon-btn" href="/" title="Back to the arcade">⌂</a>
+  </div>
+
+  <div class="touch" aria-hidden="true">
+    <button class="pad-btn" data-key="drift">✋<small>DRIFT</small></button>
+    <button class="pad-btn" data-key="boost">🚀<small>BOOST</small></button>
+    <button class="pad-btn" data-key="down">🛑<small>BRAKE</small></button>
+    <button class="pad-btn" data-key="oil">🛢️<small>OIL</small></button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="overlay" id="title">
+    <div class="panel">
+      <h1><small><span class="only-infinite">INFINITE</span><span class="only-classic">CLASSIC</span></small>MICRO RACER</h1>
+      <p class="only-infinite">One road that never ends. It keeps unrolling ahead of you, the corners keep tightening, and traffic, sand and oil keep arriving. Score for distance, clean corners, drift time and overtakes — and stay ahead of the cut-off line.</p>
+      <p class="only-classic">A championship over five circuits, three laps each, against three rivals. Win the fifth race and the title is yours.</p>
+      <div class="legend">
+        <span><b>🚀</b>boost charge</span>
+        <span><b>🛡️</b>bumper</span>
+        <span><b>🛢️</b>oil to drop</span>
+        <span><b>🟨</b>sand · slow</span>
+      </div>
+      <p><span class="k">↑ / W</span> throttle · <span class="k">↓ / S</span> brake · <span class="k">← →</span> steer · <span class="k">SPACE</span> handbrake drift <br>
+        <span class="k">SHIFT</span> boost · <span class="k">B</span> drop oil · <span class="k">P</span> pause <br>
+        Touch: drag anywhere to steer (it drives itself), then DRIFT / BOOST / OIL</p>
+      <button class="btn" id="play-btn">GREEN LIGHT</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <div class="stats">
+        <div><span>SCORE</span><b id="o-score">0</b></div>
+        <div><span id="o-dist-l">DISTANCE</span><b id="o-dist">0</b></div>
+        <div><span id="o-lap-l">BEST SPLIT</span><b id="o-lap">—</b></div>
+        <div><span>LONGEST DRIFT</span><b id="o-drift">0.0s</b></div>
+      </div>
+      <p class="only-infinite">The road is already building itself again.</p>
+      <button class="btn" id="again-btn">RACE AGAIN</button>
+      <a class="btn alt" href="/">ARCADE</a>
+    </div>
+  </div>
+
+  <script src="/shared/games.js"></script>
+  <script src="/shared/daily.js"></script>
+  <script src="/shared/arcade.js"></script>
+  <script src="/shared/leaderboard.js"></script>
+  <script src="racer.js"></script>
+  <script src="/shared/music.js"></script><script>ArcadeMusic.mount({ screen: 'title' });</script>
+</body>
+</html>
