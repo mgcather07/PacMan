@@ -1,4 +1,4 @@
-# Adding a game to the Infinite Arcade
+# Adding a game to the Forever Arcade
 
 Every game in the arcade works the same way, so players get the same things everywhere: an Infinite
 mode, a Classic mode you can beat, a shared Daily Challenge, leaderboards with server-checked scores,

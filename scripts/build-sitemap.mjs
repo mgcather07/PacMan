@@ -7,21 +7,19 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const SITE = (process.env.SITE_URL || 'https://pacman-d28dc.web.app').replace(/\/$/, '');
+const SITE = (process.env.SITE_URL || 'https://foreverarcade.com').replace(/\/$/, '');
 
 const root = {};
 new Function('root', 'globalThis', 'window', readFileSync('public/shared/games.js', 'utf8'))(root, root, root);
 const games = (root.ArcadeGames || globalThis.ArcadeGames).list;
 
-// Every page worth indexing: the catalog, the hubs, and each game in both modes.
+// Every page worth indexing. A game's Classic mode is the same document with a
+// ?mode=classic query, so it canonicalises to the game's path and isn't listed.
 const paths = ['/', '/daily/', '/leaderboards/', '/privacy/'];
-for (const g of games) {
-  paths.push(g.path);
-  if (g.boards.some((b) => b.group === 'Classic')) paths.push(`${g.path}?mode=classic`);
-}
+for (const g of games) paths.push(g.path);
 
 const today = new Date().toISOString().slice(0, 10);
-const priority = (p) => (p === '/' ? '1.0' : p.includes('?') ? '0.5' : p.endsWith('/privacy/') ? '0.2' : '0.8');
+const priority = (p) => (p === '/' ? '1.0' : p.endsWith('/privacy/') ? '0.2' : '0.8');
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${paths.map((p) => `  <url>

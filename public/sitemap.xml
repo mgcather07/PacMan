@@ -1,312 +1,182 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://pacman-d28dc.web.app/</loc>
+    <loc>https://foreverarcade.com/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/daily/</loc>
+    <loc>https://foreverarcade.com/daily/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/leaderboards/</loc>
+    <loc>https://foreverarcade.com/leaderboards/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/privacy/</loc>
+    <loc>https://foreverarcade.com/privacy/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/pacman/</loc>
+    <loc>https://foreverarcade.com/pacman/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/pacman/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/snake/</loc>
+    <loc>https://foreverarcade.com/snake/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/snake/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/minesweeper/</loc>
+    <loc>https://foreverarcade.com/minesweeper/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/minesweeper/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/frogger/</loc>
+    <loc>https://foreverarcade.com/frogger/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/frogger/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/breakout/</loc>
+    <loc>https://foreverarcade.com/breakout/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/breakout/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/asteroids/</loc>
+    <loc>https://foreverarcade.com/asteroids/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/asteroids/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/tetris/</loc>
+    <loc>https://foreverarcade.com/tetris/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/tetris/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/shooter/</loc>
+    <loc>https://foreverarcade.com/shooter/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/shooter/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/invaders/</loc>
+    <loc>https://foreverarcade.com/invaders/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/invaders/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/pong/</loc>
+    <loc>https://foreverarcade.com/pong/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/pong/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/missile/</loc>
+    <loc>https://foreverarcade.com/missile/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/missile/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/2048/</loc>
+    <loc>https://foreverarcade.com/2048/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/2048/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/flyer/</loc>
+    <loc>https://foreverarcade.com/flyer/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/flyer/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/bubble/</loc>
+    <loc>https://foreverarcade.com/bubble/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/bubble/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/defender/</loc>
+    <loc>https://foreverarcade.com/defender/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/defender/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/tempest/</loc>
+    <loc>https://foreverarcade.com/tempest/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/tempest/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/centipede/</loc>
+    <loc>https://foreverarcade.com/centipede/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/centipede/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/tanks/</loc>
+    <loc>https://foreverarcade.com/tanks/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/tanks/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/pyramid/</loc>
+    <loc>https://foreverarcade.com/pyramid/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/match3/</loc>
+    <loc>https://foreverarcade.com/match3/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/match3/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/tripeaks/</loc>
+    <loc>https://foreverarcade.com/tripeaks/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/mahjong/</loc>
+    <loc>https://foreverarcade.com/mahjong/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/digger/</loc>
+    <loc>https://foreverarcade.com/digger/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/digger/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/sokoban/</loc>
+    <loc>https://foreverarcade.com/sokoban/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/sokoban/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/racer/</loc>
+    <loc>https://foreverarcade.com/racer/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/racer/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/blackjack/</loc>
+    <loc>https://foreverarcade.com/blackjack/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/blackjack/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/poker/</loc>
+    <loc>https://foreverarcade.com/poker/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/poker/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/skeeball/</loc>
+    <loc>https://foreverarcade.com/skeeball/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/skeeball/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/climber/</loc>
+    <loc>https://foreverarcade.com/climber/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/climber/?mode=classic</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pacman-d28dc.web.app/solitaire/</loc>
+    <loc>https://foreverarcade.com/solitaire/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/spider/</loc>
+    <loc>https://foreverarcade.com/spider/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pacman-d28dc.web.app/freecell/</loc>
+    <loc>https://foreverarcade.com/freecell/</loc>
     <lastmod>2026-09-18</lastmod>
     <priority>0.8</priority>
   </url>

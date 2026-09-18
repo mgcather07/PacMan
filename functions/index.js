@@ -1,5 +1,5 @@
 /*
- * Infinite Arcade backend (Cloud Functions, 2nd gen).
+ * Forever Arcade backend (Cloud Functions, 2nd gen).
  *
  * Leaderboard entries, player profiles and play statistics are written only from here; the Firestore
  * rules deny all client writes. Every callable requires Firebase Auth (anonymous is fine) and App Check.

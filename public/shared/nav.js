@@ -80,7 +80,7 @@
       const me = LB
         ? `<a class="an-me${name ? '' : ' guest'}" href="/profile/"${path === '/profile/' ? ' aria-current="page"' : ''} title="Your profile">${LB.avatarHtml(name || '?', LB.cachedAvatar())}<span class="who"><span class="nm">${esc(name || 'Guest')}</span><span class="meta">${meta || 'SET UP PROFILE ▶'}</span></span></a>`
         : '';
-      el.innerHTML = `<div class="an-in"><a class="an-logo" href="/"><i>🕹️</i><span>INFINITE <b>ARCADE</b></span></a><div class="an-links">${links}</div>${me}</div>`;
+      el.innerHTML = `<div class="an-in"><a class="an-logo" href="/"><i>🕹️</i><span>FOREVER <b>ARCADE</b></span></a><div class="an-links">${links}</div>${me}</div>`;
     };
     render();
     if (!LB) return;

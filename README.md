@@ -1,4 +1,4 @@
-# Infinite Arcade
+# Forever Arcade
 
 A static site of arcade, puzzle and card games. Every game has an Infinite mode that never ends, a
 Classic mode with an ending you can beat, a shared daily challenge, online leaderboards, achievements
@@ -97,7 +97,7 @@ To remove an entry, use the Firebase console or `firebase firestore:delete board
 ## Streaks and sharing
 
 - **Daily streaks:** finishing any daily challenge records that day in `players/{uid}.days` (server-side, in `submitScore`). The current streak counts back from today (or from yesterday, until today's challenge is done). It shows as 🔥 N on the name chip, as a banner on `/daily/`, and after each daily game.
-- **Share:** after posting a score, **📤 Share** opens the phone's share sheet (or copies to the clipboard on desktop), e.g. `📅 Infinite Arcade Daily · Wed, Sep 16 / 🐸 Hopper: 1,240 pts (#3 of 12) / 🔥 5-day streak / link`. **Share today** on `/daily/` copies a summary of every challenge you've posted that day.
+- **Share:** after posting a score, **📤 Share** opens the phone's share sheet (or copies to the clipboard on desktop), e.g. `📅 Forever Arcade Daily · Wed, Sep 16 / 🐸 Hopper: 1,240 pts (#3 of 12) / 🔥 5-day streak / link`. **Share today** on `/daily/` copies a summary of every challenge you've posted that day.
 
 ## Analytics
 

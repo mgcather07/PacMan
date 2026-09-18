@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /profile/
 
-Sitemap: https://pacman-d28dc.web.app/sitemap.xml
+Sitemap: https://foreverarcade.com/sitemap.xml

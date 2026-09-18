@@ -521,7 +521,7 @@
   // ---------------------------------------------------------------------------
   // Sharing
   // ---------------------------------------------------------------------------
-  const SITE = 'https://pacman-d28dc.web.app';
+  const SITE = 'https://foreverarcade.com';
   function shareText(board, res) {
     const meta = info(board);
     const game = gameOf(board);
@@ -531,7 +531,7 @@
     if (meta.group === 'Daily') {
       const name = DAILY_GAMES[game][0];
       return [
-        `📅 Infinite Arcade Daily · ${window.Daily ? Daily.label(meta.day) : dayLabel(meta.day)}`,
+        `📅 Forever Arcade Daily · ${window.Daily ? Daily.label(meta.day) : dayLabel(meta.day)}`,
         `${ICONS[game] || '🎮'} ${name}: ${shown}${place}`,
         ...(s.current > 1 ? [`🔥 ${s.current}-day streak`] : []),
         `${SITE}${meta.href}`,
