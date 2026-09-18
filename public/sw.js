@@ -4,7 +4,7 @@
  * cached copy when offline or when the network is too slow. Fonts are served from cache and refreshed
  * in the background. Leaderboards, analytics and Firebase always go straight to the network.
  */
-const CACHE = 'arcade-v7';
+const CACHE = 'arcade-v8';
 const FONT_CACHE = 'arcade-fonts-v1';
 const NETWORK_TIMEOUT_MS = 3500;
 

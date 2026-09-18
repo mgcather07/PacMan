@@ -76,8 +76,36 @@
   const eaten = new Set();
   const tkey = (x, y) => x + ',' + y;
 
+  // A Classic maze is a fixed 9x7 box of nodes, so Infinite's spawn odds (~2% of
+  // nodes) leave 39% of mazes with no power pellet at all and 78% with no card.
+  // Classic places them deliberately instead.
+  const classicItems = new Map();
+  function buildClassicItems() {
+    classicItems.clear();
+    if (!CLASSIC) return;
+    // four power pellets in the corners, the way the arcade does it
+    for (const i of [-NX, NX]) for (const j of [-NY, NY]) classicItems.set(tkey(i * S, j * S), { kind: POWER });
+    // one card per maze, a different suit each level, so clearing all four
+    // mazes completes the set and pays the extra life
+    const spots = [];
+    for (let i = -NX; i <= NX; i++) {
+      for (let j = -NY; j <= NY; j++) {
+        const x = i * S, y = j * S;
+        if (Math.abs(x) + Math.abs(y) <= 6) continue;          // keep the start clear
+        if (classicItems.has(tkey(x, y)) || isWall(x, y)) continue;
+        spots.push({ x, y, h: hash(x, y, 91) });
+      }
+    }
+    spots.sort((a, b) => a.h - b.h);
+    if (spots.length) classicItems.set(tkey(spots[0].x, spots[0].y), { kind: CARD, suit: (level - 1) % 4 });
+  }
+
   function itemAt(x, y) {
     if (eaten.has(tkey(x, y))) return 0;
+    if (CLASSIC) {
+      const placed = classicItems.get(tkey(x, y));
+      return placed ? placed.kind : DOT;
+    }
     if (isNode(x, y) && (Math.abs(x) + Math.abs(y) > 6)) {
       const h = hash(x, y, 57);
       if (h < 0.022) return POWER;
@@ -85,7 +113,10 @@
     }
     return DOT;
   }
-  const cardSuit = (x, y) => Math.floor(hash(x, y, 71) * 4);
+  const cardSuit = (x, y) => {
+    if (CLASSIC) { const placed = classicItems.get(tkey(x, y)); return placed && placed.suit != null ? placed.suit : 0; }
+    return Math.floor(hash(x, y, 71) * 4);
+  };
 
   const FRUITS = [
     { e: '🍒', v: 100 }, { e: '🍓', v: 300 }, { e: '🍊', v: 500 }, { e: '🍎', v: 700 },
@@ -191,6 +222,7 @@
     fruit = null;
     frightT = 0;
     eaten.add(tkey(0, 0));
+    buildClassicItems();
     dotsLeft = CLASSIC ? countDots() : 0;
     spawnGhosts();
     setState('ready');
@@ -207,6 +239,7 @@
     suits = [false, false, false, false];
     nextLifeAt = 10000; farthest = 0; modeT = 0; scatter = false; freezeT = 0;
     eaten.add(tkey(0, 0));
+    buildClassicItems();
     dotsLeft = CLASSIC ? countDots() : 0;
     spawnGhosts();
     setState('ready');
