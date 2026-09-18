@@ -1,5 +1,5 @@
 /*
- * Sokoban — Infinite (an endless ladder of generated warehouses), Classic (30 rooms) and the seeded Daily.
+ * Boxed In — Infinite (an endless ladder of generated warehouses), Classic (30 rooms) and the seeded Daily.
  * Generated rooms are built backwards from the solved position (crates start on the goals and are pulled
  * around), so the walk played in reverse is always a solution; a bounded A* then double-checks every room
  * and hands back the reference solution used for the move-efficiency bonus.

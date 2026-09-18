@@ -1,4 +1,4 @@
-/* Home-page preview: Pac-Man eating a corridor of dots with the ghost train behind. See docs/ADDING_A_GAME.md. */
+/* Home-page preview: Chomp eating a corridor of dots with the ghost train behind. See docs/ADDING_A_GAME.md. */
 (window.ArcadePreviews = window.ArcadePreviews || {}).pacman = function (canvas) {
   const ctx = canvas.getContext('2d');
   const colors = ['#ff2a2a', '#ffb8ff', '#00e5ff', '#ffb852'];

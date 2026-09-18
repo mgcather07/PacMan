@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy — Infinite Arcade</title>
+  <meta name="description" content="What Infinite Arcade stores, what it doesn't, and how to get your data removed.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#05050f">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { background: radial-gradient(ellipse at 50% -10%, #2a1a52 0%, #05050f 55%) fixed, #05050f; color: #e7e7f0; font-family: Inter, system-ui, sans-serif; line-height: 1.7; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 22px 22px; }
+    main { position: relative; max-width: 760px; margin: 0 auto; padding: clamp(18px, 3.5vh, 36px) 16px 72px; }
+    .px { font-family: "Press Start 2P", monospace; font-weight: normal; line-height: 1.5; }
+    h1 { font-size: clamp(18px, 4.6vw, 26px); color: #ffe600; text-shadow: 0 0 18px #ffe60055; margin: 0 0 6px; }
+    h2 { font-size: clamp(11px, 2.6vw, 13px); color: #3fd8ff; margin: 38px 0 10px; letter-spacing: 1px; }
+    .when { color: #7c7ca0; font-size: 13px; margin: 0 0 30px; }
+    p, li { color: #c9c9dd; font-size: 15px; }
+    a { color: #ffe600; }
+    ul { padding-left: 20px; }
+    li { margin: 6px 0; }
+    .lead { color: #e7e7f0; font-size: 16px; border-left: 3px solid #c77dff; padding-left: 16px; }
+    .back { display: inline-block; margin-bottom: 26px; font-size: 12px; color: #9a9ac0; text-decoration: none; }
+    .back:hover { color: #ffe600; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #ffffff14; vertical-align: top; }
+    th { color: #9a9ac0; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="/">&larr; Back to the arcade</a>
+    <h1 class="px">PRIVACY</h1>
+    <p class="when">Last updated 18 September 2026</p>
+
+    <p class="lead">Infinite Arcade is a free hobby site. It doesn't sell anything, doesn't run ads, and doesn't
+      sell or share your data with anyone. You can play every game without signing in or telling us your name.</p>
+
+    <h2 class="px">WHAT'S STORED WHEN YOU JUST PLAY</h2>
+    <p>The first time you finish a game we create an anonymous player for you through Firebase Authentication. That's
+      a random ID — it isn't linked to your name, email or anything else about you.</p>
+    <table>
+      <tr><th>Stored on our servers</th><th>Why</th></tr>
+      <tr><td>Your random player ID</td><td>To keep your scores and achievements together</td></tr>
+      <tr><td>The display name you type on a leaderboard</td><td>To show next to your score. Pick anything — it doesn't have to be your real name</td></tr>
+      <tr><td>Your avatar icon and colour</td><td>To show on your player card</td></tr>
+      <tr><td>Scores, finish times, games played and achievements</td><td>Leaderboards, your profile and your level</td></tr>
+    </table>
+    <p>Your browser also keeps some things on your own device that never reach us: your sound setting, your local high
+      scores, which games you played recently, and unfinished games you can resume.</p>
+
+    <h2 class="px">IF YOU SIGN IN WITH GOOGLE</h2>
+    <p>Signing in is optional, and its only purpose is to let you keep one player across your phone and computer.
+      If you use it, Google tells us your account's email address, name and profile picture URL. We store the account
+      link so we can recognise you on another device. We don't email you, and we don't share the address with anyone.</p>
+
+    <h2 class="px">ANALYTICS</h2>
+    <p>The site uses Google Analytics to count visits and see which games people play. It records things like the pages
+      you open, roughly where in the world you are (from your IP address, which Google shortens), and what kind of
+      device and browser you're on. It does not tell us who you are. If you'd rather not be counted, most ad and
+      tracker blockers stop it, and so does your browser's "Do Not Track" or private browsing mode.</p>
+
+    <h2 class="px">KEEPING SCORES HONEST</h2>
+    <p>Leaderboard scores are checked on the server, and the site uses Google's reCAPTCHA Enterprise through Firebase
+      App Check to tell real players from bots. Google collects device and usage signals for that check, under
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</p>
+
+    <h2 class="px">WHO ELSE SEES IT</h2>
+    <p>Nobody, except Google — the site runs on Firebase (hosting, sign-in, database) and uses Google Analytics, so
+      Google processes this data on our behalf. We don't sell data, we don't run ad networks, and there are no other
+      trackers on the site.</p>
+
+    <h2 class="px">CHILDREN</h2>
+    <p>The games are suitable for all ages and nothing here asks a player for personal information. The card games use
+      play-money chips only — there is nothing to buy and nothing to cash out. If you're a parent and you'd like your
+      child's player deleted, just ask.</p>
+
+    <h2 class="px">DELETING YOUR DATA</h2>
+    <p>Email us and we'll delete your player, your scores and your achievements. If you signed in with Google, you can
+      also remove the arcade's access from your
+      <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google account permissions</a>.
+      Clearing your browser's site data removes everything kept on your own device.</p>
+
+    <h2 class="px">CONTACT</h2>
+    <p>Questions, or want your data removed? Email <a href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a>.</p>
+
+    <h2 class="px">CHANGES</h2>
+    <p>If this policy changes, the date at the top changes with it.</p>
+  </main>
+</body>
+</html>

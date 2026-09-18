@@ -1,5 +1,5 @@
 /*
- * Infinite Defender: a wrapping mountain planet, ten humanoids, and raiders that want them.
+ * Infinite Rescue Patrol: a wrapping mountain planet, ten humanoids, and raiders that want them.
  * Landers carry humanoids to the top of the sky to become mutants; lose them all and the planet dies.
  * See docs/ADDING_A_GAME.md.
  */

@@ -1,7 +1,7 @@
 {
   "name": "Infinite Arcade",
   "short_name": "Arcade",
-  "description": "Endless arcade classics — Pac-Man, Snake, Space Invaders, Minesweeper, Frogger, Breakout, Asteroids, Tetris and a space shooter — plus Klondike, Spider and FreeCell solitaire. Daily challenges and leaderboards.",
+  "description": "32 arcade games that never end — maze chases, brick breakers, falling blocks, tube shooters, match-3, solitaire and more. Every game has an endless mode, a classic mode you can beat, a daily challenge and leaderboards.",
   "id": "/",
   "start_url": "/?source=app",
   "scope": "/",
@@ -17,7 +17,7 @@
   ],
   "shortcuts": [
     { "name": "Daily Challenge", "short_name": "Daily", "url": "/daily/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Pac-Man", "url": "/pacman/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Chomp", "url": "/pacman/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
     { "name": "Klondike Solitaire", "short_name": "Solitaire", "url": "/solitaire/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
     { "name": "Leaderboards", "url": "/leaderboards/", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
   ]

@@ -1,4 +1,4 @@
-/* Pixel sprites for Space Invaders, shared by the game and its home-page preview. */
+/* Pixel sprites for Alien Wave, shared by the game and its home-page preview. */
 (function () {
   'use strict';
 

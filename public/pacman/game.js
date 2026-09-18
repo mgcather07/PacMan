@@ -493,7 +493,7 @@
       }
     }
 
-    // Pac-Man
+    // Chomp
     pac.speed = pacSpeed();
     advance(pac, pac.speed * dt, pacCenter);
     eatAt(Math.round(pac.x), Math.round(pac.y));
@@ -569,7 +569,7 @@
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
 
-    // classic mazes are centred on screen when they fit; otherwise the camera follows Pac-Man
+    // classic mazes are centred on screen when they fit; otherwise the camera follows Chomp
     const fitsX = CLASSIC && (NX * 2 * S + 1) * T <= W, fitsY = CLASSIC && (NY * 2 * S + 1) * T <= H - 70;
     const ox = W / 2 - (fitsX ? 0 : pac.x) * T;
     const oy = (fitsY ? (H + 50) / 2 : H / 2) - (fitsY ? 0 : pac.y) * T;
@@ -646,7 +646,7 @@
     // Ghosts
     for (const g of ghosts) drawGhost(g, ox + g.x * T, oy + g.y * T);
 
-    // Pac-Man
+    // Chomp
     drawPac(ox + pac.x * T, oy + pac.y * T);
 
     // Popups

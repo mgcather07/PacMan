@@ -1,5 +1,5 @@
 /*
- * Skee-Ball: pull back, let go, and roll a ball up the alley, over the ramp and into the rings.
+ * Alley Roll: pull back, let go, and roll a ball up the alley, over the ramp and into the rings.
  * Physics runs in a fixed 600 x 1000 "virtual alley"; only the lane stretches to fill tall screens,
  * so a roll behaves exactly the same on every device. See docs/ADDING_A_GAME.md.
  */
