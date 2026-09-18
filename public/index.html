@@ -134,8 +134,8 @@
   <main>
     <header>
       <h1>FOREVER <span>ARCADE</span></h1>
-      <p class="only-infinite"><b class="n-infinite">…</b> games that never end — arcade, puzzle and cards.</p>
-      <p class="only-classic"><b class="n-classic">…</b> games you can actually beat — arcade, puzzle and cards.</p>
+      <p class="only-infinite"><b class="n-infinite">…</b> games that never end<span class="n-rest"></span>.</p>
+      <p class="only-classic"><b class="n-classic">…</b> games you can actually beat<span class="c-rest"></span>.</p>
       <nav class="tabs" role="tablist">
         <button role="tab" data-tab="infinite">∞ Infinite</button>
         <button role="tab" data-tab="classic">🏆 Classic</button>
@@ -322,6 +322,17 @@
       n('.n-infinite', GAMES.filter((g) => group(g, 'Infinite')).length);
       n('.n-classic', GAMES.filter((g) => group(g, 'Classic')).length);
       n('.n-cards', GAMES.filter((g) => g.category === 'cards').length);
+      // Both tabs list every game, but not every game has both modes — so each headline
+      // names what it is leaving out, and its count plus those adds up to the "All" count.
+      const list = (names) => `${names.slice(0, -1).join(', ')}${names.length > 1 ? ' and ' : ''}${names.at(-1)}`;
+      const WORD = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+      const noInfinite = GAMES.filter((g) => !group(g, 'Infinite')).map((g) => g.name);
+      const noClassic = GAMES.filter((g) => !group(g, 'Classic'));
+      n('.n-rest', noInfinite.length ? ` — plus ${list(noInfinite)}` : ' — arcade, puzzle and cards');
+      n('.c-rest', !noClassic.length ? ' — arcade, puzzle and cards'
+        : noClassic.every((g) => g.category === 'cards')
+          ? ` — plus ${WORD[noClassic.length] || noClassic.length} kinds of solitaire`
+          : ` — plus ${list(noClassic.map((g) => g.name))}`);
 
       setCat(cat);
       let initial = location.hash === '#classic' ? 'classic' : location.hash === '#infinite' ? 'infinite' : null;
