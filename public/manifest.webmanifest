@@ -1,7 +1,7 @@
 {
   "name": "Forever Arcade",
   "short_name": "Arcade",
-  "description": "32 arcade games that never end — maze chases, brick breakers, falling blocks, tube shooters, match-3, solitaire and more. Every game has an endless mode, a classic mode you can beat, a daily challenge and leaderboards.",
+  "description": "32 free arcade games — maze chases, brick breakers, falling blocks, tube shooters, match-3, solitaire and more. Every game has an endless mode, a classic mode you can beat, a daily challenge and leaderboards.",
   "id": "/",
   "start_url": "/?source=app",
   "scope": "/",
